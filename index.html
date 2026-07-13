@@ -176,17 +176,30 @@ function parseLine(line) {
   return m ? m.id : null;
 }
 
-function parseProfile(text, filename) {
-  const name = filename.replace(/\.txt$/i, '');
+function isNameLine(line) {
+  return line.trim() && !/^\s*\d+[\.\)、]/.test(line) && !line.includes(' - ');
+}
+
+function parseProfiles(text) {
   const lines = text.split('\n');
-  const ids = [];
+  const result = [];
+  let currentName = null;
+  let ids = [];
   let unmatched = 0;
   for (const line of lines) {
-    const id = parseLine(line);
-    if (id) ids.push(id);
-    else if (line.trim()) unmatched++;
+    if (isNameLine(line)) {
+      if (currentName && ids.length) result.push({ name: currentName, ids, unmatched });
+      currentName = line.trim();
+      ids = [];
+      unmatched = 0;
+    } else {
+      const id = parseLine(line);
+      if (id) ids.push(id);
+      else if (line.trim()) unmatched++;
+    }
   }
-  return { name, ids, unmatched };
+  if (currentName && ids.length) result.push({ name: currentName, ids, unmatched });
+  return result.length ? result : [{ name: 'unknown', ids: [], unmatched: 0 }];
 }
 
 async function loadRankings() {
@@ -199,14 +212,14 @@ async function loadRankings() {
       try {
         const r = await fetch('data/rankings/' + f);
         const text = await r.text();
-        profiles.push(parseProfile(text, f));
+        profiles.push(...parseProfiles(text));
       } catch (e) { console.warn('Failed:', f, e); }
     }
   } catch {
     try {
-      const r = await fetch('data/rankings/trioskosmos.txt');
+      const r = await fetch('data/rankings/hasu6thbelluna.txt');
       const text = await r.text();
-      profiles = [parseProfile(text, 'trioskosmos.txt')];
+      profiles = parseProfiles(text);
     } catch {
       profiles = [{ name: 'trioskosmos', ids: SONGS.map(s => s.id), unmatched: 0 }];
     }

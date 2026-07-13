@@ -28,19 +28,11 @@ nav button.active{background:var(--pink);color:#fff;border-color:var(--pink)}
 .inf{flex:1;min-width:0}
 .nm{font-size:1rem;font-weight:500}
 .ar{font-size:.8rem;color:var(--text-dim);margin-top:2px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-top:20px}
-.card{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;cursor:pointer;transition:all .2s}
-.card:hover{border-color:var(--pink)}
-.card .rn{font-size:1.5rem;font-weight:bold;color:var(--pink)}
-.card .sn{font-size:1rem;margin:4px 0}
-.card .sa{font-size:.8rem;color:var(--text-dim)}
-.card .ba{height:4px;border-radius:2px;margin-top:8px;background:var(--bg-card2);overflow:hidden}
-.card .bf{height:100%;border-radius:2px;background:var(--pink)}
 .det{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:20px}
 .det h2{font-size:1.5rem;margin-bottom:4px}
 .det .mt{color:var(--text-dim);font-size:.9rem;margin-bottom:16px}
 .rlist{display:flex;flex-direction:column;gap:6px}
-.ritem{display:flex;align-items:center;gap:12px;padding:8px 14px;background:var(--bg-card2);border-radius:6px}
+.ritem{display:flex;align-items:center;gap:12px;padding:8px 14px;background:var(--bg-card2);border-radius:6px;cursor:pointer}
 .ritem .pos{font-weight:bold;color:var(--pink);width:30px}
 .ritem .nm2{flex:1}
 .cc{display:flex;gap:20px;flex-wrap:wrap}
@@ -52,23 +44,52 @@ nav button.active{background:var(--pink);color:#fff;border-color:var(--pink)}
 .abar .bt{flex:1;height:6px;background:var(--bg);border-radius:3px;overflow:hidden;min-width:80px}
 .abar .bf{height:100%;border-radius:3px;background:var(--pink)}
 .unr{opacity:.45}
-@media(max-width:600px){.container{padding:12px}header h1{font-size:1.4rem}.item{padding:8px 10px}.rk{width:28px;font-size:1rem}.bar{flex-direction:column;align-items:stretch}.cc{flex-direction:column}}
+.votes{font-size:.8rem;color:var(--text-dim);margin-top:3px;display:flex;gap:16px;flex-wrap:wrap}
+.votes span{white-space:nowrap}
+.votes .hi{color:#4caf50}
+.votes .lo{color:#ff7043}
+/* Compare grid */
+.cgrid{display:grid;gap:4px;margin-bottom:20px}
+.cgrid .ch{font-size:.8rem;color:var(--text-dim);padding:6px;text-align:center;font-weight:bold;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cgrid .cc{background:var(--bg-card);border:1px solid var(--border);border-radius:4px;text-align:center;padding:8px 4px;cursor:pointer;font-size:.85rem;transition:all .2s}
+.cgrid .cc:hover{border-color:var(--pink);background:var(--bg-card2)}
+.cgrid .cc.sel{border-color:var(--pink);background:var(--pink);color:#fff}
+.cgrid .cc.di{opacity:.3;cursor:default}
+.cgrid .cc.di:hover{border-color:var(--border);background:var(--bg-card)}
+.cdetail{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:20px;display:none}
+.cdetail.show{display:block}
+.cdetail .cname{color:var(--pink);font-size:1.1rem;margin-bottom:12px}
+@media(max-width:600px){.container{padding:12px}header h1{font-size:1.4rem}.item{padding:8px 10px}.rk{width:28px;font-size:1rem}.bar{flex-direction:column;align-items:stretch}.cc{flex-direction:column}.cgrid .ch{font-size:.7rem}.cgrid .cc{font-size:.75rem;padding:4px 2px}}
 </style>
 </head>
 <body>
 <div class="container">
   <header>
     <h1>♡ Hasunosora Song Rankings ♡</h1>
-    <p>蓮ノ空女学院スクールアイドルクラブ — submit your ranking via PR: add a <code>.txt</code> file to <code>data/rankings/</code> and update <code>manifest.json</code></p>
+    <p>蓮ノ空女学院スクールアイドルクラブ — submit via PR: add <code>.txt</code> to <code>data/rankings/</code> + update <code>manifest.json</code></p>
   </header>
   <nav id="nav">
-    <button class="active" data-tab="rank">Ranking</button>
     <button data-tab="agg">Aggregate</button>
+    <button data-tab="rank">Ranking</button>
     <button data-tab="song">Per Song</button>
-    <button data-tab="cmp">Compare</button>
+    <button class="active" data-tab="cmp">Compare</button>
   </nav>
 
-  <div class="section active" id="section-rank">
+  <div class="section" id="section-agg">
+    <div class="bar">
+      <label>Sort:</label>
+      <select id="sortAgg">
+        <option value="rank">Average rank (best)</option>
+        <option value="rank-desc">Average rank (worst)</option>
+        <option value="name">Name A-Z</option>
+        <option value="date">Release date</option>
+        <option value="artist">Artist</option>
+      </select>
+    </div>
+    <div id="aggContent"></div>
+  </div>
+
+  <div class="section" id="section-rank">
     <div class="bar">
       <label>Profile:</label><select id="selProfile"></select>
       <label>Sort:</label>
@@ -86,32 +107,18 @@ nav button.active{background:var(--pink);color:#fff;border-color:var(--pink)}
     <div class="list" id="songList"></div>
   </div>
 
-  <div class="section" id="section-agg">
-    <div class="bar">
-      <label>Sort:</label>
-      <select id="sortAgg">
-        <option value="rank">Average rank (best)</option>
-        <option value="rank-desc">Average rank (worst)</option>
-        <option value="name">Name A-Z</option>
-        <option value="date">Release date</option>
-        <option value="artist">Artist</option>
-      </select>
-    </div>
-    <div id="aggContent"></div>
-  </div>
-
   <div class="section" id="section-song">
     <input class="sbox" id="songSearch" placeholder="Search songs...">
     <div id="songDetail"></div>
     <div id="songResults"></div>
   </div>
 
-  <div class="section" id="section-cmp">
-    <div class="bar">
-      <label>A:</label><select id="cmpA"></select>
-      <label>B:</label><select id="cmpB"></select>
+  <div class="section active" id="section-cmp">
+    <div id="cmpGrid"></div>
+    <div class="cdetail" id="cmpDetail">
+      <div class="cname" id="cmpDetailTitle"></div>
+      <div id="cmpDetailBody"></div>
     </div>
-    <div id="cmpContent"></div>
   </div>
 </div>
 <script>
@@ -153,12 +160,12 @@ const SONGS = [
   {id:"889",name:"ハナ咲けばユメ駆ける",artist:"蓮ノ空女学院スクールアイドルクラブ",date:"2026-06-03"},
   {id:"859",name:"雪舞う空と二秒の永遠",artist:"蓮ノ空女学院スクールアイドルクラブ",date:"2026-04-15"}
 ];
-const SONG_MAP = {}; SONGS.forEach(s => SONG_MAP[s.id] = s);
+const SM = {}; SONGS.forEach(s => SM[s.id] = s);
 
 let profiles = [];
 let current = null;
 
-function gs(id){return SONG_MAP[id]}
+function gs(id){return SM[id]}
 
 function gr(name, sid){
   const p = profiles.find(r => r.name === name);
@@ -171,17 +178,12 @@ function isName(l){return l.trim()&&!/^\s*\d+[\.\)、]/.test(l)&&!l.includes(' -
 
 function parseProfiles(text){
   const lines = text.split('\n');
-  const res = [];
-  let cur = null, ids = [], unr = 0;
+  const res = []; let cur = null, ids = [], unr = 0;
   for(const l of lines){
     if(isName(l)){
       if(cur&&ids.length) res.push({name:cur,ids,unr});
       cur=l.trim(); ids=[]; unr=0;
-    } else {
-      const id = parseLine(l);
-      if(id) ids.push(id);
-      else if(l.trim()) unr++;
-    }
+    } else { const id = parseLine(l); if(id) ids.push(id); else if(l.trim()) unr++; }
   }
   if(cur&&ids.length) res.push({name:cur,ids,unr});
   return res.length ? res : [{name:'unknown',ids:[],unr:0}];
@@ -204,30 +206,22 @@ async function load(){
     const files = mf.files || mf;
     profiles = [];
     for(const f of files){
-      try{
-        const r = await fetch('data/rankings/'+f);
-        profiles.push(...parseProfiles(await r.text()));
-      }catch(e){console.warn('Failed:',f,e)}
+      try{const r=await fetch('data/rankings/'+f);profiles.push(...parseProfiles(await r.text()));}
+      catch(e){console.warn('Failed:',f,e)}
     }
   }catch{
-    try{
-      const r = await fetch('data/rankings/hasu6thbelluna.txt');
-      profiles = parseProfiles(await r.text());
-    }catch{
-      profiles = [{name:'trioskosmos',ids:SONGS.map(s=>s.id),unr:0}];
-    }
+    try{const r=await fetch('data/rankings/hasu6thbelluna.txt');profiles=parseProfiles(await r.text());}
+    catch{profiles=[{name:'trioskosmos',ids:SONGS.map(s=>s.id),unr:0}]}
   }
-  if(!current||!profiles.find(p=>p.name===current))
-    current = profiles[0]?.name||'trioskosmos';
+  if(!current||!profiles.find(p=>p.name===current)) current=profiles[0]?.name||'trioskosmos';
   renderAll();
 }
 
 function rSel(){
   const names = profiles.map(p=>p.name);
-  ['selProfile','cmpA','cmpB'].forEach(id => {
+  ['selProfile'].forEach(id => {
     const s = document.getElementById(id); if(!s) return;
-    const v = s.value;
-    s.innerHTML = names.map(n => '<option value="'+n+'">'+n+'</option>').join('');
+    const v = s.value; s.innerHTML = names.map(n => '<option value="'+n+'">'+n+'</option>').join('');
     if(names.includes(v)) s.value = v;
   });
   const ps = document.getElementById('selProfile');
@@ -249,71 +243,74 @@ function sortSongs(songs, mode){
   return copy;
 }
 
-function makeItem(song, rank){
-  if(!song){
-    const d = document.createElement('div');
-    d.className = 'item unr';
-    d.innerHTML = '<div class="inf"><div class="nm" style="color:var(--text-dim)">(unknown)</div></div>';
-    return d;
-  }
-  const d = document.createElement('div');
-  d.className = 'item';
+function makeItem(song, rank, extra){
+  if(!song){const d=document.createElement('div');d.className='item unr';d.innerHTML='<div class="inf"><div class="nm" style="color:var(--text-dim)">(unknown)</div></div>';return d;}
+  const d=document.createElement('div');d.className='item';
   d.addEventListener('click',()=>showSong(song.id));
-  d.innerHTML = '<div class="rk">#'+rank+'</div><div class="inf"><div class="nm">'+song.name+'</div><div class="ar">'+song.artist+(song.date?' · '+song.date:'')+'</div></div>';
+  d.innerHTML='<div class="rk">#'+rank+'</div><div class="inf"><div class="nm">'+song.name+'</div><div class="ar">'+song.artist+(song.date?' · '+song.date:'')+'</div>'+(extra||'')+'</div>';
   return d;
 }
 
+// ---- RANKING ----
 function renderRank(){
-  const list = document.getElementById('songList');
-  const p = profiles.find(r=>r.name===current);
-  const info = document.getElementById('info');
+  const list=document.getElementById('songList');
+  const p=profiles.find(r=>r.name===current);
+  const info=document.getElementById('info');
   if(!p){list.innerHTML='';info.textContent='';return;}
-  info.textContent = p.ids.length + ' songs ranked' + (p.unr?' ('+p.unr+' unmatched lines)':'');
-  const mode = document.getElementById('sortRank').value;
-  const ranked = p.ids.map(id=>gs(id)).filter(Boolean);
-  const unranked = SONGS.filter(s => !p.ids.includes(s.id));
-  if(mode === 'default'){
-    list.innerHTML = '';
+  info.textContent=p.ids.length+' songs ranked'+(p.unr?' ('+p.unr+' unmatched lines)':'');
+  const mode=document.getElementById('sortRank').value;
+  const ranked=p.ids.map(id=>gs(id)).filter(Boolean);
+  const unranked=SONGS.filter(s=>!p.ids.includes(s.id));
+  if(mode==='default'){
+    list.innerHTML='';
     ranked.forEach((s,i)=>list.appendChild(makeItem(s,i+1)));
     unranked.forEach(s=>{const e=makeItem(s,'—');e.classList.add('unr');list.appendChild(e);});
   } else {
-    const all = sortSongs([...ranked,...unranked], mode);
-    list.innerHTML = '';
-    all.forEach((s,i)=>{
-      const e = makeItem(s, i+1);
-      if(unranked.includes(s)) e.classList.add('unr');
-      list.appendChild(e);
-    });
+    const all=sortSongs([...ranked,...unranked],mode);
+    list.innerHTML='';
+    all.forEach((s,i)=>{const e=makeItem(s,i+1);if(unranked.includes(s))e.classList.add('unr');list.appendChild(e);});
   }
 }
 
+// ---- AGGREGATE ----
 function renderAgg(){
-  const el = document.getElementById('aggContent');
-  const mode = document.getElementById('sortAgg').value;
-  const active = profiles.filter(p=>p.ids.length>0);
+  const el=document.getElementById('aggContent');
+  const mode=document.getElementById('sortAgg').value;
+  const active=profiles.filter(p=>p.ids.length>0);
   if(!active.length){el.innerHTML='<p style="color:var(--text-dim)">No profiles.</p>';return;}
-  const t = active.length;
+  const t=active.length;
   let data = SONGS.map(song => {
-    const ranks = active.map(p=>{const i=p.ids.indexOf(song.id);return i===-1?36:i+1;});
-    return {song,avg:ranks.reduce((a,b)=>a+b,0)/t};
+    const ranks = active.map(p=>{const i=p.ids.indexOf(song.id);return i===-1?null:i+1;}).filter(r=>r!==null);
+    const allRanks = active.map(p=>{const i=p.ids.indexOf(song.id);return i===-1?36:i+1;});
+    const avg = allRanks.reduce((a,b)=>a+b,0)/t;
+    // Who ranked highest/lowest
+    let hi={name:'',pos:999}, lo={name:'',pos:0};
+    active.forEach(p=>{
+      const r = gr(p.name, song.id);
+      if(r!==null){
+        if(r<hi.pos){hi={name:p.name,pos:r};}
+        if(r>lo.pos){lo={name:p.name,pos:r};}
+      }
+    });
+    return {song,avg,hi,lo,count:ranks.length};
   });
-  const c = {
-    rank: (a,b)=>a.avg-b.avg,
-    'rank-desc': (a,b)=>b.avg-a.avg,
+  const cmp = {
+    rank: (a,b)=>a.avg-b.avg, 'rank-desc': (a,b)=>b.avg-a.avg,
     name: (a,b)=>a.song.name.localeCompare(b.song.name),
     date: (a,b)=>(a.song.date||'9999').localeCompare(b.song.date||'9999'),
     artist: (a,b)=>a.song.artist.localeCompare(b.song.artist),
   };
-  if(c[mode]) data.sort(c[mode]);
-  el.innerHTML = '<div class="grid">'+data.map((item,i)=>{
+  if(cmp[mode]) data.sort(cmp[mode]);
+  el.innerHTML = '<div class="list">'+data.map((item,i)=>{
     const s=item.song;
-    return '<div class="card" onclick="showSong(\''+s.id+'\')"><div class="rn">#'+(i+1)+'</div><div class="sn">'+s.name+'</div><div class="sa">'+s.artist+' · avg '+item.avg.toFixed(1)+'</div><div class="ba"><div class="bf" style="width:'+((1-i/SONGS.length)*100)+'%"></div></div></div>';
+    return '<div class="item" onclick="showSong(\''+s.id+'\')"><div class="rk">#'+(i+1)+'</div><div class="inf"><div class="nm">'+s.name+'</div><div class="ar">'+s.artist+' · avg '+item.avg.toFixed(1)+' ('+item.count+' rankings)</div><div class="votes"><span class="hi">▲ '+item.hi.name+' (#'+item.hi.pos+')</span><span class="lo">▼ '+item.lo.name+' (#'+item.lo.pos+')</span></div></div></div>';
   }).join('')+'</div>';
 }
 
+// ---- PER SONG ----
 function showSong(sid){
   switchTab('song');
-  const s = gs(sid); if(!s) return;
+  const s=gs(sid); if(!s) return;
   document.getElementById('songDetail').innerHTML = '<div class="det"><h2>'+s.name+'</h2><div class="mt">'+s.artist+(s.date?' · '+s.date:'')+'</div></div>';
   const list = profiles.map(p=>({name:p.name,pos:gr(p.name,sid)})).filter(r=>r.pos!==null).sort((a,b)=>a.pos-b.pos);
   document.getElementById('songResults').innerHTML = list.length
@@ -323,58 +320,106 @@ function showSong(sid){
 }
 
 function renderSearch(){
-  const q = document.getElementById('songSearch').value.toLowerCase();
-  const list = document.getElementById('songResults');
-  const m = q ? SONGS.filter(s=>s.name.toLowerCase().includes(q)||s.artist.toLowerCase().includes(q)) : [];
-  list.innerHTML = m.length ? m.map(s=>{
-    const c = profiles.filter(p=>p.ids.includes(s.id)).length;
+  const q=document.getElementById('songSearch').value.toLowerCase();
+  const list=document.getElementById('songResults');
+  const m=q?SONGS.filter(s=>s.name.toLowerCase().includes(q)||s.artist.toLowerCase().includes(q)):[];
+  list.innerHTML=m.length?m.map(s=>{
+    const c=profiles.filter(p=>p.ids.includes(s.id)).length;
     return '<div class="item" onclick="showSong(\''+s.id+'\')"><div class="inf"><div class="nm">'+s.name+'</div><div class="ar">'+s.artist+' · ranked by '+c+'</div></div></div>';
-  }).join('') : '<p style="color:var(--text-dim);padding:12px">No matching songs.</p>';
-  if(!q) list.innerHTML = '<p style="color:var(--text-dim);padding:12px">Type a song name to search.</p>';
+  }).join(''):'<p style="color:var(--text-dim);padding:12px">No matching songs.</p>';
+  if(!q) list.innerHTML='<p style="color:var(--text-dim);padding:12px">Type a song name to search.</p>';
 }
+
+// ---- COMPARE (Grid) ----
+let cmpSelected = null;
 
 function renderCmp(){
-  const el = document.getElementById('cmpContent');
-  const aN = document.getElementById('cmpA').value;
-  const bN = document.getElementById('cmpB').value;
-  if(!aN||!bN||!profiles.find(p=>p.name===aN)||!profiles.find(p=>p.name===bN)){
-    el.innerHTML='<p style="color:var(--text-dim)">Select two profiles.</p>';return;
+  const names = profiles.map(p=>p.name);
+  if(names.length<2){document.getElementById('cmpGrid').innerHTML='<p style="color:var(--text-dim)">Need at least 2 profiles.</p>';return;}
+  // Build agreement matrix
+  const matrix = names.map(a => names.map(b => {
+    if(a===b) return null;
+    let close=0;
+    SONGS.forEach(s=>{
+      const pA = gr(a,s.id)||36, pB = gr(b,s.id)||36;
+      if(Math.abs(pA-pB)<=3) close++;
+    });
+    return Math.round(close/SONGS.length*100);
+  }));
+  // Render grid
+  const n=names.length;
+  const grid = document.getElementById('cmpGrid');
+  grid.style.gridTemplateColumns = '120px repeat('+n+', 1fr)';
+  // Headers
+  let html = '<div class="ch"></div>';
+  names.forEach(n=>html+='<div class="ch" title="'+n+'">'+n+'</div>');
+  for(let i=0;i<n;i++){
+    html += '<div class="ch" title="'+names[i]+'">'+names[i]+'</div>';
+    for(let j=0;j<n;j++){
+      if(i===j) html += '<div class="cc di">—</div>';
+      else {
+        const v = matrix[i][j];
+        const sel = cmpSelected && cmpSelected[0]===i && cmpSelected[1]===j ? ' sel' : '';
+        html += '<div class="cc'+sel+'" style="background:'+(v>=75?'#2e7d32':v>=50?'#795548':v>=25?'#5d4037':'#3e2723')+'" onclick="pickCmp('+i+','+j+')">'+v+'%</div>';
+      }
+    }
   }
-  const aIds = profiles.find(p=>p.name===aN).ids;
-  const bIds = profiles.find(p=>p.name===bN).ids;
-  const aS = aIds.map(id=>gs(id)).filter(Boolean);
-  const bS = bIds.map(id=>gs(id)).filter(Boolean);
-  const diffs = SONGS.map(s=>{
-    const pA = gr(aN,s.id)||36;
-    const pB = gr(bN,s.id)||36;
-    return {song:s,pA,pB,abs:Math.abs(pA-pB)};
-  }).sort((a,b)=>b.abs-a.abs);
-  const close = diffs.filter(d=>d.abs<=3).length;
-  el.innerHTML = '<div class="abar"><span>Agreement: <strong>'+(close/SONGS.length*100).toFixed(0)+'%</strong> within ±3</span><div class="bt"><div class="bf" style="width:'+(close/SONGS.length*100).toFixed(0)+'%"></div></div></div><div class="cc"><div class="cl"><h3>'+aN+' ('+aS.length+')</h3>'+aS.map((s,i)=>'<div class="item" onclick="showSong(\''+s.id+'\')"><div class="rk">#'+(i+1)+'</div><div class="inf"><div class="nm">'+s.name+'</div></div></div>').join('')+'</div><div class="cl"><h3>'+bN+' ('+bS.length+')</h3>'+bS.map((s,i)=>'<div class="item" onclick="showSong(\''+s.id+'\')"><div class="rk">#'+(i+1)+'</div><div class="inf"><div class="nm">'+s.name+'</div></div></div>').join('')+'</div></div><h3 style="color:var(--pink);margin:20px 0 10px">Biggest Differences</h3>'+diffs.slice(0,10).map(d=>'<div class="ritem" onclick="showSong(\''+d.song.id+'\')" style="cursor:pointer"><span style="flex:1">'+d.song.name+'</span><span style="color:var(--text-dim);font-size:.85rem">#'+d.pA+' vs #'+d.pB+'</span></div>').join('');
+  grid.innerHTML = html;
+  // Show detail if selected
+  if(cmpSelected){
+    const [ai,bi]=cmpSelected;
+    showCmpDetail(names[ai],names[bi]);
+  }
 }
 
+function pickCmp(i,j){
+  cmpSelected = [i,j];
+  const names=profiles.map(p=>p.name);
+  // Remove sel class from all cells
+  document.querySelectorAll('#cmpGrid .cc').forEach(c=>c.classList.remove('sel'));
+  // Re-render grid
+  renderCmp();
+}
+
+function showCmpDetail(aN,bN){
+  const detail=document.getElementById('cmpDetail');
+  detail.classList.add('show');
+  document.getElementById('cmpDetailTitle').textContent = aN + ' vs ' + bN;
+  const aIds=profiles.find(p=>p.name===aN).ids;
+  const bIds=profiles.find(p=>p.name===bN).ids;
+  const aS=aIds.map(id=>gs(id)).filter(Boolean);
+  const bS=bIds.map(id=>gs(id)).filter(Boolean);
+  const diffs=SONGS.map(s=>{
+    const pA=gr(aN,s.id)||36,pB=gr(bN,s.id)||36;
+    return {song:s,pA,pB,abs:Math.abs(pA-pB)};
+  }).sort((a,b)=>b.abs-a.abs);
+  const close=diffs.filter(d=>d.abs<=3).length;
+  document.getElementById('cmpDetailBody').innerHTML = `
+    <div class="abar"><span>Agreement: <strong>${(close/SONGS.length*100).toFixed(0)}%</strong> within ±3</span><div class="bt"><div class="bf" style="width:${(close/SONGS.length*100).toFixed(0)}%"></div></div></div>
+    <div class="cc"><div class="cl"><h3>${aN} (${aS.length})</h3>${aS.map((s,i)=>'<div class="item" onclick="showSong(\''+s.id+'\')"><div class="rk">#'+(i+1)+'</div><div class="inf"><div class="nm">'+s.name+'</div></div></div>').join('')}</div><div class="cl"><h3>${bN} (${bS.length})</h3>${bS.map((s,i)=>'<div class="item" onclick="showSong(\''+s.id+'\')"><div class="rk">#'+(i+1)+'</div><div class="inf"><div class="nm">'+s.name+'</div></div></div>').join('')}</div></div>
+    <h3 style="color:var(--pink);margin:20px 0 10px">Biggest Differences</h3>
+    ${diffs.slice(0,10).map(d=>'<div class="ritem" onclick="showSong(\''+d.song.id+'\')"><span style="flex:1">'+d.song.name+'</span><span style="color:var(--text-dim);font-size:.85rem">#'+d.pA+' vs #'+d.pB+'</span></div>').join('')}`;
+}
+
+// ---- NAV ----
 function switchTab(t){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.getElementById('section-'+t).classList.add('active');
   document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
   document.querySelector('[data-tab="'+t+'"]').classList.add('active');
   if(t==='agg') renderAgg();
+  if(t==='rank') renderRank();
   if(t==='song'){document.getElementById('songDetail').innerHTML='';document.getElementById('songResults').innerHTML='<p style="color:var(--text-dim);padding:12px">Type a song name to search.</p>';}
   if(t==='cmp') renderCmp();
 }
 
-function renderAll(){rSel();renderRank();}
+function renderAll(){rSel();renderAgg();renderRank();}
 
-document.querySelectorAll('nav button').forEach(b=>{
-  b.addEventListener('click',()=>switchTab(b.dataset.tab));
-});
-document.getElementById('selProfile').addEventListener('change',()=>{
-  current=document.getElementById('selProfile').value;renderRank();
-});
+document.querySelectorAll('nav button').forEach(b=>{b.addEventListener('click',()=>switchTab(b.dataset.tab));});
+document.getElementById('selProfile').addEventListener('change',()=>{current=document.getElementById('selProfile').value;renderRank();});
 document.getElementById('sortRank').addEventListener('change',renderRank);
 document.getElementById('sortAgg').addEventListener('change',renderAgg);
 document.getElementById('songSearch').addEventListener('input',renderSearch);
-['cmpA','cmpB'].forEach(id=>document.getElementById(id).addEventListener('change',renderCmp));
 
 load();
 </script>

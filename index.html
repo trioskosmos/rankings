@@ -52,18 +52,25 @@ nav button.active{background:#fb8a9b;color:#fff;border-color:#fb8a9b}
 .votes{font-size:.78rem;color:var(--text-dim);margin-top:2px;display:flex;gap:12px;flex-wrap:wrap}
 .votes .hi{color:#4caf50}
 .votes .lo{color:#ff7043}
+/* Compare grid */
 .cgrid{display:grid;gap:3px;margin-bottom:16px}
-.cgrid .ch{font-size:.7rem;color:var(--text-dim);padding:3px;text-align:center;font-weight:bold;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cgrid .cc{background:var(--bg-card);border:1px solid var(--border);border-radius:3px;text-align:center;padding:5px 2px;cursor:pointer;font-size:.8rem;transition:all .2s}
+.cgrid .ch{font-size:.7rem;color:var(--text-dim);padding:3px;text-align:center;font-weight:bold;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;justify-content:center}
+.cgrid .cc{background:var(--bg-card);border:1px solid var(--border);border-radius:4px;text-align:center;cursor:pointer;font-size:.8rem;transition:all .2s;display:flex;flex-direction:column;align-items:center;justify-content:center;aspect-ratio:1;padding:4px}
 .cgrid .cc:hover{border-color:#fb8a9b}
 .cgrid .cc.sel{border-color:#fb8a9b;color:#fff}
-.cgrid .cc.di{cursor:default}
+.cgrid .cc.di{cursor:default;aspect-ratio:1}
 .cgrid .cc.di:hover{border-color:var(--border)}
-.cdetail{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;display:none}
-.cdetail.show{display:block}
-.cdetail .cname{color:#fb8a9b;font-size:1rem;margin-bottom:10px}
+.cgrid .cc .pct{font-size:1.1rem;font-weight:bold;line-height:1.2}
+.cgrid .cc .sub{font-size:.6rem;color:var(--text-dim);margin-top:2px}
+.cgrid .cc.sel .sub{color:rgba(255,255,255,.7)}
+/* Compare modal */
+.cover{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);z-index:100;overflow-y:auto;padding:20px}
+.cover.show{display:block}
+.cover-inner{max-width:1100px;margin:0 auto;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:20px;position:relative}
+.cover-close{position:sticky;top:0;float:right;background:var(--bg-card);border:1px solid var(--border);color:var(--text);width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:1.2rem;display:flex;align-items:center;justify-content:center;z-index:10}
+.cover-close:hover{background:#fb8a9b;color:#fff}
 .count{font-size:.75rem;color:var(--text-dim);margin-left:4px}
-@media(max-width:700px){.container{padding:10px}header h1{font-size:1.3rem}.item{padding:6px 8px}.rk{width:26px;font-size:1rem}.bar{flex-direction:column;align-items:stretch}.cc{flex-direction:column}.cgrid .ch{font-size:.6rem}.cgrid .cc{font-size:.65rem;padding:2px 1px}.delta{width:36px;font-size:.75rem}}
+@media(max-width:700px){.container{padding:10px}header h1{font-size:1.3rem}.item{padding:6px 8px}.rk{width:26px;font-size:1rem}.bar{flex-direction:column;align-items:stretch}.cc{flex-direction:column}.cgrid .ch{font-size:.6rem}.cgrid .cc{font-size:.65rem}.cgrid .cc .pct{font-size:.9rem}.delta{width:36px;font-size:.75rem}}
 </style>
 </head>
 <body>
@@ -107,21 +114,21 @@ nav button.active{background:#fb8a9b;color:#fff;border-color:#fb8a9b}
 
   <div class="section" id="section-cmp">
     <div id="cmpGrid"></div>
-    <div class="cdetail" id="cmpDetail">
-      <div class="cname" id="cmpDetailTitle"></div>
-      <div id="cmpDetailBody"></div>
-    </div>
   </div>
 </div>
+
+<!-- Compare overlay -->
+<div class="cover" id="cmpCover">
+  <div class="cover-inner">
+    <button class="cover-close" onclick="closeCmpDetail()">✕</button>
+    <div class="cname" id="cmpDetailTitle" style="color:#fb8a9b;font-size:1.1rem;margin-bottom:12px"></div>
+    <div id="cmpDetailBody"></div>
+  </div>
+</div>
+
 <script>
 // ---- DATA LOADING ----
-let SONGS = [];
-let SM = {};
-let SERIES = {};
-let SERIES_COLORS = {};
-let ARTIST_NAMES = {};
-let ARTISTS_LIST = [];
-let SERIES_LIST = [];
+let SONGS = [], SM = {}, SERIES = {}, SERIES_COLORS = {}, ARTIST_NAMES = {}, ARTISTS_LIST = [], SERIES_LIST = [];
 
 async function loadData() {
   try {
@@ -134,54 +141,40 @@ async function loadData() {
     const songsRes = await fetch('data/song-info.json');
     const songsData = await songsRes.json();
     SONGS = songsData.map(s => {
-      const artistId = s.artists && s.artists.length > 0 ? s.artists[0].id : null;
+      const artistId = s.artists && s.artists.length ? s.artists[0].id : null;
       const artistName = artistId ? (ARTIST_NAMES[artistId] || 'Unknown') : 'Unknown';
-      const seriesId = s.seriesIds && s.seriesIds.length > 0 ? String(s.seriesIds[0]) : null;
-      const seriesName = seriesId ? (SERIES[seriesId] || 'Unknown') : 'Unknown';
-      const seriesColor = seriesId ? (SERIES_COLORS[seriesId] || '#888') : '#888';
-      const allArtists = [...new Set(s.artists.map(a => ARTIST_NAMES[a.id] || 'Unknown').filter(Boolean))];
+      const seriesId = s.seriesIds && s.seriesIds.length ? String(s.seriesIds[0]) : null;
       return {
         id: String(s.id), name: s.name, en: s.englishName || '',
-        artist: artistName, allArtists, series: seriesName, color: seriesColor,
-        date: s.releasedOn || '', seriesId
+        artist: artistName,
+        allArtists: [...new Set(s.artists.map(a => ARTIST_NAMES[a.id] || 'Unknown').filter(Boolean))],
+        series: seriesId ? (SERIES[seriesId] || 'Unknown') : 'Unknown',
+        color: seriesId ? (SERIES_COLORS[seriesId] || '#888') : '#888',
+        date: s.releasedOn || ''
       };
     });
     SONGS.forEach(s => SM[s.id] = s);
-    const aSet = new Set(); const sSet = new Set();
+    const aSet = new Set(), sSet = new Set();
     SONGS.forEach(s => { s.allArtists.forEach(a => aSet.add(a)); sSet.add(s.series); });
-    ARTISTS_LIST = [...aSet].sort();
-    SERIES_LIST = [...sSet].sort();
-    populateSelect('filterRank', 'All series', SERIES_LIST);
-    populateSelect('filterAgg', 'All series', SERIES_LIST);
-    populateSelect('filterRankArtist', 'All artists', ARTISTS_LIST);
-    populateSelect('filterAggArtist', 'All artists', ARTISTS_LIST);
+    ARTISTS_LIST = [...aSet].sort(); SERIES_LIST = [...sSet].sort();
+    ['filterRank','filterAgg'].forEach(id => {
+      const sel = document.getElementById(id); if(!sel) return; const v = sel.value;
+      sel.innerHTML = '<option value="">All series</option>' + SERIES_LIST.map(i => '<option value="'+i+'">'+i+'</option>').join('');
+      if(SERIES_LIST.includes(v)) sel.value = v;
+    });
+    ['filterRankArtist','filterAggArtist'].forEach(id => {
+      const sel = document.getElementById(id); if(!sel) return; const v = sel.value;
+      sel.innerHTML = '<option value="">All artists</option>' + ARTISTS_LIST.map(i => '<option value="'+i+'">'+i+'</option>').join('');
+      if(ARTISTS_LIST.includes(v)) sel.value = v;
+    });
     await loadRankings();
-  } catch(e) {
-    console.error('Failed:', e);
-    document.body.innerHTML = '<div class="container"><p style="color:red">Failed to load data.</p></div>';
-  }
-}
-
-function populateSelect(id, empty, items){
-  const sel = document.getElementById(id);
-  if(!sel) return;
-  const v = sel.value;
-  sel.innerHTML = '<option value="">'+empty+'</option>' + items.map(i => '<option value="'+i+'">'+i+'</option>').join('');
-  if(items.includes(v)) sel.value = v;
+  } catch(e) { console.error('Failed:', e); document.body.innerHTML = '<div class="container"><p style="color:red">Failed to load data.</p></div>'; }
 }
 
 // ---- RANKINGS ----
-let profiles = [];
-let current = null;
-
+let profiles = [], current = null;
 function gs(id){return SM[id]}
-function gr(name, sid){
-  const p = profiles.find(r => r.name === name);
-  if(!p) return null;
-  const i = p.ids.indexOf(sid);
-  return i === -1 ? null : i + 1;
-}
-
+function gr(name, sid){ const p = profiles.find(r => r.name === name); if(!p) return null; const i = p.ids.indexOf(sid); return i === -1 ? null : i + 1; }
 function isName(l){return l.trim()&&!/^\s*\d+[\.\)、]/.test(l)&&!l.includes(' - ')}
 function parseLine(l){
   l=l.trim();if(!l)return null;
@@ -190,10 +183,8 @@ function parseLine(l){
   let m=SONGS.find(s=>s.name===n);if(m)return m.id;
   m=SONGS.find(s=>s.name.includes(n)||n.includes(s.name)||s.en.includes(n));return m?m.id:null;
 }
-
 function parseProfiles(text){
-  const lines=text.split('\n');const res=[];
-  let cur=null,ids=[],unr=0;
+  const lines=text.split('\n'),res=[];let cur=null,ids=[],unr=0;
   for(const l of lines){
     if(isName(l)){if(cur&&ids.length)res.push({name:cur,ids,unr});cur=l.trim();ids=[];unr=0;}
     else{const id=parseLine(l);if(id)ids.push(id);else if(l.trim())unr++;}
@@ -201,12 +192,10 @@ function parseProfiles(text){
   if(cur&&ids.length)res.push({name:cur,ids,unr});
   return res.length?res:[{name:'unknown',ids:[],unr:0}];
 }
-
 async function loadRankings(){
   try{
     const mr=await fetch('data/rankings/manifest.json');
-    const mf=await mr.json();
-    const files=mf.files||mf; profiles=[];
+    const mf=await mr.json();const files=mf.files||mf;profiles=[];
     for(const f of files){
       try{const r=await fetch('data/rankings/'+f);profiles.push(...parseProfiles(await r.text()));}
       catch(e){console.warn('Failed:',f,e)}
@@ -218,14 +207,12 @@ async function loadRankings(){
   if(!current||!profiles.find(p=>p.name===current))current=profiles[0]?.name||'default';
   renderAll();
 }
-
 function rSel(){
   const names=profiles.map(p=>p.name);
   const s=document.getElementById('selProfile');if(!s)return;
   const v=s.value;s.innerHTML=names.map(n=>'<option value="'+n+'">'+n+'</option>').join('');
   if(names.includes(v))s.value=v;else if(names.length){s.value=names[0];current=names[0];}
 }
-
 function sortSongs(songs,mode){
   const c=[...songs];
   const cmp={
@@ -236,83 +223,47 @@ function sortSongs(songs,mode){
   };
   if(cmp[mode])c.sort(cmp[mode]);return c;
 }
-
 function songHTML(song,extra){
   return '<div class="sc" style="background:'+(song.color||'#888')+'"></div><div class="inf"><div class="nm">'+song.name+'</div><div class="ar">'+song.artist+(song.series?' · '+song.series:'')+(song.date?' · '+song.date:'')+'</div>'+(extra||'')+'</div>';
 }
-
 function makeItem(song,rank,extra){
   if(!song){const d=document.createElement('div');d.className='item unr';d.innerHTML='<div class="inf"><div class="nm" style="color:var(--text-dim)">(unknown)</div></div>';return d;}
   const d=document.createElement('div');d.className='item';
   d.addEventListener('click',()=>showSong(song.id));
-  d.innerHTML='<div class="rk">#'+rank+'</div>'+songHTML(song,extra);
-  return d;
+  d.innerHTML='<div class="rk">#'+rank+'</div>'+songHTML(song,extra);return d;
 }
-
-function getFilteredSongs(fSeries, fArtist){
-  let s = SONGS;
-  if(fSeries) s = s.filter(x => x.series === fSeries);
-  if(fArtist) s = s.filter(x => x.allArtists.includes(fArtist));
-  return s;
+function getFilteredSongs(fS,fA){
+  let s=SONGS;if(fS)s=s.filter(x=>x.series===fS);if(fA)s=s.filter(x=>x.allArtists.includes(fA));return s;
 }
-
-function median(arr){
-  if(!arr.length) return 0;
-  const s=[...arr].sort((a,b)=>a-b);
-  const m=Math.floor(s.length/2);
-  return s.length%2?s[m]:(s[m-1]+s[m])/2;
-}
-
-function stddev(arr, mean){
-  if(arr.length<2) return 0;
-  return Math.sqrt(arr.reduce((sum,v)=>sum+(v-mean)**2,0)/arr.length);
-}
+function median(arr){if(!arr.length)return 0;const s=[...arr].sort((a,b)=>a-b),m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2;}
+function stddev(arr,m){if(arr.length<2)return 0;return Math.sqrt(arr.reduce((s,v)=>s+(v-m)**2,0)/arr.length);}
 
 // ---- RANKING ----
 function renderRank(){
-  const list=document.getElementById('songList');
-  const p=profiles.find(r=>r.name===current);
-  const info=document.getElementById('info');
+  const list=document.getElementById('songList'),p=profiles.find(r=>r.name===current),info=document.getElementById('info');
   if(!p){list.innerHTML='';info.textContent='';return;}
-  const fS=document.getElementById('filterRank').value;
-  const fA=document.getElementById('filterRankArtist').value;
-  const allS=getFilteredSongs(fS,fA);
-  const ranked=p.ids.map(id=>gs(id)).filter(Boolean).filter(s=>allS.includes(s));
-  const unranked=allS.filter(s=>!p.ids.includes(s.id));
+  const fS=document.getElementById('filterRank').value,fA=document.getElementById('filterRankArtist').value;
+  const allS=getFilteredSongs(fS,fA),ranked=p.ids.map(id=>gs(id)).filter(Boolean).filter(s=>allS.includes(s)),unranked=allS.filter(s=>!p.ids.includes(s.id));
   info.textContent=p.ids.length+' songs ranked · '+allS.length+' match filters';
-  const mode=document.getElementById('sortRank').value;
-  const display=mode==='default'?[...ranked,...unranked]:sortSongs([...ranked,...unranked],mode);
-  list.innerHTML='';
-  display.forEach((s,i)=>{const e=makeItem(s,i+1);if(!p.ids.includes(s.id))e.classList.add('unr');list.appendChild(e);});
+  const mode=document.getElementById('sortRank').value,display=mode==='default'?[...ranked,...unranked]:sortSongs([...ranked,...unranked],mode);
+  list.innerHTML='';display.forEach((s,i)=>{const e=makeItem(s,i+1);if(!p.ids.includes(s.id))e.classList.add('unr');list.appendChild(e);});
 }
 
 // ---- AGGREGATE ----
 function renderAgg(){
-  const el=document.getElementById('aggContent');
-  const mode=document.getElementById('sortAgg').value;
-  const fS=document.getElementById('filterAgg').value;
-  const fA=document.getElementById('filterAggArtist').value;
-  const active=profiles.filter(p=>p.ids.length>0);
-  if(!active.length){el.innerHTML='<p style="color:var(--text-dim)">No profiles.</p>';return;}
-  const allS=getFilteredSongs(fS,fA);
-  const t=active.length;
+  const el=document.getElementById('aggContent'),mode=document.getElementById('sortAgg').value;
+  const fS=document.getElementById('filterAgg').value,fA=document.getElementById('filterAggArtist').value;
+  const active=profiles.filter(p=>p.ids.length>0);if(!active.length){el.innerHTML='<p style="color:var(--text-dim)">No profiles.</p>';return;}
+  const allS=getFilteredSongs(fS,fA),t=active.length;
   let data=allS.map(song=>{
     const allRanks=active.map(p=>{const i=p.ids.indexOf(song.id);return i===-1?36:i+1;});
     const avg=t>0?allRanks.reduce((a,b)=>a+b,0)/t:0;
-    const rankedRanks=allRanks.filter(r=>r<36);
-    const med=median(rankedRanks.length?rankedRanks:[36]);
-    const sd=stddev(allRanks,avg);
+    const rankedRanks=allRanks.filter(r=>r<36),med=median(rankedRanks.length?rankedRanks:[36]),sd=stddev(allRanks,avg);
     let hi={name:'',pos:999},lo={name:'',pos:0};
     active.forEach(p=>{const r=gr(p.name,song.id);if(r!==null){if(r<hi.pos){hi={name:p.name,pos:r}}if(r>lo.pos){lo={name:p.name,pos:r}}}});
     return{song,avg,med,sd,hi,lo,count:rankedRanks.length};
   });
-  const cmp={
-    rank:(a,b)=>a.avg-b.avg,'rank-desc':(a,b)=>b.avg-a.avg,
-    name:(a,b)=>a.song.name.localeCompare(b.song.name),
-    date:(a,b)=>(a.song.date||'9999').localeCompare(b.song.date||'9999'),
-    artist:(a,b)=>a.song.artist.localeCompare(b.song.artist),
-    series:(a,b)=>a.song.series.localeCompare(b.song.series)||a.song.name.localeCompare(b.song.name),
-  };
+  const cmp={rank:(a,b)=>a.avg-b.avg,'rank-desc':(a,b)=>b.avg-a.avg,name:(a,b)=>a.song.name.localeCompare(b.song.name),date:(a,b)=>(a.song.date||'9999').localeCompare(b.song.date||'9999'),artist:(a,b)=>a.song.artist.localeCompare(b.song.artist),series:(a,b)=>a.song.series.localeCompare(b.song.series)||a.song.name.localeCompare(b.song.name)};
   if(cmp[mode])data.sort(cmp[mode]);
   if(!data.length){el.innerHTML='<p style="color:var(--text-dim)">No songs match filters.</p>';return;}
   el.innerHTML='<div class="list">'+data.map((item,i)=>{
@@ -327,26 +278,18 @@ function showSong(sid){
   const s=gs(sid);if(!s)return;
   document.getElementById('songDetail').innerHTML='<div class="det"><h2>'+s.name+'</h2><div class="mt">'+(s.en?s.en+' · ':'')+s.artist+' · '+s.series+(s.date?' · '+s.date:'')+'</div></div>';
   const list=profiles.map(p=>({name:p.name,pos:gr(p.name,sid)})).filter(r=>r.pos!==null).sort((a,b)=>a.pos-b.pos);
-  document.getElementById('songResults').innerHTML=list.length
-    ? list.map(r=>'<div class="ritem"><span class="pos">#'+r.pos+'</span><span class="nm2">'+r.name+'</span></div>').join('')
-    : '<p style="color:var(--text-dim);padding:12px">Not ranked by anyone.</p>';
+  document.getElementById('songResults').innerHTML=list.length?list.map(r=>'<div class="ritem"><span class="pos">#'+r.pos+'</span><span class="nm2">'+r.name+'</span></div>').join(''):'<p style="color:var(--text-dim);padding:12px">Not ranked by anyone.</p>';
   document.getElementById('songSearch').value=s.name;
 }
-
 function renderSearch(){
-  const q=document.getElementById('songSearch').value.toLowerCase();
-  const list=document.getElementById('songResults');
+  const q=document.getElementById('songSearch').value.toLowerCase(),list=document.getElementById('songResults');
   const m=q?SONGS.filter(s=>s.name.toLowerCase().includes(q)||s.artist.toLowerCase().includes(q)||(s.en&&s.en.toLowerCase().includes(q))):[];
-  list.innerHTML=m.length?m.map(s=>{
-    const c=profiles.filter(p=>p.ids.includes(s.id)).length;
-    return '<div class="item" onclick="showSong(\''+s.id+'\')">'+songHTML(s,'<div class="ar">ranked by '+c+'</div>')+'</div>';
-  }).join(''):'<p style="color:var(--text-dim);padding:12px">No matches.</p>';
+  list.innerHTML=m.length?m.map(s=>{const c=profiles.filter(p=>p.ids.includes(s.id)).length;return '<div class="item" onclick="showSong(\''+s.id+'\')">'+songHTML(s,'<div class="ar">ranked by '+c+'</div>')+'</div>';}).join(''):'<p style="color:var(--text-dim);padding:12px">No matches.</p>';
   if(!q)list.innerHTML='<p style="color:var(--text-dim);padding:12px">Type a song name to search.</p>';
 }
 
 // ---- COMPARE ----
 let cmpSel=null;
-
 function renderCmp(){
   const names=profiles.map(p=>p.name);
   if(names.length<2){document.getElementById('cmpGrid').innerHTML='<p style="color:var(--text-dim)">Need at least 2 profiles.</p>';return;}
@@ -360,9 +303,8 @@ function renderCmp(){
     return Math.round(c/cmpSongs.length*100);
   }));
   const grid=document.getElementById('cmpGrid');
-  grid.style.gridTemplateColumns='120px repeat('+n+', 1fr)';
+  grid.style.gridTemplateColumns='100px repeat('+n+', 1fr)';
   let html='';
-  // header row
   html+='<div class="ch" style="grid-column:1;grid-row:1"></div>';
   names.forEach((nm,i)=>{html+='<div class="ch" style="grid-column:'+(i+2)+';grid-row:1" title="'+nm+'">'+nm+'</div>';});
   for(let i=0;i<n;i++){
@@ -373,33 +315,35 @@ function renderCmp(){
         const v=matrix[i][j];
         const sel=cmpSel&&cmpSel[0]===i&&cmpSel[1]===j?' sel':'';
         const bg=v>=80?'#1b5e20':v>=60?'#4e342e':v>=40?'#3e2723':'#1a1a1a';
-        html+='<div class="cc'+sel+'" style="background:'+bg+';grid-column:'+(j+2)+';grid-row:'+(i+2)+'" onclick="pickCmp('+i+','+j+')">'+v+'%<span class="count">'+cmpSongs.length+'</span></div>';
+        html+='<div class="cc'+sel+'" style="background:'+bg+';grid-column:'+(j+2)+';grid-row:'+(i+2)+'" onclick="openCmp('+i+','+j+')"><span class="pct">'+v+'%</span><span class="sub">'+cmpSongs.length+' songs</span></div>';
       }
     }
   }
   grid.innerHTML=html;
-  if(cmpSel)showCmpDetail(names[cmpSel[0]],names[cmpSel[1]]);
-  else if(names.length>=2){cmpSel=[0,1];showCmpDetail(names[0],names[1]);}
 }
-
-function pickCmp(i,j){
+function openCmp(i,j){
   cmpSel=[i,j];
   document.querySelectorAll('#cmpGrid .cc').forEach(c=>c.classList.remove('sel'));
-  renderCmp();
+  const el=document.querySelector(`#cmpGrid .cc[style*="grid-column:${j+2};grid-row:${i+2}"]`);
+  if(el)el.classList.add('sel');
+  const names=profiles.map(p=>p.name);
+  showCmpDetail(names[i],names[j]);
 }
-
+function closeCmpDetail(){document.getElementById('cmpCover').classList.remove('show');}
 function showCmpDetail(aN,bN){
-  const detail=document.getElementById('cmpDetail');detail.classList.add('show');
-  document.getElementById('cmpDetailTitle').textContent=aN+' vs '+bN;
   const allIds=new Set();profiles.forEach(p=>p.ids.forEach(id=>allIds.add(id)));
   const cmpSongs=[...allIds].map(id=>gs(id)).filter(Boolean).sort((a,b)=>a.name.localeCompare(b.name));
   const diffs=cmpSongs.map(s=>{
     const pA=gr(aN,s.id)||null,pB=gr(bN,s.id)||null;
-    const rA=pA||36,rB=pB||36;
-    return{song:s,pA,pB,rA,rB,abs:Math.abs(rA-rB),both:pA&&pB,onlyA:pA&&!pB,onlyB:!pA&&pB};
+    return{song:s,pA,pB,rA:pA||36,rB:pB||36,abs:Math.abs((pA||36)-(pB||36)),both:pA&&pB,onlyA:pA&&!pB,onlyB:!pA&&pB};
   }).sort((a,b)=>b.abs-a.abs);
   const bothCount=diffs.filter(d=>d.both).length;
   const closeCount=diffs.filter(d=>d.both&&d.abs<=3).length;
+  // Build full per-profile song lists (all union songs, unranked grayed)
+  const aP=profiles.find(p=>p.name===aN),bP=profiles.find(p=>p.name===bN);
+  const aList=cmpSongs.map(s=>({song:s,pos:gr(aN,s.id)})).sort((a,b)=>(a.pos||999)-(b.pos||999));
+  const bList=cmpSongs.map(s=>({song:s,pos:gr(bN,s.id)})).sort((a,b)=>(a.pos||999)-(b.pos||999));
+  document.getElementById('cmpDetailTitle').textContent=aN+' vs '+bN;
   document.getElementById('cmpDetailBody').innerHTML=`
     <div class="abar" style="gap:12px">
       <span>Agreement: <strong>${cmpSongs.length?Math.round(closeCount/cmpSongs.length*100):0}%</strong> within ±3</span>
@@ -411,14 +355,19 @@ function showCmpDetail(aN,bN){
     ${diffs.map(d=>{
       const cls=d.onlyA||d.onlyB?' unr':'';
       const dc=d.abs===0?'d0':d.rA<d.rB?'dp':'dn';
-      return '<div class="item'+cls+'" onclick="showSong(\''+d.song.id+'\')"><div class="delta '+dc+'">'+(!d.both?'—':(d.rA-d.rB>0?'+':'')+(d.rA-d.rB))+'</div><div class="rk" style="width:28px;font-size:.9rem">'+(d.pA?'#'+d.pA:'—')+'</div>'+songHTML(d.song)+'<div class="rk" style="width:28px;font-size:.9rem">'+(d.pB?'#'+d.pB:'—')+'</div></div>';
+      return '<div class="item'+cls+'" onclick="closeCmpDetail();showSong(\''+d.song.id+'\')"><div class="delta '+dc+'">'+(!d.both?'—':(d.rA-d.rB>0?'+':'')+(d.rA-d.rB))+'</div><div class="rk" style="width:28px;font-size:.9rem">'+(d.pA?'#'+d.pA:'—')+'</div>'+songHTML(d.song)+'<div class="rk" style="width:28px;font-size:.9rem">'+(d.pB?'#'+d.pB:'—')+'</div></div>';
     }).join('')}</div>
-    <h3 style="color:#fb8a9b;margin:16px 0 8px;font-size:.95rem">Full Rankings</h3>
-    <div class="cc"><div class="cl"><h3>${aN} (${profiles.find(p=>p.name===aN).ids.length})</h3>${profiles.find(p=>p.name===aN).ids.map(id=>gs(id)).filter(Boolean).map((s,i)=>'<div class="item" onclick="showSong(\''+s.id+'\')"><div class="rk">#'+(i+1)+'</div>'+songHTML(s)+'</div>').join('')}</div><div class="cl"><h3>${bN} (${profiles.find(p=>p.name===bN).ids.length})</h3>${profiles.find(p=>p.name===bN).ids.map(id=>gs(id)).filter(Boolean).map((s,i)=>'<div class="item" onclick="showSong(\''+s.id+'\')"><div class="rk">#'+(i+1)+'</div>'+songHTML(s)+'</div>').join('')}</div></div>`;
+    <h3 style="color:#fb8a9b;margin:16px 0 8px;font-size:.95rem">Full Rankings (all songs)</h3>
+    <div class="cc"><div class="cl"><h3>${aN} (${aP.ids.length} ranked of ${cmpSongs.length})</h3>
+    ${aList.map(({song,pos})=>'<div class="item'+(pos===null?' unr':'')+'" onclick="closeCmpDetail();showSong(\''+song.id+'\')"><div class="rk" style="font-size:.9rem">'+(pos?'#'+pos:'—')+'</div>'+songHTML(song)+'</div>').join('')}</div>
+    <div class="cl"><h3>${bN} (${bP.ids.length} ranked of ${cmpSongs.length})</h3>
+    ${bList.map(({song,pos})=>'<div class="item'+(pos===null?' unr':'')+'" onclick="closeCmpDetail();showSong(\''+song.id+'\')"><div class="rk" style="font-size:.9rem">'+(pos?'#'+pos:'—')+'</div>'+songHTML(song)+'</div>').join('')}</div></div>`;
+  document.getElementById('cmpCover').classList.add('show');
+  document.getElementById('cmpCover').scrollTop = 0;
 }
 
 // ---- NAV ----
-let currentTab = 'agg';
+let currentTab='agg';
 function switchTab(t){
   currentTab=t;
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
@@ -428,15 +377,11 @@ function switchTab(t){
   if(t==='agg')renderAgg();
   if(t==='rank')renderRank();
   if(t==='song'){document.getElementById('songDetail').innerHTML='';document.getElementById('songResults').innerHTML='<p style="color:var(--text-dim);padding:12px">Type a song name to search.</p>';}
-  if(t==='cmp')renderCmp();
+  if(t==='cmp'){closeCmpDetail();renderCmp();}
 }
-
 function renderAll(){
   rSel();
-  // Render the currently-active tab
-  if(currentTab==='agg')renderAgg();
-  else if(currentTab==='rank')renderRank();
-  else if(currentTab==='cmp')renderCmp();
+  if(currentTab==='agg')renderAgg();else if(currentTab==='rank')renderRank();else if(currentTab==='cmp')renderCmp();
   else if(currentTab==='song'){document.getElementById('songDetail').innerHTML='';document.getElementById('songResults').innerHTML='<p style="color:var(--text-dim);padding:12px">Type a song name to search.</p>';}
 }
 

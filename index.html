@@ -103,6 +103,7 @@ nav button.active{background:#fb8a9b;color:#fff;border-color:#fb8a9b}
       <label>Sort:</label><select id="sortRank"><option value="default">Default (rank)</option><option value="name">Name A-Z</option><option value="name-desc">Name Z-A</option><option value="date">Release (old)</option><option value="date-desc">Release (new)</option><option value="artist">Artist A-Z</option><option value="artist-desc">Artist Z-A</option><option value="series">Series</option></select>
       <label>Series:</label><select id="filterRank"><option value="">All series</option></select>
       <label>Artist:</label><select id="filterRankArtist"><option value="">All artists</option></select>
+      <label class="cb"><input type="checkbox" id="hideUnrankedRank"> Hide unranked</label>
     </div>
     <div id="info" style="color:var(--text-dim);font-size:.85rem;margin-bottom:10px"></div>
     <div class="list" id="songList"></div>
@@ -207,11 +208,13 @@ function stddev(arr,m){if(arr.length<2)return 0;return Math.sqrt(arr.reduce((s,v
 function renderRank(){
   const list=document.getElementById('songList'),p=profiles.find(r=>r.name===current),info=document.getElementById('info');
   if(!p){list.innerHTML='';info.textContent='';return;}
-  const fS=document.getElementById('filterRank').value,fA=document.getElementById('filterRankArtist').value;
+  const fS=document.getElementById('filterRank').value,fA=document.getElementById('filterRankArtist').value,hideUR=document.getElementById('hideUnrankedRank').checked;
   const allS=getFilteredSongs(fS,fA),ranked=p.ids.map(id=>gs(id)).filter(Boolean).filter(s=>allS.includes(s)),unranked=allS.filter(s=>!p.ids.includes(s.id));
-  info.textContent=p.ids.length+' songs ranked · '+allS.length+' match filters';
-  const mode=document.getElementById('sortRank').value,display=mode==='default'?[...ranked,...unranked]:sortSongs([...ranked,...unranked],mode);
-  list.innerHTML='';display.forEach((s,i)=>{const e=makeItem(s,i+1);if(!p.ids.includes(s.id))e.classList.add('unr');list.appendChild(e);});
+  info.textContent=p.ids.length+' songs ranked · '+allS.length+' match filters'+(hideUR?' (hiding unranked)':'');
+  const mode=document.getElementById('sortRank').value;
+  const items = hideUR ? ranked : (mode==='default' ? [...ranked,...unranked] : sortSongs([...ranked,...unranked],mode));
+  list.innerHTML='';
+  items.forEach((s,i)=>{const e=makeItem(s,i+1);if(!p.ids.includes(s.id))e.classList.add('unr');list.appendChild(e);});
 }
 
 // ---- AGGREGATE ----
@@ -336,6 +339,7 @@ document.getElementById('filterAgg').addEventListener('change',renderAgg);
 document.getElementById('filterRankArtist').addEventListener('change',renderRank);
 document.getElementById('filterAggArtist').addEventListener('change',renderAgg);
 document.getElementById('hideUnranked').addEventListener('change',renderAgg);
+document.getElementById('hideUnrankedRank').addEventListener('change',renderRank);
 document.getElementById('songSearch').addEventListener('input',renderSearch);
 
 loadData();

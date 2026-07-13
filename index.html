@@ -248,37 +248,26 @@ function renderCmp(){
   if(!cmpSongs.length){document.getElementById('cmpGrid').innerHTML='<p style="color:var(--text-dim)">No songs in rankings.</p>';return;}
   const n=names.length;
   const matrix=names.map(a=>names.map(b=>{if(a===b)return null;let c=0;cmpSongs.forEach(s=>{const pA=gr(a,s.id)||36,pB=gr(b,s.id)||36;if(Math.abs(pA-pB)<=3)c++;});return Math.round(c/cmpSongs.length*100);}));
-  const wrap=document.getElementById('cmpGrid');
-  wrap.innerHTML='<div class="matrix" style="grid-template-columns:80px repeat('+n+',1fr)">';
-  const grid=wrap.querySelector('.matrix');
-  // Corner
-  grid.innerHTML+='<div class="ml" style="grid-column:1;grid-row:1"></div>';
-  // Column headers (vertical text)
-  names.forEach((nm,i)=>{grid.innerHTML+='<div class="mt" style="grid-column:'+(i+2)+';grid-row:1" title="'+nm+'">'+nm+'</div>';});
-  // Rows
+  let html='<div class="matrix" style="grid-template-columns:80px repeat('+n+',minmax(50px,1fr))">';
+  html+='<div class="ml" style="grid-column:1;grid-row:1"></div>';
+  names.forEach((nm,i)=>{html+='<div class="mt" style="grid-column:'+(i+2)+';grid-row:1" title="'+nm+'">'+nm+'</div>';});
   for(let i=0;i<n;i++){
-    grid.innerHTML+='<div class="ml" style="grid-column:1;grid-row:'+(i+2)+'" title="'+names[i]+'">'+names[i]+'</div>';
+    html+='<div class="ml" style="grid-column:1;grid-row:'+(i+2)+'" title="'+names[i]+'">'+names[i]+'</div>';
     for(let j=0;j<n;j++){
-      const cell=document.createElement('div');
-      cell.className='mc'+(i===j?' di':'');
-      cell.style.gridColumn=(j+2);cell.style.gridRow=(i+2);
-      if(i!==j){
-        const v=matrix[i][j];
-        const sel=cmpSel&&cmpSel[0]===i&&cmpSel[1]===j?' sel':'';
-        cell.className+=' '+sel;
-        const r=v/100;
+      if(i===j)html+='<div class="mc di" style="grid-column:'+(j+2)+';grid-row:'+(i+2)+'"><span class="pct" style="color:var(--text-dim)">—</span></div>';
+      else{
+        const v=matrix[i][j];const r=v/100;
         const grn=Math.round(200*r),red=Math.round(200*(1-r));
-        cell.style.background='rgb('+red+','+grn+',80)';
-        cell.innerHTML='<span class="pct">'+v+'%</span><span class="sub">'+cmpSongs.length+'</span>';
-        cell.addEventListener('click',()=>openCmp(i,j));
-      } else cell.innerHTML='<span class="pct" style="color:var(--text-dim)">—</span>';
-      grid.appendChild(cell);
+        const sel=cmpSel&&cmpSel[0]===i&&cmpSel[1]===j?' sel':'';
+        html+='<div class="mc'+sel+'" style="grid-column:'+(j+2)+';grid-row:'+(i+2)+';background:rgb('+red+','+grn+',80)" onclick="openCmp('+i+','+j+')"><span class="pct">'+v+'%</span><span class="sub">'+cmpSongs.length+'</span></div>';
+      }
     }
   }
+  html+='</div>';
+  document.getElementById('cmpGrid').innerHTML=html;
 }
 function openCmp(i,j){
   cmpSel=[i,j];
-  document.querySelectorAll('.matrix .mc').forEach(c=>c.classList.remove('sel'));
   const names=profiles.map(p=>p.name);
   showCmpDetail(names[i],names[j]);
 }

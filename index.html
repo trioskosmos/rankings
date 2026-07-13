@@ -78,7 +78,7 @@ nav button.active{background:#fb8a9b;color:#fff;border-color:#fb8a9b}
 <div class="container">
   <header>
     <h1>♡ Love Live! Song Rankings ♡</h1>
-    <p>Rank any songs — <a href="https://github.com/trioskosmos/rankings/tree/main/data/rankings" target="_blank" style="color:#fb8a9b">add your <code>.txt</code> here</a> via PR (or use the Discord bot)</p>
+    <p>Rank any songs — <a href="https://github.com/trioskosmos/rankings/tree/main/data/rankings" target="_blank" style="color:#fb8a9b">add your <code>.txt</code> here</a> via PR (or just yell at trioskosmos to add them)</p>
   </header>
   <nav id="nav">
     <button class="active" data-tab="agg">Aggregate</button>
@@ -103,7 +103,7 @@ nav button.active{background:#fb8a9b;color:#fff;border-color:#fb8a9b}
       <label>Sort:</label><select id="sortRank"><option value="default">Default (rank)</option><option value="name">Name A-Z</option><option value="name-desc">Name Z-A</option><option value="date">Release (old)</option><option value="date-desc">Release (new)</option><option value="artist">Artist A-Z</option><option value="artist-desc">Artist Z-A</option><option value="series">Series</option></select>
       <label>Series:</label><select id="filterRank"><option value="">All series</option></select>
       <label>Artist:</label><select id="filterRankArtist"><option value="">All artists</option></select>
-      <label class="cb"><input type="checkbox" id="hideUnrankedRank"> Hide unranked</label>
+      <label class="cb"><input type="checkbox" id="hideUnrankedRank" checked> Hide unranked</label>
     </div>
     <div id="info" style="color:var(--text-dim);font-size:.85rem;margin-bottom:10px"></div>
     <div class="list" id="songList"></div>

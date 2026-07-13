@@ -20,15 +20,12 @@ nav button.active{background:#fb8a9b;color:#fff;border-color:#fb8a9b}
 .section.active{display:block}
 .bar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
 .bar label{color:var(--text-dim);font-size:.85rem}
-.bar select{background:var(--bg-card);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:5px;font-size:.9rem;max-width:200px}
+.bar select,.bar input[type=checkbox]{background:var(--bg-card);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:5px;font-size:.9rem;max-width:200px}
+.bar label.cb{display:flex;align-items:center;gap:4px;cursor:pointer;font-size:.85rem;color:var(--text-dim)}
 .list{display:flex;flex-direction:column;gap:5px}
 .item{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;transition:all .2s;cursor:pointer}
 .item:hover{border-color:#fb8a9b}
 .rk{font-size:1.1rem;font-weight:bold;width:32px;text-align:center;color:#fb8a9b;flex-shrink:0}
-.delta{font-size:.85rem;font-weight:bold;width:48px;text-align:center;flex-shrink:0}
-.delta.d0{color:var(--text-dim)}
-.delta.dp{color:#4caf50}
-.delta.dn{color:#ff7043}
 .sc{width:4px;height:36px;border-radius:2px;flex-shrink:0}
 .inf{flex:1;min-width:0}
 .nm{font-size:.95rem;font-weight:500}
@@ -52,25 +49,29 @@ nav button.active{background:#fb8a9b;color:#fff;border-color:#fb8a9b}
 .votes{font-size:.78rem;color:var(--text-dim);margin-top:2px;display:flex;gap:12px;flex-wrap:wrap}
 .votes .hi{color:#4caf50}
 .votes .lo{color:#ff7043}
-/* Compare grid */
-.cgrid{display:grid;gap:3px;margin-bottom:16px}
-.cgrid .ch{font-size:.7rem;color:var(--text-dim);padding:3px;text-align:center;font-weight:bold;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;justify-content:center}
-.cgrid .cc{background:var(--bg-card);border:1px solid var(--border);border-radius:4px;text-align:center;cursor:pointer;font-size:.8rem;transition:all .2s;display:flex;flex-direction:column;align-items:center;justify-content:center;aspect-ratio:1;padding:4px}
-.cgrid .cc:hover{border-color:#fb8a9b}
-.cgrid .cc.sel{border-color:#fb8a9b;color:#fff}
-.cgrid .cc.di{cursor:default;aspect-ratio:1}
-.cgrid .cc.di:hover{border-color:var(--border)}
-.cgrid .cc .pct{font-size:1.1rem;font-weight:bold;line-height:1.2}
-.cgrid .cc .sub{font-size:.6rem;color:var(--text-dim);margin-top:2px}
-.cgrid .cc.sel .sub{color:rgba(255,255,255,.7)}
-/* Compare modal */
+/* Matrix grid */
+.matrix-wrap{overflow-x:auto;margin-bottom:12px}
+.matrix{display:grid;gap:2px;min-width:fit-content}
+.matrix .ml{font-size:.75rem;color:var(--text-dim);padding:6px 8px;display:flex;align-items:center;justify-content:flex-end;font-weight:bold;white-space:nowrap}
+.matrix .mt{font-size:.75rem;color:var(--text-dim);padding:6px 8px;display:flex;align-items:center;justify-content:center;font-weight:bold;white-space:nowrap;writing-mode:vertical-lr;transform:rotate(180deg)}
+.matrix .mc{aspect-ratio:1;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;font-size:.75rem;font-weight:bold;transition:all .2s;border:2px solid transparent;min-width:50px;min-height:50px}
+.matrix .mc:hover{border-color:#fb8a9b;transform:scale(1.05);z-index:2}
+.matrix .mc.sel{border-color:#fff;box-shadow:0 0 12px rgba(251,138,155,.5)}
+.matrix .mc .pct{font-size:1rem}
+.matrix .mc .sub{font-size:.6rem;opacity:.7;margin-top:2px}
+.matrix .mc.di{opacity:.3;cursor:default}
+.matrix .mc.di:hover{transform:none;border-color:transparent}
+/* Compare overlay */
 .cover{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);z-index:100;overflow-y:auto;padding:20px}
 .cover.show{display:block}
-.cover-inner{max-width:1100px;margin:0 auto;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:20px;position:relative}
+.cover-inner{max-width:1100px;margin:40px auto;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:24px;position:relative}
 .cover-close{position:sticky;top:0;float:right;background:var(--bg-card);border:1px solid var(--border);color:var(--text);width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:1.2rem;display:flex;align-items:center;justify-content:center;z-index:10}
 .cover-close:hover{background:#fb8a9b;color:#fff}
-.count{font-size:.75rem;color:var(--text-dim);margin-left:4px}
-@media(max-width:700px){.container{padding:10px}header h1{font-size:1.3rem}.item{padding:6px 8px}.rk{width:26px;font-size:1rem}.bar{flex-direction:column;align-items:stretch}.cc{flex-direction:column}.cgrid .ch{font-size:.6rem}.cgrid .cc{font-size:.65rem}.cgrid .cc .pct{font-size:.9rem}.delta{width:36px;font-size:.75rem}}
+.delta{font-size:.85rem;font-weight:bold;width:48px;text-align:center;flex-shrink:0}
+.delta.d0{color:var(--text-dim)}
+.delta.dp{color:#4caf50}
+.delta.dn{color:#ff7043}
+@media(max-width:700px){.container{padding:10px}header h1{font-size:1.3rem}.item{padding:6px 8px}.rk{width:26px;font-size:1rem}.bar{flex-direction:column;align-items:stretch}.cc{flex-direction:column}}
 </style>
 </head>
 <body>
@@ -91,7 +92,7 @@ nav button.active{background:#fb8a9b;color:#fff;border-color:#fb8a9b}
       <label>Sort:</label><select id="sortAgg"><option value="rank">Avg rank</option><option value="rank-desc">Avg rank (worst)</option><option value="name">Name A-Z</option><option value="date">Release date</option><option value="artist">Artist</option><option value="series">Series</option></select>
       <label>Series:</label><select id="filterAgg"><option value="">All series</option></select>
       <label>Artist:</label><select id="filterAggArtist"><option value="">All artists</option></select>
-      <label><input type="checkbox" id="hideUnranked" checked> Hide unranked</label>
+      <label class="cb"><input type="checkbox" id="hideUnranked" checked> Hide unranked</label>
     </div>
     <div id="aggContent"></div>
   </div>
@@ -114,75 +115,50 @@ nav button.active{background:#fb8a9b;color:#fff;border-color:#fb8a9b}
   </div>
 
   <div class="section" id="section-cmp">
-    <div id="cmpGrid"></div>
+    <div class="matrix-wrap" id="cmpGrid"></div>
   </div>
 </div>
 
-<!-- Compare overlay -->
-<div class="cover" id="cmpCover">
+<div class="cover" id="cmpCover" onclick="if(event.target===this)closeCmpDetail()">
   <div class="cover-inner">
     <button class="cover-close" onclick="closeCmpDetail()">✕</button>
-    <div class="cname" id="cmpDetailTitle" style="color:#fb8a9b;font-size:1.1rem;margin-bottom:12px"></div>
+    <div id="cmpDetailTitle" style="color:#fb8a9b;font-size:1.1rem;margin-bottom:12px"></div>
     <div id="cmpDetailBody"></div>
   </div>
 </div>
 
 <script>
 // ---- DATA LOADING ----
-let SONGS = [], SM = {}, SERIES = {}, SERIES_COLORS = {}, ARTIST_NAMES = {}, ARTISTS_LIST = [], SERIES_LIST = [];
+let SONGS=[],SM={},SERIES={},SERIES_COLORS={},ARTIST_NAMES={},ARTISTS_LIST=[],SERIES_LIST=[];
 
-async function loadData() {
-  try {
-    const [sr, ar] = await Promise.all([
-      fetch('data/series-info.json').then(r=>r.json()),
-      fetch('data/artists-info.json').then(r=>r.json())
-    ]);
-    sr.forEach(s => { SERIES[s.id] = s.name; SERIES_COLORS[s.id] = s.color; });
-    ar.forEach(a => { ARTIST_NAMES[a.id] = a.name; });
-    const songsRes = await fetch('data/song-info.json');
-    const songsData = await songsRes.json();
-    SONGS = songsData.map(s => {
-      const artistId = s.artists && s.artists.length ? s.artists[0].id : null;
-      const artistName = artistId ? (ARTIST_NAMES[artistId] || 'Unknown') : 'Unknown';
-      const seriesId = s.seriesIds && s.seriesIds.length ? String(s.seriesIds[0]) : null;
-      return {
-        id: String(s.id), name: s.name, en: s.englishName || '',
-        artist: artistName,
-        allArtists: [...new Set(s.artists.map(a => ARTIST_NAMES[a.id] || 'Unknown').filter(Boolean))],
-        series: seriesId ? (SERIES[seriesId] || 'Unknown') : 'Unknown',
-        color: seriesId ? (SERIES_COLORS[seriesId] || '#888') : '#888',
-        date: s.releasedOn || ''
-      };
-    });
-    SONGS.forEach(s => SM[s.id] = s);
-    const aSet = new Set(), sSet = new Set();
-    SONGS.forEach(s => { s.allArtists.forEach(a => aSet.add(a)); sSet.add(s.series); });
-    ARTISTS_LIST = [...aSet].sort(); SERIES_LIST = [...sSet].sort();
-    ['filterRank','filterAgg'].forEach(id => {
-      const sel = document.getElementById(id); if(!sel) return; const v = sel.value;
-      sel.innerHTML = '<option value="">All series</option>' + SERIES_LIST.map(i => '<option value="'+i+'">'+i+'</option>').join('');
-      if(SERIES_LIST.includes(v)) sel.value = v;
-    });
-    ['filterRankArtist','filterAggArtist'].forEach(id => {
-      const sel = document.getElementById(id); if(!sel) return; const v = sel.value;
-      sel.innerHTML = '<option value="">All artists</option>' + ARTISTS_LIST.map(i => '<option value="'+i+'">'+i+'</option>').join('');
-      if(ARTISTS_LIST.includes(v)) sel.value = v;
-    });
+async function loadData(){
+  try{
+    const[sr,ar]=await Promise.all([fetch('data/series-info.json').then(r=>r.json()),fetch('data/artists-info.json').then(r=>r.json())]);
+    sr.forEach(s=>{SERIES[s.id]=s.name;SERIES_COLORS[s.id]=s.color;});
+    ar.forEach(a=>{ARTIST_NAMES[a.id]=a.name;});
+    const songsData=await(await fetch('data/song-info.json')).json();
+    SONGS=songsData.map(s=>({id:String(s.id),name:s.name,en:s.englishName||'',artist:(s.artists&&s.artists.length?ARTIST_NAMES[s.artists[0].id]||'Unknown':'Unknown'),allArtists:[...new Set(s.artists.map(a=>ARTIST_NAMES[a.id]||'Unknown').filter(Boolean))],series:(s.seriesIds&&s.seriesIds.length?SERIES[String(s.seriesIds[0])]||'Unknown':'Unknown'),color:(s.seriesIds&&s.seriesIds.length?SERIES_COLORS[String(s.seriesIds[0])]||'#888':'#888'),date:s.releasedOn||''}));
+    SONGS.forEach(s=>SM[s.id]=s);
+    const aS=new Set(),sS=new Set();SONGS.forEach(s=>{s.allArtists.forEach(a=>aS.add(a));sS.add(s.series);});
+    ARTISTS_LIST=[...aS].sort();SERIES_LIST=[...sS].sort();
+    ['filterRank','filterAgg'].forEach(id=>{const s=document.getElementById(id);if(!s)return;const v=s.value;s.innerHTML='<option value="">All series</option>'+SERIES_LIST.map(i=>'<option value="'+i+'">'+i+'</option>').join('');if(SERIES_LIST.includes(v))s.value=v;});
+    ['filterRankArtist','filterAggArtist'].forEach(id=>{const s=document.getElementById(id);if(!s)return;const v=s.value;s.innerHTML='<option value="">All artists</option>'+ARTISTS_LIST.map(i=>'<option value="'+i+'">'+i+'</option>').join('');if(ARTISTS_LIST.includes(v))s.value=v;});
     await loadRankings();
-  } catch(e) { console.error('Failed:', e); document.body.innerHTML = '<div class="container"><p style="color:red">Failed to load data.</p></div>'; }
+  }catch(e){console.error('Failed:',e);document.body.innerHTML='<div class="container"><p style="color:red">Failed to load data.</p></div>';}
 }
 
 // ---- RANKINGS ----
-let profiles = [], current = null;
+let profiles=[],current=null;
 function gs(id){return SM[id]}
-function gr(name, sid){ const p = profiles.find(r => r.name === name); if(!p) return null; const i = p.ids.indexOf(sid); return i === -1 ? null : i + 1; }
+function gr(name,sid){const p=profiles.find(r=>r.name===name);if(!p)return null;const i=p.ids.indexOf(sid);return i===-1?null:i+1;}
 function isName(l){return l.trim()&&!/^\s*\d+[\.\)、]/.test(l)&&!l.includes(' - ')}
+function cleanName(n){return n.replace(/[「」"'（）\(\)]/g,'').trim();}
 function parseLine(l){
   l=l.trim();if(!l)return null;
-  let n=l.replace(/^\d+[\.\)、]\s*/,'').replace(/\s*-\s*[^-]+$/,'').trim().replace(/[「」"']/g,'');
-  if(!n)return null;
-  let m=SONGS.find(s=>s.name===n);if(m)return m.id;
-  m=SONGS.find(s=>s.name.includes(n)||n.includes(s.name)||s.en.includes(n));return m?m.id:null;
+  let n=l.replace(/^\d+[\.\)、]\s*/,'').replace(/\s*-\s*[^-]+$/,'').trim();
+  n=cleanName(n);if(!n)return null;
+  let m=SONGS.find(s=>s.name===n||cleanName(s.name)===n);if(m)return m.id;
+  m=SONGS.find(s=>s.name.includes(n)||n.includes(s.name)||cleanName(s.name).includes(n)||n.includes(cleanName(s.name))||(s.en&&s.en.includes(n)));return m?m.id:null;
 }
 function parseProfiles(text){
   const lines=text.split('\n'),res=[];let cur=null,ids=[],unr=0;
@@ -195,47 +171,24 @@ function parseProfiles(text){
 }
 async function loadRankings(){
   try{
-    const mr=await fetch('data/rankings/manifest.json');
-    const mf=await mr.json();const files=mf.files||mf;profiles=[];
-    for(const f of files){
-      try{const r=await fetch('data/rankings/'+f);profiles.push(...parseProfiles(await r.text()));}
-      catch(e){console.warn('Failed:',f,e)}
-    }
-  }catch{
-    try{const r=await fetch('data/rankings/hasu6thbelluna.txt');profiles=parseProfiles(await r.text());}
-    catch{profiles=[{name:'default',ids:[],unr:0}]}
-  }
+    const mr=await fetch('data/rankings/manifest.json');const mf=await mr.json();const files=mf.files||mf;profiles=[];
+    for(const f of files){try{const r=await fetch('data/rankings/'+f);profiles.push(...parseProfiles(await r.text()));}catch(e){console.warn('Failed:',f,e)}}
+  }catch{try{const r=await fetch('data/rankings/hasu6thbelluna.txt');profiles=parseProfiles(await r.text());}catch{profiles=[{name:'default',ids:[],unr:0}]}}
   if(!current||!profiles.find(p=>p.name===current))current=profiles[0]?.name||'default';
   renderAll();
 }
 function rSel(){
-  const names=profiles.map(p=>p.name);
-  const s=document.getElementById('selProfile');if(!s)return;
+  const names=profiles.map(p=>p.name);const s=document.getElementById('selProfile');if(!s)return;
   const v=s.value;s.innerHTML=names.map(n=>'<option value="'+n+'">'+n+'</option>').join('');
   if(names.includes(v))s.value=v;else if(names.length){s.value=names[0];current=names[0];}
 }
 function sortSongs(songs,mode){
-  const c=[...songs];
-  const cmp={
-    name:(a,b)=>a.name.localeCompare(b.name),'name-desc':(a,b)=>b.name.localeCompare(a.name),
-    date:(a,b)=>(a.date||'9999').localeCompare(b.date||'9999'),'date-desc':(a,b)=>(b.date||'').localeCompare(a.date||''),
-    artist:(a,b)=>a.artist.localeCompare(b.artist),'artist-desc':(a,b)=>b.artist.localeCompare(a.artist),
-    series:(a,b)=>a.series.localeCompare(b.series)||a.name.localeCompare(b.name),
-  };
+  const c=[...songs];const cmp={name:(a,b)=>a.name.localeCompare(b.name),'name-desc':(a,b)=>b.name.localeCompare(a.name),date:(a,b)=>(a.date||'9999').localeCompare(b.date||'9999'),'date-desc':(a,b)=>(b.date||'').localeCompare(a.date||''),artist:(a,b)=>a.artist.localeCompare(b.artist),'artist-desc':(a,b)=>b.artist.localeCompare(a.artist),series:(a,b)=>a.series.localeCompare(b.series)||a.name.localeCompare(b.name)};
   if(cmp[mode])c.sort(cmp[mode]);return c;
 }
-function songHTML(song,extra){
-  return '<div class="sc" style="background:'+(song.color||'#888')+'"></div><div class="inf"><div class="nm">'+song.name+'</div><div class="ar">'+song.artist+(song.series?' · '+song.series:'')+(song.date?' · '+song.date:'')+'</div>'+(extra||'')+'</div>';
-}
-function makeItem(song,rank,extra){
-  if(!song){const d=document.createElement('div');d.className='item unr';d.innerHTML='<div class="inf"><div class="nm" style="color:var(--text-dim)">(unknown)</div></div>';return d;}
-  const d=document.createElement('div');d.className='item';
-  d.addEventListener('click',()=>showSong(song.id));
-  d.innerHTML='<div class="rk">#'+rank+'</div>'+songHTML(song,extra);return d;
-}
-function getFilteredSongs(fS,fA){
-  let s=SONGS;if(fS)s=s.filter(x=>x.series===fS);if(fA)s=s.filter(x=>x.allArtists.includes(fA));return s;
-}
+function songHTML(song,extra){return '<div class="sc" style="background:'+(song.color||'#888')+'"></div><div class="inf"><div class="nm">'+song.name+'</div><div class="ar">'+song.artist+(song.series?' · '+song.series:'')+(song.date?' · '+song.date:'')+'</div>'+(extra||'')+'</div>';}
+function makeItem(song,rank,extra){if(!song){const d=document.createElement('div');d.className='item unr';d.innerHTML='<div class="inf"><div class="nm" style="color:var(--text-dim)">(unknown)</div></div>';return d;}const d=document.createElement('div');d.className='item';d.addEventListener('click',()=>showSong(song.id));d.innerHTML='<div class="rk">#'+rank+'</div>'+songHTML(song,extra);return d;}
+function getFilteredSongs(fS,fA){let s=SONGS;if(fS)s=s.filter(x=>x.series===fS);if(fA)s=s.filter(x=>x.allArtists.includes(fA));return s;}
 function median(arr){if(!arr.length)return 0;const s=[...arr].sort((a,b)=>a-b),m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2;}
 function stddev(arr,m){if(arr.length<2)return 0;return Math.sqrt(arr.reduce((s,v)=>s+(v-m)**2,0)/arr.length);}
 
@@ -259,8 +212,7 @@ function renderAgg(){
   const hideZero=document.getElementById('hideUnranked').checked;
   let data=allS.map(song=>{
     const allRanks=active.map(p=>{const i=p.ids.indexOf(song.id);return i===-1?36:i+1;});
-    const avg=t>0?allRanks.reduce((a,b)=>a+b,0)/t:0;
-    const rankedRanks=allRanks.filter(r=>r<36),med=median(rankedRanks.length?rankedRanks:[36]),sd=stddev(allRanks,avg);
+    const avg=t>0?allRanks.reduce((a,b)=>a+b,0)/t:0;const rankedRanks=allRanks.filter(r=>r<36),med=median(rankedRanks.length?rankedRanks:[36]),sd=stddev(allRanks,avg);
     let hi={name:'',pos:999},lo={name:'',pos:0};
     active.forEach(p=>{const r=gr(p.name,song.id);if(r!==null){if(r<hi.pos){hi={name:p.name,pos:r}}if(r>lo.pos){lo={name:p.name,pos:r}}}});
     return{song,avg,med,sd,hi,lo,count:rankedRanks.length};
@@ -268,16 +220,12 @@ function renderAgg(){
   const cmp={rank:(a,b)=>a.avg-b.avg,'rank-desc':(a,b)=>b.avg-a.avg,name:(a,b)=>a.song.name.localeCompare(b.song.name),date:(a,b)=>(a.song.date||'9999').localeCompare(b.song.date||'9999'),artist:(a,b)=>a.song.artist.localeCompare(b.song.artist),series:(a,b)=>a.song.series.localeCompare(b.song.series)||a.song.name.localeCompare(b.song.name)};
   if(cmp[mode])data.sort(cmp[mode]);
   if(!data.length){el.innerHTML='<p style="color:var(--text-dim)">No songs match filters.</p>';return;}
-  el.innerHTML='<div class="list">'+data.map((item,i)=>{
-    const s=item.song;
-    return '<div class="item" onclick="showSong(\''+s.id+'\')"><div class="rk">#'+(i+1)+'</div>'+songHTML(s,'<div class="votes"><span>avg '+item.avg.toFixed(1)+' · med '+item.med.toFixed(1)+' · σ '+item.sd.toFixed(1)+' ('+item.count+'/'+t+' ranked)</span>'+(item.hi.name?'<span class="hi">▲ '+item.hi.name+' (#'+item.hi.pos+')</span>':'')+(item.lo.name?'<span class="lo">▼ '+item.lo.name+' (#'+item.lo.pos+')</span>':'')+'</div>')+'</div>';
-  }).join('')+'</div>';
+  el.innerHTML='<div class="list">'+data.map((item,i)=>{const s=item.song;return '<div class="item" onclick="showSong(\''+s.id+'\')"><div class="rk">#'+(i+1)+'</div>'+songHTML(s,'<div class="votes"><span>avg '+item.avg.toFixed(1)+' · med '+item.med.toFixed(1)+' · σ '+item.sd.toFixed(1)+' ('+item.count+'/'+t+' ranked)</span>'+(item.hi.name?'<span class="hi">▲ '+item.hi.name+' (#'+item.hi.pos+')</span>':'')+(item.lo.name?'<span class="lo">▼ '+item.lo.name+' (#'+item.lo.pos+')</span>':'')+'</div>')+'</div>';}).join('')+'</div>';
 }
 
 // ---- PER SONG ----
 function showSong(sid){
-  switchTab('song');
-  const s=gs(sid);if(!s)return;
+  switchTab('song');const s=gs(sid);if(!s)return;
   document.getElementById('songDetail').innerHTML='<div class="det"><h2>'+s.name+'</h2><div class="mt">'+(s.en?s.en+' · ':'')+s.artist+' · '+s.series+(s.date?' · '+s.date:'')+'</div></div>';
   const list=profiles.map(p=>({name:p.name,pos:gr(p.name,sid)})).filter(r=>r.pos!==null).sort((a,b)=>a.pos-b.pos);
   document.getElementById('songResults').innerHTML=list.length?list.map(r=>'<div class="ritem"><span class="pos">#'+r.pos+'</span><span class="nm2">'+r.name+'</span></div>').join(''):'<p style="color:var(--text-dim);padding:12px">Not ranked by anyone.</p>';
@@ -299,35 +247,38 @@ function renderCmp(){
   const cmpSongs=[...allIds].map(id=>gs(id)).filter(Boolean);
   if(!cmpSongs.length){document.getElementById('cmpGrid').innerHTML='<p style="color:var(--text-dim)">No songs in rankings.</p>';return;}
   const n=names.length;
-  const matrix=names.map(a=>names.map(b=>{
-    if(a===b)return null;
-    let c=0;cmpSongs.forEach(s=>{const pA=gr(a,s.id)||36,pB=gr(b,s.id)||36;if(Math.abs(pA-pB)<=3)c++;});
-    return Math.round(c/cmpSongs.length*100);
-  }));
-  const grid=document.getElementById('cmpGrid');
-  grid.style.gridTemplateColumns='100px repeat('+n+', 1fr)';
-  let html='';
-  html+='<div class="ch" style="grid-column:1;grid-row:1"></div>';
-  names.forEach((nm,i)=>{html+='<div class="ch" style="grid-column:'+(i+2)+';grid-row:1" title="'+nm+'">'+nm+'</div>';});
+  const matrix=names.map(a=>names.map(b=>{if(a===b)return null;let c=0;cmpSongs.forEach(s=>{const pA=gr(a,s.id)||36,pB=gr(b,s.id)||36;if(Math.abs(pA-pB)<=3)c++;});return Math.round(c/cmpSongs.length*100);}));
+  const wrap=document.getElementById('cmpGrid');
+  wrap.innerHTML='<div class="matrix" style="grid-template-columns:80px repeat('+n+',1fr)">';
+  const grid=wrap.querySelector('.matrix');
+  // Corner
+  grid.innerHTML+='<div class="ml" style="grid-column:1;grid-row:1"></div>';
+  // Column headers (vertical text)
+  names.forEach((nm,i)=>{grid.innerHTML+='<div class="mt" style="grid-column:'+(i+2)+';grid-row:1" title="'+nm+'">'+nm+'</div>';});
+  // Rows
   for(let i=0;i<n;i++){
-    html+='<div class="ch" style="grid-column:1;grid-row:'+(i+2)+'" title="'+names[i]+'">'+names[i]+'</div>';
+    grid.innerHTML+='<div class="ml" style="grid-column:1;grid-row:'+(i+2)+'" title="'+names[i]+'">'+names[i]+'</div>';
     for(let j=0;j<n;j++){
-      if(i===j)html+='<div class="cc di" style="grid-column:'+(j+2)+';grid-row:'+(i+2)+'">—</div>';
-      else{
+      const cell=document.createElement('div');
+      cell.className='mc'+(i===j?' di':'');
+      cell.style.gridColumn=(j+2);cell.style.gridRow=(i+2);
+      if(i!==j){
         const v=matrix[i][j];
         const sel=cmpSel&&cmpSel[0]===i&&cmpSel[1]===j?' sel':'';
-        const bg=v>=80?'#1b5e20':v>=60?'#4e342e':v>=40?'#3e2723':'#1a1a1a';
-        html+='<div class="cc'+sel+'" style="background:'+bg+';grid-column:'+(j+2)+';grid-row:'+(i+2)+'" onclick="openCmp('+i+','+j+')"><span class="pct">'+v+'%</span><span class="sub">'+cmpSongs.length+' songs</span></div>';
-      }
+        cell.className+=' '+sel;
+        const r=v/100;
+        const grn=Math.round(200*r),red=Math.round(200*(1-r));
+        cell.style.background='rgb('+red+','+grn+',80)';
+        cell.innerHTML='<span class="pct">'+v+'%</span><span class="sub">'+cmpSongs.length+'</span>';
+        cell.addEventListener('click',()=>openCmp(i,j));
+      } else cell.innerHTML='<span class="pct" style="color:var(--text-dim)">—</span>';
+      grid.appendChild(cell);
     }
   }
-  grid.innerHTML=html;
 }
 function openCmp(i,j){
   cmpSel=[i,j];
-  document.querySelectorAll('#cmpGrid .cc').forEach(c=>c.classList.remove('sel'));
-  const el=document.querySelector(`#cmpGrid .cc[style*="grid-column:${j+2};grid-row:${i+2}"]`);
-  if(el)el.classList.add('sel');
+  document.querySelectorAll('.matrix .mc').forEach(c=>c.classList.remove('sel'));
   const names=profiles.map(p=>p.name);
   showCmpDetail(names[i],names[j]);
 }
@@ -335,13 +286,9 @@ function closeCmpDetail(){document.getElementById('cmpCover').classList.remove('
 function showCmpDetail(aN,bN){
   const allIds=new Set();profiles.forEach(p=>p.ids.forEach(id=>allIds.add(id)));
   const cmpSongs=[...allIds].map(id=>gs(id)).filter(Boolean).sort((a,b)=>a.name.localeCompare(b.name));
-  const diffs=cmpSongs.map(s=>{
-    const pA=gr(aN,s.id)||null,pB=gr(bN,s.id)||null;
-    return{song:s,pA,pB,rA:pA||36,rB:pB||36,abs:Math.abs((pA||36)-(pB||36)),both:pA&&pB,onlyA:pA&&!pB,onlyB:!pA&&pB};
-  }).sort((a,b)=>b.abs-a.abs);
+  const diffs=cmpSongs.map(s=>{const pA=gr(aN,s.id)||null,pB=gr(bN,s.id)||null;return{song:s,pA,pB,rA:pA||36,rB:pB||36,abs:Math.abs((pA||36)-(pB||36)),both:pA&&pB};}).sort((a,b)=>b.abs-a.abs);
   const bothCount=diffs.filter(d=>d.both).length;
   const closeCount=diffs.filter(d=>d.both&&d.abs<=3).length;
-  // Build full per-profile song lists (all union songs, unranked grayed)
   const aP=profiles.find(p=>p.name===aN),bP=profiles.find(p=>p.name===bN);
   const aList=cmpSongs.map(s=>({song:s,pos:gr(aN,s.id)})).sort((a,b)=>(a.pos||999)-(b.pos||999));
   const bList=cmpSongs.map(s=>({song:s,pos:gr(bN,s.id)})).sort((a,b)=>(a.pos||999)-(b.pos||999));
@@ -349,23 +296,15 @@ function showCmpDetail(aN,bN){
   document.getElementById('cmpDetailBody').innerHTML=`
     <div class="abar" style="gap:12px">
       <span>Agreement: <strong>${cmpSongs.length?Math.round(closeCount/cmpSongs.length*100):0}%</strong> within ±3</span>
-      <span>Both: ${bothCount} · Only ${aN}: ${diffs.filter(d=>d.onlyA).length} · Only ${bN}: ${diffs.filter(d=>d.onlyB).length}</span>
+      <span>Both: ${bothCount} · Only ${aN}: ${diffs.filter(d=>!d.both&&d.pA).length} · Only ${bN}: ${diffs.filter(d=>!d.both&&d.pB).length}</span>
       <div class="bt" style="min-width:100px"><div class="bf" style="width:${cmpSongs.length?Math.round(closeCount/cmpSongs.length*100):0}%"></div></div>
     </div>
-    <div class="list" style="margin-bottom:16px"><div class="item" style="cursor:default;background:var(--bg-card2);font-weight:bold;font-size:.82rem;color:var(--text-dim)">
-      <div class="delta" style="width:28px">Δ</div><div class="rk" style="width:28px">#</div><div class="inf">Song</div><div class="rk" style="width:28px">#</div></div>
-    ${diffs.map(d=>{
-      const cls=d.onlyA||d.onlyB?' unr':'';
-      const dc=d.abs===0?'d0':d.rA<d.rB?'dp':'dn';
-      return '<div class="item'+cls+'" onclick="closeCmpDetail();showSong(\''+d.song.id+'\')"><div class="delta '+dc+'">'+(!d.both?'—':(d.rA-d.rB>0?'+':'')+(d.rA-d.rB))+'</div><div class="rk" style="width:28px;font-size:.9rem">'+(d.pA?'#'+d.pA:'—')+'</div>'+songHTML(d.song)+'<div class="rk" style="width:28px;font-size:.9rem">'+(d.pB?'#'+d.pB:'—')+'</div></div>';
-    }).join('')}</div>
+    <div class="list" style="margin-bottom:16px"><div class="item" style="cursor:default;background:var(--bg-card2);font-weight:bold;font-size:.82rem;color:var(--text-dim)"><div style="width:28px;text-align:center">Δ</div><div class="rk" style="width:28px">#</div><div class="inf">Song</div><div class="rk" style="width:28px">#</div></div>
+    ${diffs.map(d=>{const cls=d.both?'':' unr';const dc=d.abs===0?'d0':d.rA<d.rB?'dp':'dn';return '<div class="item'+cls+'" onclick="closeCmpDetail();showSong(\''+d.song.id+'\')"><div class="delta '+dc+'">'+(!d.both?'—':(d.rA-d.rB>0?'+':'')+(d.rA-d.rB))+'</div><div class="rk" style="width:28px;font-size:.9rem">'+(d.pA?'#'+d.pA:'—')+'</div>'+songHTML(d.song)+'<div class="rk" style="width:28px;font-size:.9rem">'+(d.pB?'#'+d.pB:'—')+'</div></div>';}).join('')}</div>
     <h3 style="color:#fb8a9b;margin:16px 0 8px;font-size:.95rem">Full Rankings (all songs)</h3>
-    <div class="cc"><div class="cl"><h3>${aN} (${aP.ids.length} ranked of ${cmpSongs.length})</h3>
-    ${aList.map(({song,pos})=>'<div class="item'+(pos===null?' unr':'')+'" onclick="closeCmpDetail();showSong(\''+song.id+'\')"><div class="rk" style="font-size:.9rem">'+(pos?'#'+pos:'—')+'</div>'+songHTML(song)+'</div>').join('')}</div>
-    <div class="cl"><h3>${bN} (${bP.ids.length} ranked of ${cmpSongs.length})</h3>
-    ${bList.map(({song,pos})=>'<div class="item'+(pos===null?' unr':'')+'" onclick="closeCmpDetail();showSong(\''+song.id+'\')"><div class="rk" style="font-size:.9rem">'+(pos?'#'+pos:'—')+'</div>'+songHTML(song)+'</div>').join('')}</div></div>`;
+    <div class="cc"><div class="cl"><h3>${aN} (${aP.ids.length} ranked of ${cmpSongs.length})</h3>${aList.map(({song,pos})=>'<div class="item'+(pos===null?' unr':'')+'" onclick="closeCmpDetail();showSong(\''+song.id+'\')"><div class="rk" style="font-size:.9rem">'+(pos?'#'+pos:'—')+'</div>'+songHTML(song)+'</div>').join('')}</div><div class="cl"><h3>${bN} (${bP.ids.length} ranked of ${cmpSongs.length})</h3>${bList.map(({song,pos})=>'<div class="item'+(pos===null?' unr':'')+'" onclick="closeCmpDetail();showSong(\''+song.id+'\')"><div class="rk" style="font-size:.9rem">'+(pos?'#'+pos:'—')+'</div>'+songHTML(song)+'</div>').join('')}</div></div>`;
   document.getElementById('cmpCover').classList.add('show');
-  document.getElementById('cmpCover').scrollTop = 0;
+  document.getElementById('cmpCover').scrollTop=0;
 }
 
 // ---- NAV ----
@@ -381,11 +320,7 @@ function switchTab(t){
   if(t==='song'){document.getElementById('songDetail').innerHTML='';document.getElementById('songResults').innerHTML='<p style="color:var(--text-dim);padding:12px">Type a song name to search.</p>';}
   if(t==='cmp'){closeCmpDetail();renderCmp();}
 }
-function renderAll(){
-  rSel();
-  if(currentTab==='agg')renderAgg();else if(currentTab==='rank')renderRank();else if(currentTab==='cmp')renderCmp();
-  else if(currentTab==='song'){document.getElementById('songDetail').innerHTML='';document.getElementById('songResults').innerHTML='<p style="color:var(--text-dim);padding:12px">Type a song name to search.</p>';}
-}
+function renderAll(){rSel();if(currentTab==='agg')renderAgg();else if(currentTab==='rank')renderRank();else if(currentTab==='cmp')renderCmp();else if(currentTab==='song'){document.getElementById('songDetail').innerHTML='';document.getElementById('songResults').innerHTML='<p style="color:var(--text-dim);padding:12px">Type a song name to search.</p>';}}
 
 document.querySelectorAll('nav button').forEach(b=>{b.addEventListener('click',()=>switchTab(b.dataset.tab));});
 document.getElementById('selProfile').addEventListener('change',()=>{current=document.getElementById('selProfile').value;renderRank();});

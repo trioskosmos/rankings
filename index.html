@@ -7,7 +7,6 @@
 <style>
 :root {
   --pink: #fb8a9b;
-  --pink-dark: #e06a7a;
   --bg: #1a1a2e;
   --bg-card: #222244;
   --bg-card2: #2a2a4a;
@@ -15,614 +14,340 @@
   --text-dim: #999;
   --border: #333366;
 }
-
-* { margin: 0; padding: 0; box-sizing: border-box; }
-
-body {
-  font-family: 'Segoe UI', system-ui, sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-}
-
-.container { max-width: 1000px; margin: 0 auto; padding: 20px; }
-
-header {
-  text-align: center; padding: 30px 0; border-bottom: 2px solid var(--pink);
-  margin-bottom: 30px;
-}
-header h1 { font-size: 2rem; color: var(--pink); }
-header p { color: var(--text-dim); margin-top: 5px; }
-
-nav {
-  display: flex; gap: 10px; justify-content: center; margin: 20px 0; flex-wrap: wrap;
-}
-nav button {
-  background: var(--bg-card); color: var(--text); border: 1px solid var(--border);
-  padding: 10px 24px; border-radius: 8px; cursor: pointer; font-size: 0.95rem;
-  transition: all 0.2s;
-}
-nav button:hover, nav button.active { border-color: var(--pink); color: var(--pink); }
-nav button.active { background: var(--pink); color: #fff; border-color: var(--pink); }
-
-.section { display: none; }
-.section.active { display: block; }
-
-/* Profile bar */
-.profile-bar {
-  display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;
-}
-.profile-bar label { color: var(--text-dim); font-size: 0.9rem; }
-.profile-bar select {
-  background: var(--bg-card); color: var(--text); border: 1px solid var(--border);
-  padding: 8px 12px; border-radius: 6px; font-size: 0.95rem;
-}
-.profile-bar button {
-  background: var(--pink); color: #fff; border: none; padding: 8px 16px;
-  border-radius: 6px; cursor: pointer; font-size: 0.9rem;
-}
-.profile-bar button.sec { background: var(--bg-card2); color: var(--text); border: 1px solid var(--border); }
-
-/* Song list */
-.song-list { display: flex; flex-direction: column; gap: 6px; }
-.song-item {
-  display: flex; align-items: center; gap: 12px; padding: 10px 14px;
-  background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
-  transition: all 0.2s; position: relative;
-}
-.song-item:hover { border-color: var(--pink); }
-
-.song-rank {
-  font-size: 1.2rem; font-weight: bold; width: 36px; text-align: center;
-  color: var(--pink); flex-shrink: 0;
-}
-.song-color-bar {
-  width: 4px; height: 40px; border-radius: 2px; flex-shrink: 0;
-}
-.song-info { flex: 1; min-width: 0; }
-.song-name { font-size: 1rem; font-weight: 500; }
-.song-artist { font-size: 0.8rem; color: var(--text-dim); margin-top: 2px; }
-.song-avg { font-size: 0.8rem; color: var(--text-dim); margin-top: 2px; }
-
-/* Stats cards */
-.stats-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 12px; margin-top: 20px;
-}
-.stat-card {
-  background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
-  padding: 16px; cursor: pointer; transition: all 0.2s;
-}
-.stat-card:hover { border-color: var(--pink); }
-.stat-card .rank-num { font-size: 1.5rem; font-weight: bold; color: var(--pink); }
-.stat-card .song-name { font-size: 1rem; margin: 4px 0; }
-.stat-card .song-artist { font-size: 0.8rem; color: var(--text-dim); }
-.stat-card .stat-bar {
-  height: 4px; border-radius: 2px; margin-top: 8px;
-  background: var(--bg-card2); overflow: hidden;
-}
-.stat-card .stat-bar-fill { height: 100%; border-radius: 2px; }
-
-/* Per-song view */
-.song-detail {
-  background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
-  padding: 20px; margin-bottom: 20px;
-}
-.song-detail h2 { font-size: 1.5rem; margin-bottom: 4px; }
-.song-detail .meta { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 16px; }
-.ranking-list { display: flex; flex-direction: column; gap: 6px; }
-.ranking-item {
-  display: flex; align-items: center; gap: 12px; padding: 8px 14px;
-  background: var(--bg-card2); border-radius: 6px;
-}
-.ranking-item .pos { font-weight: bold; color: var(--pink); width: 30px; }
-.ranking-item .name { flex: 1; }
-
-/* Comparison */
-.compare-container { display: flex; gap: 20px; flex-wrap: wrap; }
-.compare-col { flex: 1; min-width: 280px; }
-.compare-col h3 { color: var(--pink); margin-bottom: 10px; }
-.compare-col .song-item { cursor: default; }
-.compare-col .song-item.dim { opacity: 0.4; }
-
-/* Import */
-.import-area {
-  background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
-  padding: 20px; margin-bottom: 20px;
-}
-.import-area h3 { color: var(--pink); margin-bottom: 10px; }
-.import-area textarea {
-  width: 100%; min-height: 200px; background: var(--bg-card2); color: var(--text);
-  border: 1px solid var(--border); border-radius: 6px; padding: 12px;
-  font-size: 0.9rem; font-family: inherit; resize: vertical;
-}
-.import-area textarea:focus { outline: none; border-color: var(--pink); }
-.import-area .hint { color: var(--text-dim); font-size: 0.85rem; margin: 8px 0; }
-
-/* Legend */
-.legend {
-  display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; margin: 16px 0;
-}
-.legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--text-dim); }
-.legend-dot { width: 12px; height: 12px; border-radius: 50%; }
-
-.toast {
-  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-  background: var(--bg-card); border: 1px solid var(--pink); color: var(--text);
-  padding: 12px 24px; border-radius: 8px; z-index: 100;
-  opacity: 0; transition: opacity 0.3s; pointer-events: none;
-}
-.toast.show { opacity: 1; }
-
-.delete-btn {
-  background: transparent; border: 1px solid #ff4444; color: #ff4444;
-  padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;
-}
-.delete-btn:hover { background: #ff4444; color: #fff; }
-
-.search-box {
-  width: 100%; padding: 10px 14px; background: var(--bg-card); color: var(--text);
-  border: 1px solid var(--border); border-radius: 8px; font-size: 1rem;
-  margin-bottom: 12px;
-}
-.search-box:focus { outline: none; border-color: var(--pink); }
-
-.btn-import {
-  background: var(--pink); color: #fff; border: none;
-  padding: 10px 24px; border-radius: 6px; cursor: pointer; font-size: 0.95rem;
-}
-
-.agreement-bar {
-  display: flex; align-items: center; gap: 24px; padding: 8px 14px;
-  background: var(--bg-card2); border-radius: 6px; margin-top: 8px;
-  font-size: 0.85rem; color: var(--text-dim); flex-wrap: wrap;
-}
-.agreement-bar span { white-space: nowrap; }
-.agreement-bar .bar-track {
-  flex: 1; height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; min-width: 80px;
-}
-.agreement-bar .bar-fill { height: 100%; border-radius: 3px; }
-
-@media (max-width: 600px) {
-  .container { padding: 12px; }
-  header h1 { font-size: 1.4rem; }
-  .song-item { padding: 8px 10px; }
-  .song-rank { width: 28px; font-size: 1rem; }
-  .profile-bar { flex-direction: column; align-items: stretch; }
-  .compare-container { flex-direction: column; }
-}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+.container { max-width:1000px; margin:0 auto; padding:20px; }
+header { text-align:center; padding:30px 0; border-bottom:2px solid var(--pink); margin-bottom:30px; }
+header h1 { font-size:2rem; color:var(--pink); }
+header p { color:var(--text-dim); margin-top:5px; font-size:0.9rem; }
+nav { display:flex; gap:10px; justify-content:center; margin:20px 0; flex-wrap:wrap; }
+nav button { background:var(--bg-card); color:var(--text); border:1px solid var(--border); padding:10px 24px; border-radius:8px; cursor:pointer; font-size:0.95rem; transition:all .2s; }
+nav button:hover, nav button.active { border-color:var(--pink); color:var(--pink); }
+nav button.active { background:var(--pink); color:#fff; border-color:var(--pink); }
+.section { display:none; }
+.section.active { display:block; }
+.profile-bar { display:flex; align-items:center; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
+.profile-bar label { color:var(--text-dim); font-size:0.9rem; }
+.profile-bar select { background:var(--bg-card); color:var(--text); border:1px solid var(--border); padding:8px 12px; border-radius:6px; font-size:0.95rem; }
+.song-list { display:flex; flex-direction:column; gap:6px; }
+.song-item { display:flex; align-items:center; gap:12px; padding:10px 14px; background:var(--bg-card); border:1px solid var(--border); border-radius:8px; transition:all .2s; cursor:pointer; }
+.song-item:hover { border-color:var(--pink); }
+.song-rank { font-size:1.2rem; font-weight:bold; width:36px; text-align:center; color:var(--pink); flex-shrink:0; }
+.song-color-bar { width:4px; height:40px; border-radius:2px; flex-shrink:0; }
+.song-info { flex:1; min-width:0; }
+.song-name { font-size:1rem; font-weight:500; }
+.song-artist { font-size:0.8rem; color:var(--text-dim); margin-top:2px; }
+.stats-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; margin-top:20px; }
+.stat-card { background:var(--bg-card); border:1px solid var(--border); border-radius:8px; padding:16px; cursor:pointer; transition:all .2s; }
+.stat-card:hover { border-color:var(--pink); }
+.stat-card .rn { font-size:1.5rem; font-weight:bold; color:var(--pink); }
+.stat-card .sn { font-size:1rem; margin:4px 0; }
+.stat-card .sa { font-size:0.8rem; color:var(--text-dim); }
+.stat-card .bar { height:4px; border-radius:2px; margin-top:8px; background:var(--bg-card2); overflow:hidden; }
+.stat-card .bf { height:100%; border-radius:2px; }
+.song-detail { background:var(--bg-card); border:1px solid var(--border); border-radius:8px; padding:20px; margin-bottom:20px; }
+.song-detail h2 { font-size:1.5rem; margin-bottom:4px; }
+.song-detail .meta { color:var(--text-dim); font-size:0.9rem; margin-bottom:16px; }
+.ranking-list { display:flex; flex-direction:column; gap:6px; }
+.ranking-item { display:flex; align-items:center; gap:12px; padding:8px 14px; background:var(--bg-card2); border-radius:6px; cursor:pointer; }
+.ranking-item .pos { font-weight:bold; color:var(--pink); width:30px; }
+.ranking-item .name { flex:1; }
+.compare-container { display:flex; gap:20px; flex-wrap:wrap; }
+.compare-col { flex:1; min-width:280px; }
+.compare-col h3 { color:var(--pink); margin-bottom:10px; }
+.legend { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin:16px 0; }
+.legend-item { display:flex; align-items:center; gap:6px; font-size:0.85rem; color:var(--text-dim); }
+.legend-dot { width:12px; height:12px; border-radius:50%; }
+.search-box { width:100%; padding:10px 14px; background:var(--bg-card); color:var(--text); border:1px solid var(--border); border-radius:8px; font-size:1rem; margin-bottom:12px; }
+.search-box:focus { outline:none; border-color:var(--pink); }
+.agreement-bar { display:flex; align-items:center; gap:24px; padding:8px 14px; background:var(--bg-card2); border-radius:6px; margin-bottom:16px; font-size:0.85rem; flex-wrap:wrap; }
+.agreement-bar .bt { flex:1; height:6px; background:var(--bg); border-radius:3px; overflow:hidden; min-width:80px; }
+.agreement-bar .bf { height:100%; border-radius:3px; }
+@media (max-width:600px) { .container{padding:12px;} header h1{font-size:1.4rem;} .song-item{padding:8px 10px;} .song-rank{width:28px;font-size:1rem;} .profile-bar{flex-direction:column;align-items:stretch;} .compare-container{flex-direction:column;} }
 </style>
 </head>
 <body>
-
 <div class="container">
   <header>
     <h1>♡ Hasunosora Song Rankings ♡</h1>
-    <p>蓮ノ空女学院スクールアイドルクラブ — Compare rankings across friends</p>
+    <p>蓮ノ空女学院スクールアイドルクラブ — submit your ranking as a PR adding a <code>.txt</code> file to <strong>data/rankings/</strong></p>
   </header>
-
   <nav id="nav">
     <button class="active" data-tab="ranking">Ranking</button>
-    <button data-tab="all">All Rankings</button>
+    <button data-tab="all">Aggregate</button>
     <button data-tab="song">Per Song</button>
     <button data-tab="compare">Compare</button>
-    <button data-tab="import">Import</button>
   </nav>
-
-  <!-- Ranking Tab (single profile view) -->
   <div class="section active" id="section-ranking">
     <div class="profile-bar">
       <label>Profile:</label>
       <select id="profileSelect"></select>
-      <button id="deleteProfileBtn" class="sec delete-btn">Delete</button>
     </div>
     <div class="legend" id="legend"></div>
+    <div id="profileInfo" style="color:var(--text-dim);font-size:0.9rem;margin-bottom:12px"></div>
     <div class="song-list" id="songList"></div>
   </div>
-
-  <!-- All Rankings Tab (aggregate leaderboard) -->
   <div class="section" id="section-all">
     <h2 style="color:var(--pink);margin-bottom:16px">Aggregate Leaderboard</h2>
-    <p style="color:var(--text-dim);margin-bottom:16px;font-size:0.9rem">
-      Average rank across all profiles — lower = better
-    </p>
+    <p style="color:var(--text-dim);margin-bottom:16px;font-size:0.9rem">Average rank across all profiles. Unranked songs get #36.</p>
     <div id="allContent"></div>
   </div>
-
-  <!-- Per Song Tab -->
   <div class="section" id="section-song">
-    <input class="search-box" id="songSearch" placeholder="Search for a song...">
+    <input class="search-box" id="songSearch" placeholder="Search songs...">
     <div id="songDetail"></div>
     <div id="songRankingList"></div>
   </div>
-
-  <!-- Compare Tab -->
   <div class="section" id="section-compare">
     <div class="profile-bar">
-      <label>Profile A:</label>
-      <select id="compareA"></select>
-      <label>Profile B:</label>
-      <select id="compareB"></select>
+      <label>A:</label><select id="compareA"></select>
+      <label>B:</label><select id="compareB"></select>
     </div>
     <div id="compareContent"></div>
   </div>
-
-  <!-- Import Tab -->
-  <div class="section" id="section-import">
-    <h2 style="color:var(--pink);margin-bottom:10px">Import a Ranking</h2>
-    <p style="color:var(--text-dim);margin-bottom:16px;font-size:0.9rem">
-      Paste a numbered list of song names in ranking order (best first).
-    </p>
-    <div class="import-area">
-      <h3>Paste your ranking</h3>
-      <div class="hint">
-        Format: one song per line. Numbered or plain — both work.<br>
-        Example: <code>1. A出るノート</code> or just <code>A出るノート</code>
-      </div>
-      <textarea id="importText" placeholder="Paste your ranking here..."></textarea>
-      <div style="margin-top:10px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-        <input id="importName" placeholder="Profile name..." style="background:var(--bg-card2);color:var(--text);border:1px solid var(--border);padding:10px 14px;border-radius:6px;font-size:0.95rem;flex:1;min-width:150px">
-        <button class="btn-import" id="importBtn">Import</button>
-      </div>
-    </div>
-    <div class="import-area">
-      <h3>Or select from presets</h3>
-      <div id="presetList"></div>
-    </div>
-  </div>
 </div>
-
-<div class="toast" id="toast"></div>
-
 <script>
-// ---- DATA ----
-const SONGS = [{"rank":1,"id":"888","name":"A出るノート","englishName":"A Deru Note","releasedOn":"2026-04-08","artist":"Edel Note","color":"#a8d8a8"},{"rank":2,"id":"502","name":"Dream Believers","englishName":"Dream Believers","releasedOn":"2023-03-29","artist":"蓮ノ空女学院スクールアイドルクラブ","color":"#fb8a9b"},{"rank":3,"id":"891","name":"光の中で花咲いて","englishName":"Hikari no Naka de Hana Saite","releasedOn":"2026-06-03","artist":"蓮ノ空女学院スクールアイドルクラブ","color":"#fb8a9b"},{"rank":4,"id":"854","name":"シアター生き様","englishName":"Theater Ikizama","releasedOn":"2025-12-10","artist":"Edel Note","color":"#a8d8a8"},{"rank":5,"id":"899","name":"Bless you!","englishName":"Bless you!","releasedOn":"2026-07-01","artist":"村野さやか","color":"#ff9eb5"},{"rank":6,"id":"552","name":"Holiday∞Holiday","englishName":"Holiday∞Holiday","releasedOn":"2023-06-14","artist":"スリーズブーケ","color":"#6ab0d9"},{"rank":7,"id":"504","name":"水彩世界","englishName":"Suisai Sekai","releasedOn":"2023-03-29","artist":"スリーズブーケ","color":"#6ab0d9"},{"rank":8,"id":"748","name":"いったん","englishName":"Ittan","releasedOn":"2025-04-09","artist":"蓮ノ空女学院スクールアイドルクラブ","color":"#fb8a9b"},{"rank":9,"id":"506","name":"ド！ド！ド！","englishName":"Do! Do! Do!","releasedOn":"2023-03-29","artist":"みらくらぱーく！","color":"#f7c86a"},{"rank":10,"id":"586","name":"青春の輪郭","englishName":"Seishun no Rinkaku","releasedOn":"2023-09-20","artist":"DOLLCHESTRA","color":"#e89ac7"},{"rank":11,"id":"619","name":"KNOT","englishName":"KNOT","releasedOn":"2023-11-22","artist":"DOLLCHESTRA","color":"#e89ac7"},{"rank":12,"id":"898","name":"プレイリスト/「あの日」","englishName":"Playlist / \"Ano Hi\"","releasedOn":"2026-07-01","artist":"日野下花帆","color":"#ffd700"},{"rank":13,"id":"579","name":"眩耀夜行","englishName":"Genyou Yakou","releasedOn":"2023-08-09","artist":"スリーズブーケ","color":"#6ab0d9"},{"rank":14,"id":"881","name":"アイシイ","englishName":"Aishii","releasedOn":"2026-04-08","artist":"DOLLCHESTRA","color":"#e89ac7"},{"rank":15,"id":"835","name":"はじまりの羽音","englishName":"Hajimari no Hane Oto","releasedOn":"2025-12-24","artist":"蓮ノ空女学院スクールアイドルクラブ","color":"#fb8a9b"},{"rank":16,"id":"648","name":"Special Thanks","englishName":"Special Thanks","releasedOn":"2024-02-14","artist":"スリーズブーケ","color":"#6ab0d9"},{"rank":17,"id":"900","name":"ミジンコトランスフォーメーション","englishName":"Mijinko Transformation","releasedOn":"2026-07-01","artist":"大沢瑠璃乃","color":"#c8a0e0"},{"rank":18,"id":"867","name":"Echoes Beyond","englishName":"Echoes Beyond","releasedOn":"2026-01-28","artist":"蓮ノ空女学院スクールアイドルクラブ","color":"#fb8a9b"},{"rank":19,"id":"591","name":"パラレルダンサー","englishName":"Parallel Dancer","releasedOn":"2023-09-20","artist":"DOLLCHESTRA","color":"#e89ac7"},{"rank":20,"id":"811","name":"フュージョンクラスト","englishName":"Fusion Crust","releasedOn":"2025-09-03","artist":"Edel Note","color":"#a8d8a8"},{"rank":21,"id":"663","name":"STEP UP !","englishName":"STEP UP!","releasedOn":"2024-04-03","artist":"蓮ノ空女学院スクールアイドルクラブ","color":"#fb8a9b"},{"rank":22,"id":"589","name":"ココン東西","englishName":"Kokon Touzai","releasedOn":"2023-09-20","artist":"みらくらぱーく！","color":"#f7c86a"},{"rank":23,"id":"890","name":"ペレニアル","englishName":"Perennial","releasedOn":"","artist":"日野下花帆、村野さやか、大沢瑠璃乃","color":"#c9a0dc"},{"rank":24,"id":"505","name":"AWOKE","englishName":"AWOKE","releasedOn":"2023-03-29","artist":"DOLLCHESTRA","color":"#e89ac7"},{"rank":25,"id":"836","name":"チャーミングな花束を！","englishName":"Charming na Hanataba o!","releasedOn":"2025-12-24","artist":"蓮ノ空女学院スクールアイドルクラブ","color":"#fb8a9b"},{"rank":26,"id":"697","name":"ジョーショーキリュー","englishName":"Joushou Kiryuu","releasedOn":"2024-12-04","artist":"みらくらぱーく！","color":"#f7c86a"},{"rank":27,"id":"880","name":"不思議と君とライブラリー","englishName":"Fushigi to Kimi to Library","releasedOn":"2026-04-08","artist":"スリーズブーケ","color":"#6ab0d9"},{"rank":28,"id":"886","name":"センパイ","englishName":"Senpai","releasedOn":"2026-04-08","artist":"みらくらぱーく！","color":"#f7c86a"},{"rank":29,"id":"882","name":"EdelinieN","englishName":"EdelinieN","releasedOn":"2026-04-08","artist":"Edel Note","color":"#a8d8a8"},{"rank":30,"id":"879","name":"トモダチになれる場所","englishName":"Tomodachi ni Nareru Basho","releasedOn":"2026-04-08","artist":"みらくらぱーく！","color":"#f7c86a"},{"rank":31,"id":"787","name":"アイドゥーミー！","englishName":"I Do Me!","releasedOn":"2025-07-09","artist":"蓮ノ空女学院スクールアイドルクラブ","color":"#fb8a9b"},{"rank":32,"id":"756","name":"Retrofuture","englishName":"Retrofuture","releasedOn":"2025-05-21","artist":"Edel Note","color":"#a8d8a8"},{"rank":33,"id":"883","name":"今、過去、未来の三原色","englishName":"Ima, Kako, Mirai no Sangenshoku","releasedOn":"2026-04-15","artist":"蓮ノ空女学院スクールアイドルクラブ","color":"#fb8a9b"},{"rank":34,"id":"826","name":"一生に夢が咲くように","englishName":"Hitoyo ni Yume ga Saku You ni","releasedOn":"2026-04-15","artist":"蓮ノ空女学院スクールアイドルクラブ","color":"#fb8a9b"},{"rank":35,"id":"889","name":"ハナ咲けばユメ駆ける","englishName":"Hana Sakeba Yume Kakeru","releasedOn":"2026-06-03","artist":"蓮ノ空女学院スクールアイドルクラブ","color":"#fb8a9b"},{"rank":36,"id":"859","name":"雪舞う空と二秒の永遠","englishName":"Yuki Mau Sora to Nibyou no Eien","releasedOn":"2026-04-15","artist":"蓮ノ空女学院スクールアイドルクラブ","color":"#fb8a9b"}];
+const SONGS = [
+  {id:"888",name:"A出るノート",artist:"Edel Note",color:"#a8d8a8",releasedOn:"2026-04-08"},
+  {id:"502",name:"Dream Believers",artist:"蓮ノ空女学院スクールアイドルクラブ",color:"#fb8a9b",releasedOn:"2023-03-29"},
+  {id:"891",name:"光の中で花咲いて",artist:"蓮ノ空女学院スクールアイドルクラブ",color:"#fb8a9b",releasedOn:"2026-06-03"},
+  {id:"854",name:"シアター生き様",artist:"Edel Note",color:"#a8d8a8",releasedOn:"2025-12-10"},
+  {id:"899",name:"Bless you!",artist:"村野さやか",color:"#ff9eb5",releasedOn:"2026-07-01"},
+  {id:"552",name:"Holiday∞Holiday",artist:"スリーズブーケ",color:"#6ab0d9",releasedOn:"2023-06-14"},
+  {id:"504",name:"水彩世界",artist:"スリーズブーケ",color:"#6ab0d9",releasedOn:"2023-03-29"},
+  {id:"748",name:"いったん",artist:"蓮ノ空女学院スクールアイドルクラブ",color:"#fb8a9b",releasedOn:"2025-04-09"},
+  {id:"506",name:"ド！ド！ド！",artist:"みらくらぱーく！",color:"#f7c86a",releasedOn:"2023-03-29"},
+  {id:"586",name:"青春の輪郭",artist:"DOLLCHESTRA",color:"#e89ac7",releasedOn:"2023-09-20"},
+  {id:"619",name:"KNOT",artist:"DOLLCHESTRA",color:"#e89ac7",releasedOn:"2023-11-22"},
+  {id:"898",name:"プレイリスト/「あの日」",artist:"日野下花帆",color:"#ffd700",releasedOn:"2026-07-01"},
+  {id:"579",name:"眩耀夜行",artist:"スリーズブーケ",color:"#6ab0d9",releasedOn:"2023-08-09"},
+  {id:"881",name:"アイシイ",artist:"DOLLCHESTRA",color:"#e89ac7",releasedOn:"2026-04-08"},
+  {id:"835",name:"はじまりの羽音",artist:"蓮ノ空女学院スクールアイドルクラブ",color:"#fb8a9b",releasedOn:"2025-12-24"},
+  {id:"648",name:"Special Thanks",artist:"スリーズブーケ",color:"#6ab0d9",releasedOn:"2024-02-14"},
+  {id:"900",name:"ミジンコトランスフォーメーション",artist:"大沢瑠璃乃",color:"#c8a0e0",releasedOn:"2026-07-01"},
+  {id:"867",name:"Echoes Beyond",artist:"蓮ノ空女学院スクールアイドルクラブ",color:"#fb8a9b",releasedOn:"2026-01-28"},
+  {id:"591",name:"パラレルダンサー",artist:"DOLLCHESTRA",color:"#e89ac7",releasedOn:"2023-09-20"},
+  {id:"811",name:"フュージョンクラスト",artist:"Edel Note",color:"#a8d8a8",releasedOn:"2025-09-03"},
+  {id:"663",name:"STEP UP !",artist:"蓮ノ空女学院スクールアイドルクラブ",color:"#fb8a9b",releasedOn:"2024-04-03"},
+  {id:"589",name:"ココン東西",artist:"みらくらぱーく！",color:"#f7c86a",releasedOn:"2023-09-20"},
+  {id:"890",name:"ペレニアル",artist:"日野下花帆、村野さやか、大沢瑠璃乃",color:"#c9a0dc",releasedOn:""},
+  {id:"505",name:"AWOKE",artist:"DOLLCHESTRA",color:"#e89ac7",releasedOn:"2023-03-29"},
+  {id:"836",name:"チャーミングな花束を！",artist:"蓮ノ空女学院スクールアイドルクラブ",color:"#fb8a9b",releasedOn:"2025-12-24"},
+  {id:"697",name:"ジョーショーキリュー",artist:"みらくらぱーく！",color:"#f7c86a",releasedOn:"2024-12-04"},
+  {id:"880",name:"不思議と君とライブラリー",artist:"スリーズブーケ",color:"#6ab0d9",releasedOn:"2026-04-08"},
+  {id:"886",name:"センパイ",artist:"みらくらぱーく！",color:"#f7c86a",releasedOn:"2026-04-08"},
+  {id:"882",name:"EdelinieN",artist:"Edel Note",color:"#a8d8a8",releasedOn:"2026-04-08"},
+  {id:"879",name:"トモダチになれる場所",artist:"みらくらぱーく！",color:"#f7c86a",releasedOn:"2026-04-08"},
+  {id:"787",name:"アイドゥーミー！",artist:"蓮ノ空女学院スクールアイドルクラブ",color:"#fb8a9b",releasedOn:"2025-07-09"},
+  {id:"756",name:"Retrofuture",artist:"Edel Note",color:"#a8d8a8",releasedOn:"2025-05-21"},
+  {id:"883",name:"今、過去、未来の三原色",artist:"蓮ノ空女学院スクールアイドルクラブ",color:"#fb8a9b",releasedOn:"2026-04-15"},
+  {id:"826",name:"一生に夢が咲くように",artist:"蓮ノ空女学院スクールアイドルクラブ",color:"#fb8a9b",releasedOn:"2026-04-15"},
+  {id:"889",name:"ハナ咲けばユメ駆ける",artist:"蓮ノ空女学院スクールアイドルクラブ",color:"#fb8a9b",releasedOn:"2026-06-03"},
+  {id:"859",name:"雪舞う空と二秒の永遠",artist:"蓮ノ空女学院スクールアイドルクラブ",color:"#fb8a9b",releasedOn:"2026-04-15"}
+];
 
 const UNIT_COLORS = {
-  '蓮ノ空女学院スクールアイドルクラブ': '#fb8a9b',
-  'スリーズブーケ': '#6ab0d9',
-  'DOLLCHESTRA': '#e89ac7',
-  'みらくらぱーく！': '#f7c86a',
-  'Edel Note': '#a8d8a8',
-  '村野さやか': '#ff9eb5',
-  '日野下花帆': '#ffd700',
-  '大沢瑠璃乃': '#c8a0e0',
-  '日野下花帆、村野さやか、大沢瑠璃乃': '#c9a0dc'
+  '蓮ノ空女学院スクールアイドルクラブ':'#fb8a9b','スリーズブーケ':'#6ab0d9','DOLLCHESTRA':'#e89ac7',
+  'みらくらぱーく！':'#f7c86a','Edel Note':'#a8d8a8','村野さやか':'#ff9eb5','日野下花帆':'#ffd700',
+  '大沢瑠璃乃':'#c8a0e0','日野下花帆、村野さやか、大沢瑠璃乃':'#c9a0dc'
 };
-const UNIT_NAMES = Object.keys(UNIT_COLORS);
 
-// ---- STATE ----
-let profiles = {};
+let profiles = [];
 let currentProfile = null;
 
-// ---- STORAGE ----
-function loadProfiles() {
-  try { profiles = JSON.parse(localStorage.getItem('hasunosora_rankings_v2')) || {}; } catch { profiles = {}; }
-  if (Object.keys(profiles).length === 0) {
-    profiles['trioskosmos'] = SONGS.map(s => s.id);
-    saveProfiles();
+function getSong(id) { return SONGS.find(s => s.id === id); }
+
+function getRank(name, songId) {
+  const p = profiles.find(r => r.name === name);
+  if (!p) return null;
+  const idx = p.ids.indexOf(songId);
+  return idx === -1 ? null : idx + 1;
+}
+
+function parseLine(line) {
+  line = line.trim();
+  if (!line) return null;
+  let namePart = line.replace(/^\d+[\.\)、]\s*/, '');
+  namePart = namePart.replace(/\s*-\s*[^-]+$/, '').trim();
+  namePart = namePart.replace(/[「」"']/g, '');
+  if (!namePart) return null;
+  let m = SONGS.find(s => s.name === namePart);
+  if (m) return m.id;
+  m = SONGS.find(s => s.name.includes(namePart) || namePart.includes(s.name));
+  return m ? m.id : null;
+}
+
+function parseProfile(text, filename) {
+  const name = filename.replace(/\.txt$/i, '');
+  const lines = text.split('\n');
+  const ids = [];
+  let unmatched = 0;
+  for (const line of lines) {
+    const id = parseLine(line);
+    if (id) ids.push(id);
+    else if (line.trim()) unmatched++;
   }
+  return { name, ids, unmatched };
 }
 
-function saveProfiles() {
-  localStorage.setItem('hasunosora_rankings_v2', JSON.stringify(profiles));
+async function loadRankings() {
+  try {
+    const mr = await fetch('data/rankings/manifest.json');
+    const manifest = await mr.json();
+    const files = manifest.files || manifest;
+    profiles = [];
+    for (const f of files) {
+      try {
+        const r = await fetch('data/rankings/' + f);
+        const text = await r.text();
+        profiles.push(parseProfile(text, f));
+      } catch (e) { console.warn('Failed:', f, e); }
+    }
+  } catch {
+    try {
+      const r = await fetch('data/rankings/trioskosmos.txt');
+      const text = await r.text();
+      profiles = [parseProfile(text, 'trioskosmos.txt')];
+    } catch {
+      profiles = [{ name: 'trioskosmos', ids: SONGS.map(s => s.id), unmatched: 0 }];
+    }
+  }
+  if (!currentProfile || !profiles.find(p => p.name === currentProfile))
+    currentProfile = profiles[0]?.name || 'trioskosmos';
+  renderAll();
 }
 
-function getRankedSongs(name) {
-  const ids = profiles[name] || SONGS.map(s => s.id);
-  return ids.map(id => SONGS.find(s => s.id === id)).filter(Boolean);
-}
-
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
-}
-
-// ---- RENDER HELPERS ----
-function createSongElement(song, rank, extra) {
-  const div = document.createElement('div');
-  div.className = 'song-item';
-  div.style.cursor = 'pointer';
-  div.addEventListener('click', () => showSongDetail(song.id));
-  div.innerHTML = `
-    <div class="song-rank">#${rank}</div>
-    <div class="song-color-bar" style="background:${song.color}"></div>
-    <div class="song-info">
-      <div class="song-name">${song.name}</div>
-      <div class="song-artist">${song.artist}</div>
-      ${extra || ''}
-    </div>
-  `;
-  return div;
+function renderAll() {
+  renderLegend();
+  renderProfileSelects();
+  renderRanking();
+  if (document.getElementById('section-all').classList.contains('active')) renderAggregate();
+  if (document.getElementById('section-song').classList.contains('active')) renderSongSearch();
+  if (document.getElementById('section-compare').classList.contains('active')) renderCompare();
 }
 
 function renderLegend() {
-  document.getElementById('legend').innerHTML = UNIT_NAMES.map(n =>
-    `<span class="legend-item"><span class="legend-dot" style="background:${UNIT_COLORS[n]}"></span>${n}</span>`
+  document.getElementById('legend').innerHTML = Object.keys(UNIT_COLORS).map(n =>
+    '<span class="legend-item"><span class="legend-dot" style="background:'+UNIT_COLORS[n]+'"></span>'+n+'</span>'
   ).join('');
 }
 
-// ---- RANKING TAB ----
-function renderRanking() {
-  const list = document.getElementById('songList');
-  const songs = getRankedSongs(currentProfile);
-  list.innerHTML = '';
-  songs.forEach((song, i) => list.appendChild(createSongElement(song, i + 1)));
-}
-
 function renderProfileSelects() {
-  const names = Object.keys(profiles);
-  ['profileSelect', 'compareA', 'compareB'].forEach(id => {
+  const names = profiles.map(p => p.name);
+  ['profileSelect','compareA','compareB'].forEach(id => {
     const sel = document.getElementById(id);
     if (!sel) return;
     const val = sel.value;
-    sel.innerHTML = names.map(n => `<option value="${n}">${n}</option>`).join('');
+    sel.innerHTML = names.map(n => '<option value="'+n+'">'+n+'</option>').join('');
     if (names.includes(val)) sel.value = val;
   });
-  if (!currentProfile || !names.includes(currentProfile)) currentProfile = names[0];
   const ps = document.getElementById('profileSelect');
-  if (ps) ps.value = currentProfile;
+  if (ps && names.includes(currentProfile)) ps.value = currentProfile;
+  else if (ps && names.length) { ps.value = names[0]; currentProfile = names[0]; }
 }
 
-// ---- ALL RANKINGS TAB ----
-function renderAllRankings() {
-  const container = document.getElementById('allContent');
-  const profileNames = Object.keys(profiles);
-  if (profileNames.length === 0) { container.innerHTML = '<p style="color:var(--text-dim)">No profiles yet.</p>'; return; }
+function createSongEl(song, rank) {
+  if (!song) {
+    const d = document.createElement('div');
+    d.className = 'song-item';
+    d.style.opacity = '0.4';
+    d.innerHTML = '<div class="song-info"><div class="song-name" style="color:var(--text-dim)">(unknown)</div></div>';
+    return d;
+  }
+  const div = document.createElement('div');
+  div.className = 'song-item';
+  div.addEventListener('click', () => showSongDetail(song.id));
+  div.innerHTML = '<div class="song-rank">#'+rank+'</div><div class="song-color-bar" style="background:'+song.color+'"></div><div class="song-info"><div class="song-name">'+song.name+'</div><div class="song-artist">'+song.artist+'</div></div>';
+  return div;
+}
 
-  // Compute average rank per song
-  const avgRanks = SONGS.map(song => {
-    const ranks = profileNames.map(name => {
-      const idx = (profiles[name] || []).indexOf(song.id);
-      return idx === -1 ? null : idx + 1;
-    }).filter(r => r !== null);
-    const avg = ranks.length ? ranks.reduce((a, b) => a + b, 0) / ranks.length : 36;
-    return { song, avg, ranks, count: ranks.length };
-  }).sort((a, b) => a.avg - b.avg);
+function renderRanking() {
+  const list = document.getElementById('songList');
+  const p = profiles.find(r => r.name === currentProfile);
+  const info = document.getElementById('profileInfo');
+  if (!p) { list.innerHTML = ''; info.textContent = ''; return; }
+  info.textContent = p.ids.length + ' songs ranked' + (p.unmatched ? ' ('+p.unmatched+' unmatched lines)' : '');
+  list.innerHTML = '';
+  const set = new Set(p.ids);
+  p.ids.forEach((id, i) => list.appendChild(createSongEl(getSong(id), i + 1)));
+  SONGS.filter(s => !set.has(s.id)).forEach(s => { const el = createSongEl(s, '—'); el.style.opacity = '0.5'; list.appendChild(el); });
+}
 
-  container.innerHTML = '<div class="stats-grid">' + avgRanks.map((item, i) => {
+function renderAggregate() {
+  const el = document.getElementById('allContent');
+  const active = profiles.filter(p => p.ids.length > 0);
+  if (!active.length) { el.innerHTML = '<p style="color:var(--text-dim)">No profiles yet.</p>'; return; }
+  const total = active.length;
+  const data = SONGS.map(song => {
+    const ranks = active.map(p => { const i = p.ids.indexOf(song.id); return i === -1 ? 36 : i + 1; });
+    return { song, avg: ranks.reduce((a,b)=>a+b,0)/total };
+  }).sort((a,b) => a.avg - b.avg);
+  el.innerHTML = '<div class="stats-grid">' + data.map((item,i) => {
     const s = item.song;
-    const spread = item.ranks.length > 1 ? Math.max(...item.ranks) - Math.min(...item.ranks) : 0;
-    return `<div class="stat-card" onclick="showSongDetail('${s.id}')">
-      <div class="rank-num">#${i + 1}</div>
-      <div class="song-name">${s.name}</div>
-      <div class="song-artist">${s.artist} · avg ${item.avg.toFixed(1)} (${item.count} rankings, spread ${spread})</div>
-      <div class="stat-bar"><div class="stat-bar-fill" style="width:${(1 - (i / SONGS.length)) * 100}%;background:${s.color}"></div></div>
-    </div>`;
+    return '<div class="stat-card" onclick="showSongDetail(\''+s.id+'\')"><div class="rn">#'+(i+1)+'</div><div class="sn">'+s.name+'</div><div class="sa">'+s.artist+' · avg '+item.avg.toFixed(1)+'</div><div class="bar"><div class="bf" style="width:'+((1-i/SONGS.length)*100)+'%;background:'+s.color+'"></div></div></div>';
   }).join('') + '</div>';
 }
 
-// ---- PER SONG TAB ----
 function showSongDetail(songId) {
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.getElementById('section-song').classList.add('active');
-  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-  document.querySelector('[data-tab="song"]').classList.add('active');
-
-  const song = SONGS.find(s => s.id === songId);
+  switchTab('song');
+  const song = getSong(songId);
   if (!song) return;
-  document.getElementById('songDetail').innerHTML = `
-    <div class="song-detail">
-      <h2>${song.name}</h2>
-      <div class="meta">
-        <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${song.color};margin-right:6px;vertical-align:middle"></span>
-        ${song.artist} ${song.releasedOn ? '· ' + song.releasedOn : ''}
-      </div>
-    </div>`;
-
-  const rankings = Object.entries(profiles).map(([name, ids]) => {
-    const pos = ids.indexOf(songId);
-    return { name, pos: pos === -1 ? null : pos + 1 };
-  }).filter(r => r.pos !== null).sort((a, b) => a.pos - b.pos);
-
-  document.getElementById('songRankingList').innerHTML = rankings.length
-    ? rankings.map(r => `<div class="ranking-item"><span class="pos">#${r.pos}</span><span class="name">${r.name}</span></div>`).join('')
-    : '<p style="color:var(--text-dim);padding:12px">No rankings yet.</p>';
+  document.getElementById('songDetail').innerHTML = '<div class="song-detail"><h2>'+song.name+'</h2><div class="meta"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+song.color+';margin-right:6px;vertical-align:middle"></span>'+song.artist+(song.releasedOn?' · '+song.releasedOn:'')+'</div></div>';
+  const list = profiles.map(p => ({ name: p.name, pos: getRank(p.name, songId) })).filter(r => r.pos !== null).sort((a,b) => a.pos - b.pos);
+  document.getElementById('songRankingList').innerHTML = list.length ? list.map(r => '<div class="ranking-item"><span class="pos">#'+r.pos+'</span><span class="name">'+r.name+'</span></div>').join('') : '<p style="color:var(--text-dim);padding:12px">Not ranked by anyone yet.</p>';
+  document.getElementById('songSearch').value = song.name;
 }
 
 function renderSongSearch() {
   const q = document.getElementById('songSearch').value.toLowerCase();
   const list = document.getElementById('songRankingList');
   const matching = q ? SONGS.filter(s => s.name.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q)) : [];
-  list.innerHTML = matching.map(song => {
-    const ranks = Object.entries(profiles).map(([name, ids]) => {
-      const pos = ids.indexOf(song.id);
-      return pos === -1 ? null : { name, pos: pos + 1 };
-    }).filter(Boolean);
-    return `<div class="song-item" style="cursor:pointer" onclick="showSongDetail('${song.id}')">
-      <div class="song-color-bar" style="background:${song.color}"></div>
-      <div class="song-info">
-        <div class="song-name">${song.name}</div>
-        <div class="song-artist">${song.artist} · ${ranks.length} ranking(s)</div>
-      </div>
-    </div>`;
-  }).join('');
+  list.innerHTML = matching.length ? matching.map(s => {
+    const c = profiles.filter(p => p.ids.includes(s.id)).length;
+    return '<div class="song-item" onclick="showSongDetail(\''+s.id+'\')"><div class="song-color-bar" style="background:'+s.color+'"></div><div class="song-info"><div class="song-name">'+s.name+'</div><div class="song-artist">'+s.artist+' · ranked by '+c+'</div></div></div>';
+  }).join('') : '<p style="color:var(--text-dim);padding:12px">No matching songs.</p>';
   if (!q) list.innerHTML = '<p style="color:var(--text-dim);padding:12px">Type a song name to search.</p>';
 }
 
-// ---- COMPARE TAB ----
 function renderCompare() {
   const el = document.getElementById('compareContent');
   const aName = document.getElementById('compareA').value;
   const bName = document.getElementById('compareB').value;
-  if (!aName || !bName || !profiles[aName] || !profiles[bName]) {
-    el.innerHTML = '<p style="color:var(--text-dim)">Select two profiles to compare.</p>'; return;
+  if (!aName || !bName || !profiles.find(p=>p.name===aName) || !profiles.find(p=>p.name===bName)) {
+    el.innerHTML = '<p style="color:var(--text-dim)">Select two profiles.</p>'; return;
   }
-  const aSongs = getRankedSongs(aName);
-  const bSongs = getRankedSongs(bName);
-
-  const diffs = SONGS.map(song => {
-    const pA = aSongs.findIndex(s => s.id === song.id) + 1;
-    const pB = bSongs.findIndex(s => s.id === song.id) + 1;
-    return { song, pA, pB, diff: pA - pB, absDiff: Math.abs(pA - pB) };
-  }).sort((a, b) => b.absDiff - a.absDiff);
-
-  // Agreement score: % of songs within 3 ranks
+  const aIds = profiles.find(p=>p.name===aName).ids;
+  const bIds = profiles.find(p=>p.name===bName).ids;
+  const aSongs = aIds.map(id => getSong(id)).filter(Boolean);
+  const bSongs = bIds.map(id => getSong(id)).filter(Boolean);
+  const diffs = SONGS.map(s => {
+    const pA = getRank(aName, s.id) || 36;
+    const pB = getRank(bName, s.id) || 36;
+    return { song: s, pA, pB, absDiff: Math.abs(pA - pB) };
+  }).sort((a,b) => b.absDiff - a.absDiff);
   const close = diffs.filter(d => d.absDiff <= 3).length;
-  const agreePct = (close / SONGS.length * 100).toFixed(0);
-
-  el.innerHTML = `
-    <div class="agreement-bar">
-      <span>Agreement: <strong>${agreePct}%</strong></span>
-      <span>within ±3 ranks</span>
-      <div class="bar-track"><div class="bar-fill" style="width:${agreePct}%;background:var(--pink)"></div></div>
-    </div>
-    <div class="compare-container" style="margin-top:16px">
-      <div class="compare-col">
-        <h3>${aName}</h3>
-        ${aSongs.map((s, i) => `
-          <div class="song-item" style="cursor:pointer" onclick="showSongDetail('${s.id}')">
-            <div class="song-rank">#${i + 1}</div>
-            <div class="song-color-bar" style="background:${s.color}"></div>
-            <div class="song-info"><div class="song-name">${s.name}</div></div>
-          </div>`).join('')}
-      </div>
-      <div class="compare-col">
-        <h3>${bName}</h3>
-        ${bSongs.map((s, i) => `
-          <div class="song-item" style="cursor:pointer" onclick="showSongDetail('${s.id}')">
-            <div class="song-rank">#${i + 1}</div>
-            <div class="song-color-bar" style="background:${s.color}"></div>
-            <div class="song-info"><div class="song-name">${s.name}</div></div>
-          </div>`).join('')}
-      </div>
-    </div>
-    <h3 style="color:var(--pink);margin:20px 0 10px">Biggest Differences</h3>
-    ${diffs.slice(0, 10).map(d =>
-      `<div class="ranking-item" onclick="showSongDetail('${d.song.id}')" style="cursor:pointer">
-        <div class="song-color-bar" style="background:${d.song.color};width:4px;height:30px;border-radius:2px;flex-shrink:0"></div>
-        <span style="flex:1">${d.song.name}</span>
-        <span style="color:var(--text-dim);font-size:0.85rem">#${d.pA} vs #${d.pB} (Δ${d.absDiff})</span>
-      </div>`
-    ).join('')}
-  `;
+  el.innerHTML = '<div class="agreement-bar"><span>Agreement: <strong>'+(close/SONGS.length*100).toFixed(0)+'%</strong> within ±3</span><div class="bt"><div class="bf" style="width:'+(close/SONGS.length*100).toFixed(0)+'%;background:var(--pink)"></div></div></div><div class="compare-container"><div class="compare-col"><h3>'+aName+' ('+aSongs.length+')</h3>'+aSongs.map((s,i)=>'<div class="song-item" onclick="showSongDetail(\''+s.id+'\')"><div class="song-rank">#'+(i+1)+'</div><div class="song-color-bar" style="background:'+s.color+'"></div><div class="song-info"><div class="song-name">'+s.name+'</div></div></div>').join('')+'</div><div class="compare-col"><h3>'+bName+' ('+bSongs.length+')</h3>'+bSongs.map((s,i)=>'<div class="song-item" onclick="showSongDetail(\''+s.id+'\')"><div class="song-rank">#'+(i+1)+'</div><div class="song-color-bar" style="background:'+s.color+'"></div><div class="song-info"><div class="song-name">'+s.name+'</div></div></div>').join('')+'</div></div><h3 style="color:var(--pink);margin:20px 0 10px">Biggest Differences</h3>'+diffs.slice(0,10).map(d=>'<div class="ranking-item" onclick="showSongDetail(\''+d.song.id+'\')"><div class="song-color-bar" style="background:'+d.song.color+';width:4px;height:30px;border-radius:2px;flex-shrink:0"></div><span style="flex:1">'+d.song.name+'</span><span style="color:var(--text-dim);font-size:0.85rem">#'+d.pA+' vs #'+d.pB+'</span></div>').join('');
 }
 
-// ---- IMPORT TAB ----
-function tryMatchSong(text) {
-  text = text.replace(/^[\d]+[\.\)、]\s*/, '').replace(/["「」]/g, '').trim();
-  if (!text) return null;
-  // Try exact match first
-  let match = SONGS.find(s => s.name === text || s.englishName === text);
-  if (match) return match;
-  // Try includes
-  match = SONGS.find(s => s.name.includes(text) || s.englishName.includes(text));
-  if (match) return match;
-  // Try phonetic
-  match = SONGS.find(s => s.name.replace(/\s/g, '').includes(text.replace(/\s/g, '')));
-  return match || null;
+function switchTab(tab) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('section-'+tab).classList.add('active');
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.querySelector('[data-tab="'+tab+'"]').classList.add('active');
 }
 
-function handleImport() {
-  const raw = document.getElementById('importText').value;
-  const name = document.getElementById('importName').value.trim();
-  if (!raw.trim()) { showToast('Paste a ranking first.'); return; }
-  if (!name) { showToast('Enter a profile name.'); return; }
-  if (profiles[name]) { showToast('Profile "' + name + '" already exists.'); return; }
-
-  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
-  const matched = [];
-  const unmatched = [];
-
-  for (const line of lines) {
-    const song = tryMatchSong(line);
-    if (song) matched.push(song.id);
-    else unmatched.push(line);
-  }
-
-  if (matched.length < 10) {
-    showToast('Could not match enough songs. Check format. (' + unmatched.length + ' unmatched)');
-    return;
-  }
-
-  // Add any unmatched songs at the end
-  const allIds = new Set(matched);
-  for (const song of SONGS) {
-    if (!allIds.has(song.id)) matched.push(song.id);
-  }
-
-  profiles[name] = matched;
-  saveProfiles();
-  renderProfileSelects();
-  document.getElementById('importText').value = '';
-  document.getElementById('importName').value = '';
-  currentProfile = name;
-  if (document.getElementById('profileSelect')) document.getElementById('profileSelect').value = name;
-  renderRanking();
-  showToast('Imported "' + name + '" with ' + matched.length + ' songs' + (unmatched.length ? ' (' + unmatched.length + ' unmatched, appended to bottom)' : ''));
-}
-
-// ---- PRESETS ----
-function renderPresets() {
-  const el = document.getElementById('presetList');
-  const existing = new Set(Object.keys(profiles));
-  const presetData = [
-    { name: 'trioskosmos (default)', ids: SONGS.map(s => s.id) },
-  ];
-  el.innerHTML = presetData.filter(p => !existing.has(p.name)).map(p =>
-    `<button class="btn-import" style="margin:4px" onclick="loadPreset('${p.name}')">${p.name}</button>`
-  ).join('') || '<p style="color:var(--text-dim)">All presets loaded.</p>';
-}
-
-function loadPreset(name) {
-  const presetData = { 'trioskosmos (default)': SONGS.map(s => s.id) };
-  if (!presetData[name]) return;
-  if (profiles[name]) { showToast('Already exists.'); return; }
-  profiles[name] = presetData[name];
-  saveProfiles();
-  renderProfileSelects();
-  renderPresets();
-  showToast('Loaded "' + name + '"');
-}
-
-// ---- TAB SWITCHING ----
 document.querySelectorAll('nav button').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-    document.getElementById('section-' + btn.dataset.tab).classList.add('active');
-    if (btn.dataset.tab === 'all') renderAllRankings();
+    switchTab(btn.dataset.tab);
+    if (btn.dataset.tab === 'all') renderAggregate();
     if (btn.dataset.tab === 'song') { document.getElementById('songDetail').innerHTML = ''; document.getElementById('songRankingList').innerHTML = '<p style="color:var(--text-dim);padding:12px">Type a song name to search.</p>'; }
     if (btn.dataset.tab === 'compare') renderCompare();
-    if (btn.dataset.tab === 'import') renderPresets();
   });
 });
-
-// ---- EVENTS ----
-document.getElementById('profileSelect').addEventListener('change', () => {
-  currentProfile = document.getElementById('profileSelect').value;
-  renderRanking();
-});
-
-document.getElementById('deleteProfileBtn').addEventListener('click', () => {
-  const names = Object.keys(profiles);
-  if (names.length <= 1) { showToast('Cannot delete the last profile.'); return; }
-  if (!confirm('Delete "' + currentProfile + '"?')) return;
-  delete profiles[currentProfile];
-  saveProfiles();
-  renderProfileSelects();
-  currentProfile = Object.keys(profiles)[0];
-  const ps = document.getElementById('profileSelect');
-  if (ps) ps.value = currentProfile;
-  renderRanking();
-  showToast('Profile deleted.');
-});
-
+document.getElementById('profileSelect').addEventListener('change', () => { currentProfile = document.getElementById('profileSelect').value; renderRanking(); });
 document.getElementById('songSearch').addEventListener('input', renderSongSearch);
+['compareA','compareB'].forEach(id => document.getElementById(id).addEventListener('change', renderCompare));
 
-['compareA', 'compareB'].forEach(id => {
-  document.getElementById(id).addEventListener('change', renderCompare);
-});
-
-document.getElementById('importBtn').addEventListener('click', handleImport);
-
-// ---- INIT ----
-loadProfiles();
-renderProfileSelects();
-renderLegend();
-renderRanking();
+loadRankings();
 </script>
 </body>
 </html>

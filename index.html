@@ -50,15 +50,15 @@ nav button.active{background:#fb8a9b;color:#fff;border-color:#fb8a9b}
 .votes .hi{color:#4caf50}
 .votes .lo{color:#ff7043}
 /* Matrix grid */
-.matrix-wrap{overflow-x:auto;margin-bottom:12px}
-.matrix{display:grid;gap:2px;min-width:fit-content}
+.matrix-wrap{width:100%;margin-bottom:12px}
+.matrix{display:grid;gap:2px;width:100%}
 .matrix .ml{font-size:.75rem;color:var(--text-dim);padding:6px 8px;display:flex;align-items:center;justify-content:flex-end;font-weight:bold;white-space:nowrap}
 .matrix .mt{font-size:.75rem;color:var(--text-dim);padding:6px 8px;display:flex;align-items:center;justify-content:center;font-weight:bold;white-space:nowrap;writing-mode:vertical-lr;transform:rotate(180deg)}
-.matrix .mc{aspect-ratio:1;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;font-size:.75rem;font-weight:bold;transition:all .2s;border:2px solid transparent;min-width:50px;min-height:50px}
-.matrix .mc:hover{border-color:#fb8a9b;transform:scale(1.05);z-index:2}
+.matrix .mc{aspect-ratio:1;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;font-size:.75rem;font-weight:bold;transition:all .2s;border:2px solid transparent;overflow:hidden}
+.matrix .mc:hover{border-color:#fb8a9b;box-shadow:0 0 10px rgba(251,138,155,.5);z-index:2}
 .matrix .mc.sel{border-color:#fff;box-shadow:0 0 12px rgba(251,138,155,.5)}
-.matrix .mc .pct{font-size:1rem}
-.matrix .mc .sub{font-size:.6rem;opacity:.7;margin-top:2px}
+.matrix .mc .pct{font-size:.9rem;line-height:1}
+.matrix .mc .sub{font-size:.55rem;opacity:.7;margin-top:1px}
 .matrix .mc.di{opacity:.3;cursor:default}
 .matrix .mc.di:hover{transform:none;border-color:transparent}
 /* Compare overlay */
@@ -248,7 +248,7 @@ function renderCmp(){
   if(!cmpSongs.length){document.getElementById('cmpGrid').innerHTML='<p style="color:var(--text-dim)">No songs in rankings.</p>';return;}
   const n=names.length;
   const matrix=names.map(a=>names.map(b=>{if(a===b)return null;let c=0;cmpSongs.forEach(s=>{const pA=gr(a,s.id)||36,pB=gr(b,s.id)||36;if(Math.abs(pA-pB)<=3)c++;});return Math.round(c/cmpSongs.length*100);}));
-  let html='<div class="matrix" style="grid-template-columns:80px repeat('+n+',minmax(50px,1fr))">';
+  let html='<div class="matrix" style="grid-template-columns:'+Math.min(80,Math.floor(700/n))+'px repeat('+n+',minmax(40px,1fr))">';
   html+='<div class="ml" style="grid-column:1;grid-row:1"></div>';
   names.forEach((nm,i)=>{html+='<div class="mt" style="grid-column:'+(i+2)+';grid-row:1" title="'+nm+'">'+nm+'</div>';});
   for(let i=0;i<n;i++){

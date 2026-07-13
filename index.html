@@ -78,7 +78,7 @@ nav button.active{background:#fb8a9b;color:#fff;border-color:#fb8a9b}
 <div class="container">
   <header>
     <h1>♡ Love Live! Song Rankings ♡</h1>
-    <p>Rank any songs — <a href="https://github.com/trioskosmos/rankings/tree/main/data/rankings" target="_blank" style="color:#fb8a9b">add your <code>.txt</code> here</a> and list it in <code>manifest.json</code></p>
+    <p>Rank any songs — <a href="https://github.com/trioskosmos/rankings/tree/main/data/rankings" target="_blank" style="color:#fb8a9b">add your <code>.txt</code> here</a> via PR (or use the Discord bot)</p>
   </header>
   <nav id="nav">
     <button class="active" data-tab="agg">Aggregate</button>
@@ -171,9 +171,20 @@ function parseProfiles(text){
 }
 async function loadRankings(){
   try{
-    const mr=await fetch('data/rankings/manifest.json');const mf=await mr.json();const files=mf.files||mf;profiles=[];
-    for(const f of files){try{const r=await fetch('data/rankings/'+f);profiles.push(...parseProfiles(await r.text()));}catch(e){console.warn('Failed:',f,e)}}
-  }catch{try{const r=await fetch('data/rankings/hasu6thbelluna.txt');profiles=parseProfiles(await r.text());}catch{profiles=[{name:'default',ids:[],unr:0}]}}
+    const dir=await fetch('https://api.github.com/repos/trioskosmos/rankings/contents/data/rankings');
+    const files=await dir.json();
+    profiles=[];
+    for(const f of files){
+      if(!f.name.endsWith('.txt')) continue;
+      try{
+        const r=await fetch(f.download_url);
+        profiles.push(...parseProfiles(await r.text()));
+      }catch(e){console.warn('Failed:',f.name,e)}
+    }
+  }catch{
+    try{const r=await fetch('data/rankings/hasu6thbelluna.txt');profiles=parseProfiles(await r.text());}
+    catch{profiles=[{name:'default',ids:[],unr:0}]}
+  }
   if(!current||!profiles.find(p=>p.name===current))current=profiles[0]?.name||'default';
   renderAll();
 }

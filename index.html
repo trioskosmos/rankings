@@ -5,362 +5,378 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Hasunosora Song Rankings</title>
 <style>
-:root {
-  --pink: #fb8a9b;
-  --bg: #1a1a2e;
-  --bg-card: #222244;
-  --bg-card2: #2a2a4a;
-  --text: #eee;
-  --text-dim: #999;
-  --border: #333366;
-}
-* { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
-.container { max-width:1000px; margin:0 auto; padding:20px; }
-header { text-align:center; padding:30px 0; border-bottom:2px solid var(--pink); margin-bottom:30px; }
-header h1 { font-size:2rem; color:var(--pink); }
-header p { color:var(--text-dim); margin-top:5px; font-size:0.9rem; }
-nav { display:flex; gap:10px; justify-content:center; margin:20px 0; flex-wrap:wrap; }
-nav button { background:var(--bg-card); color:var(--text); border:1px solid var(--border); padding:10px 24px; border-radius:8px; cursor:pointer; font-size:0.95rem; transition:all .2s; }
-nav button:hover, nav button.active { border-color:var(--pink); color:var(--pink); }
-nav button.active { background:var(--pink); color:#fff; border-color:var(--pink); }
-.section { display:none; }
-.section.active { display:block; }
-.profile-bar { display:flex; align-items:center; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
-.profile-bar label { color:var(--text-dim); font-size:0.9rem; }
-.profile-bar select { background:var(--bg-card); color:var(--text); border:1px solid var(--border); padding:8px 12px; border-radius:6px; font-size:0.95rem; }
-.song-list { display:flex; flex-direction:column; gap:6px; }
-.song-item { display:flex; align-items:center; gap:12px; padding:10px 14px; background:var(--bg-card); border:1px solid var(--border); border-radius:8px; transition:all .2s; cursor:pointer; }
-.song-item:hover { border-color:var(--pink); }
-.song-rank { font-size:1.2rem; font-weight:bold; width:36px; text-align:center; color:var(--pink); flex-shrink:0; }
-.song-color-bar { width:4px; height:40px; border-radius:2px; flex-shrink:0; }
-.song-info { flex:1; min-width:0; }
-.song-name { font-size:1rem; font-weight:500; }
-.song-artist { font-size:0.8rem; color:var(--text-dim); margin-top:2px; }
-.stats-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; margin-top:20px; }
-.stat-card { background:var(--bg-card); border:1px solid var(--border); border-radius:8px; padding:16px; cursor:pointer; transition:all .2s; }
-.stat-card:hover { border-color:var(--pink); }
-.stat-card .rn { font-size:1.5rem; font-weight:bold; color:var(--pink); }
-.stat-card .sn { font-size:1rem; margin:4px 0; }
-.stat-card .sa { font-size:0.8rem; color:var(--text-dim); }
-.stat-card .bar { height:4px; border-radius:2px; margin-top:8px; background:var(--bg-card2); overflow:hidden; }
-.stat-card .bf { height:100%; border-radius:2px; }
-.song-detail { background:var(--bg-card); border:1px solid var(--border); border-radius:8px; padding:20px; margin-bottom:20px; }
-.song-detail h2 { font-size:1.5rem; margin-bottom:4px; }
-.song-detail .meta { color:var(--text-dim); font-size:0.9rem; margin-bottom:16px; }
-.ranking-list { display:flex; flex-direction:column; gap:6px; }
-.ranking-item { display:flex; align-items:center; gap:12px; padding:8px 14px; background:var(--bg-card2); border-radius:6px; cursor:pointer; }
-.ranking-item .pos { font-weight:bold; color:var(--pink); width:30px; }
-.ranking-item .name { flex:1; }
-.compare-container { display:flex; gap:20px; flex-wrap:wrap; }
-.compare-col { flex:1; min-width:280px; }
-.compare-col h3 { color:var(--pink); margin-bottom:10px; }
-.legend { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin:16px 0; }
-.legend-item { display:flex; align-items:center; gap:6px; font-size:0.85rem; color:var(--text-dim); }
-.legend-dot { width:12px; height:12px; border-radius:50%; }
-.search-box { width:100%; padding:10px 14px; background:var(--bg-card); color:var(--text); border:1px solid var(--border); border-radius:8px; font-size:1rem; margin-bottom:12px; }
-.search-box:focus { outline:none; border-color:var(--pink); }
-.agreement-bar { display:flex; align-items:center; gap:24px; padding:8px 14px; background:var(--bg-card2); border-radius:6px; margin-bottom:16px; font-size:0.85rem; flex-wrap:wrap; }
-.agreement-bar .bt { flex:1; height:6px; background:var(--bg); border-radius:3px; overflow:hidden; min-width:80px; }
-.agreement-bar .bf { height:100%; border-radius:3px; }
-@media (max-width:600px) { .container{padding:12px;} header h1{font-size:1.4rem;} .song-item{padding:8px 10px;} .song-rank{width:28px;font-size:1rem;} .profile-bar{flex-direction:column;align-items:stretch;} .compare-container{flex-direction:column;} }
+:root{--pink:#fb8a9b;--bg:#1a1a2e;--bg-card:#222244;--bg-card2:#2a2a4a;--text:#eee;--text-dim:#999;--border:#333366}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.container{max-width:1000px;margin:0 auto;padding:20px}
+header{text-align:center;padding:30px 0;border-bottom:2px solid var(--pink);margin-bottom:30px}
+header h1{font-size:2rem;color:var(--pink)}
+header p{color:var(--text-dim);margin-top:5px;font-size:.9rem}
+nav{display:flex;gap:10px;justify-content:center;margin:20px 0;flex-wrap:wrap}
+nav button{background:var(--bg-card);color:var(--text);border:1px solid var(--border);padding:10px 24px;border-radius:8px;cursor:pointer;font-size:.95rem;transition:all .2s}
+nav button:hover,nav button.active{border-color:var(--pink);color:var(--pink)}
+nav button.active{background:var(--pink);color:#fff;border-color:var(--pink)}
+.section{display:none}
+.section.active{display:block}
+.bar{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.bar label{color:var(--text-dim);font-size:.9rem}
+.bar select{background:var(--bg-card);color:var(--text);border:1px solid var(--border);padding:8px 12px;border-radius:6px;font-size:.95rem}
+.list{display:flex;flex-direction:column;gap:6px}
+.item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;transition:all .2s;cursor:pointer}
+.item:hover{border-color:var(--pink)}
+.rk{font-size:1.2rem;font-weight:bold;width:36px;text-align:center;color:var(--pink);flex-shrink:0}
+.inf{flex:1;min-width:0}
+.nm{font-size:1rem;font-weight:500}
+.ar{font-size:.8rem;color:var(--text-dim);margin-top:2px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-top:20px}
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;cursor:pointer;transition:all .2s}
+.card:hover{border-color:var(--pink)}
+.card .rn{font-size:1.5rem;font-weight:bold;color:var(--pink)}
+.card .sn{font-size:1rem;margin:4px 0}
+.card .sa{font-size:.8rem;color:var(--text-dim)}
+.card .ba{height:4px;border-radius:2px;margin-top:8px;background:var(--bg-card2);overflow:hidden}
+.card .bf{height:100%;border-radius:2px;background:var(--pink)}
+.det{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:20px}
+.det h2{font-size:1.5rem;margin-bottom:4px}
+.det .mt{color:var(--text-dim);font-size:.9rem;margin-bottom:16px}
+.rlist{display:flex;flex-direction:column;gap:6px}
+.ritem{display:flex;align-items:center;gap:12px;padding:8px 14px;background:var(--bg-card2);border-radius:6px}
+.ritem .pos{font-weight:bold;color:var(--pink);width:30px}
+.ritem .nm2{flex:1}
+.cc{display:flex;gap:20px;flex-wrap:wrap}
+.cl{flex:1;min-width:280px}
+.cl h3{color:var(--pink);margin-bottom:10px}
+.sbox{width:100%;padding:10px 14px;background:var(--bg-card);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:1rem;margin-bottom:12px}
+.sbox:focus{outline:none;border-color:var(--pink)}
+.abar{display:flex;align-items:center;gap:24px;padding:8px 14px;background:var(--bg-card2);border-radius:6px;margin-bottom:16px;font-size:.85rem;flex-wrap:wrap}
+.abar .bt{flex:1;height:6px;background:var(--bg);border-radius:3px;overflow:hidden;min-width:80px}
+.abar .bf{height:100%;border-radius:3px;background:var(--pink)}
+.unr{opacity:.45}
+@media(max-width:600px){.container{padding:12px}header h1{font-size:1.4rem}.item{padding:8px 10px}.rk{width:28px;font-size:1rem}.bar{flex-direction:column;align-items:stretch}.cc{flex-direction:column}}
 </style>
 </head>
 <body>
 <div class="container">
   <header>
     <h1>♡ Hasunosora Song Rankings ♡</h1>
-    <p>蓮ノ空女学院スクールアイドルクラブ — submit your ranking as a PR adding a <code>.txt</code> file to <strong>data/rankings/</strong></p>
+    <p>蓮ノ空女学院スクールアイドルクラブ — submit your ranking via PR: add a <code>.txt</code> file to <code>data/rankings/</code> and update <code>manifest.json</code></p>
   </header>
   <nav id="nav">
-    <button class="active" data-tab="ranking">Ranking</button>
-    <button data-tab="all">Aggregate</button>
+    <button class="active" data-tab="rank">Ranking</button>
+    <button data-tab="agg">Aggregate</button>
     <button data-tab="song">Per Song</button>
-    <button data-tab="compare">Compare</button>
+    <button data-tab="cmp">Compare</button>
   </nav>
-  <div class="section active" id="section-ranking">
-    <div class="profile-bar">
-      <label>Profile:</label>
-      <select id="profileSelect"></select>
+
+  <div class="section active" id="section-rank">
+    <div class="bar">
+      <label>Profile:</label><select id="selProfile"></select>
+      <label>Sort:</label>
+      <select id="sortRank">
+        <option value="default">Default (rank)</option>
+        <option value="name">Name A-Z</option>
+        <option value="name-desc">Name Z-A</option>
+        <option value="date">Release date (old)</option>
+        <option value="date-desc">Release date (new)</option>
+        <option value="artist">Artist A-Z</option>
+        <option value="artist-desc">Artist Z-A</option>
+      </select>
     </div>
-    <div class="legend" id="legend"></div>
-    <div id="profileInfo" style="color:var(--text-dim);font-size:0.9rem;margin-bottom:12px"></div>
-    <div class="song-list" id="songList"></div>
+    <div id="info" style="color:var(--text-dim);font-size:.9rem;margin-bottom:12px"></div>
+    <div class="list" id="songList"></div>
   </div>
-  <div class="section" id="section-all">
-    <h2 style="color:var(--pink);margin-bottom:16px">Aggregate Leaderboard</h2>
-    <p style="color:var(--text-dim);margin-bottom:16px;font-size:0.9rem">Average rank across all profiles. Unranked songs get #36.</p>
-    <div id="allContent"></div>
+
+  <div class="section" id="section-agg">
+    <div class="bar">
+      <label>Sort:</label>
+      <select id="sortAgg">
+        <option value="rank">Average rank (best)</option>
+        <option value="rank-desc">Average rank (worst)</option>
+        <option value="name">Name A-Z</option>
+        <option value="date">Release date</option>
+        <option value="artist">Artist</option>
+      </select>
+    </div>
+    <div id="aggContent"></div>
   </div>
+
   <div class="section" id="section-song">
-    <input class="search-box" id="songSearch" placeholder="Search songs...">
+    <input class="sbox" id="songSearch" placeholder="Search songs...">
     <div id="songDetail"></div>
-    <div id="songRankingList"></div>
+    <div id="songResults"></div>
   </div>
-  <div class="section" id="section-compare">
-    <div class="profile-bar">
-      <label>A:</label><select id="compareA"></select>
-      <label>B:</label><select id="compareB"></select>
+
+  <div class="section" id="section-cmp">
+    <div class="bar">
+      <label>A:</label><select id="cmpA"></select>
+      <label>B:</label><select id="cmpB"></select>
     </div>
-    <div id="compareContent"></div>
+    <div id="cmpContent"></div>
   </div>
 </div>
 <script>
 const SONGS = [
-  {id:"888",name:"A出るノート",artist:"Edel Note",color:"#a8d8a8",releasedOn:"2026-04-08"},
-  {id:"502",name:"Dream Believers",artist:"蓮ノ空女学院スクールアイドルクラブ",color:"#fb8a9b",releasedOn:"2023-03-29"},
-  {id:"891",name:"光の中で花咲いて",artist:"蓮ノ空女学院スクールアイドルクラブ",color:"#fb8a9b",releasedOn:"2026-06-03"},
-  {id:"854",name:"シアター生き様",artist:"Edel Note",color:"#a8d8a8",releasedOn:"2025-12-10"},
-  {id:"899",name:"Bless you!",artist:"村野さやか",color:"#ff9eb5",releasedOn:"2026-07-01"},
-  {id:"552",name:"Holiday∞Holiday",artist:"スリーズブーケ",color:"#6ab0d9",releasedOn:"2023-06-14"},
-  {id:"504",name:"水彩世界",artist:"スリーズブーケ",color:"#6ab0d9",releasedOn:"2023-03-29"},
-  {id:"748",name:"いったん",artist:"蓮ノ空女学院スクールアイドルクラブ",color:"#fb8a9b",releasedOn:"2025-04-09"},
-  {id:"506",name:"ド！ド！ド！",artist:"みらくらぱーく！",color:"#f7c86a",releasedOn:"2023-03-29"},
-  {id:"586",name:"青春の輪郭",artist:"DOLLCHESTRA",color:"#e89ac7",releasedOn:"2023-09-20"},
-  {id:"619",name:"KNOT",artist:"DOLLCHESTRA",color:"#e89ac7",releasedOn:"2023-11-22"},
-  {id:"898",name:"プレイリスト/「あの日」",artist:"日野下花帆",color:"#ffd700",releasedOn:"2026-07-01"},
-  {id:"579",name:"眩耀夜行",artist:"スリーズブーケ",color:"#6ab0d9",releasedOn:"2023-08-09"},
-  {id:"881",name:"アイシイ",artist:"DOLLCHESTRA",color:"#e89ac7",releasedOn:"2026-04-08"},
-  {id:"835",name:"はじまりの羽音",artist:"蓮ノ空女学院スクールアイドルクラブ",color:"#fb8a9b",releasedOn:"2025-12-24"},
-  {id:"648",name:"Special Thanks",artist:"スリーズブーケ",color:"#6ab0d9",releasedOn:"2024-02-14"},
-  {id:"900",name:"ミジンコトランスフォーメーション",artist:"大沢瑠璃乃",color:"#c8a0e0",releasedOn:"2026-07-01"},
-  {id:"867",name:"Echoes Beyond",artist:"蓮ノ空女学院スクールアイドルクラブ",color:"#fb8a9b",releasedOn:"2026-01-28"},
-  {id:"591",name:"パラレルダンサー",artist:"DOLLCHESTRA",color:"#e89ac7",releasedOn:"2023-09-20"},
-  {id:"811",name:"フュージョンクラスト",artist:"Edel Note",color:"#a8d8a8",releasedOn:"2025-09-03"},
-  {id:"663",name:"STEP UP !",artist:"蓮ノ空女学院スクールアイドルクラブ",color:"#fb8a9b",releasedOn:"2024-04-03"},
-  {id:"589",name:"ココン東西",artist:"みらくらぱーく！",color:"#f7c86a",releasedOn:"2023-09-20"},
-  {id:"890",name:"ペレニアル",artist:"日野下花帆、村野さやか、大沢瑠璃乃",color:"#c9a0dc",releasedOn:""},
-  {id:"505",name:"AWOKE",artist:"DOLLCHESTRA",color:"#e89ac7",releasedOn:"2023-03-29"},
-  {id:"836",name:"チャーミングな花束を！",artist:"蓮ノ空女学院スクールアイドルクラブ",color:"#fb8a9b",releasedOn:"2025-12-24"},
-  {id:"697",name:"ジョーショーキリュー",artist:"みらくらぱーく！",color:"#f7c86a",releasedOn:"2024-12-04"},
-  {id:"880",name:"不思議と君とライブラリー",artist:"スリーズブーケ",color:"#6ab0d9",releasedOn:"2026-04-08"},
-  {id:"886",name:"センパイ",artist:"みらくらぱーく！",color:"#f7c86a",releasedOn:"2026-04-08"},
-  {id:"882",name:"EdelinieN",artist:"Edel Note",color:"#a8d8a8",releasedOn:"2026-04-08"},
-  {id:"879",name:"トモダチになれる場所",artist:"みらくらぱーく！",color:"#f7c86a",releasedOn:"2026-04-08"},
-  {id:"787",name:"アイドゥーミー！",artist:"蓮ノ空女学院スクールアイドルクラブ",color:"#fb8a9b",releasedOn:"2025-07-09"},
-  {id:"756",name:"Retrofuture",artist:"Edel Note",color:"#a8d8a8",releasedOn:"2025-05-21"},
-  {id:"883",name:"今、過去、未来の三原色",artist:"蓮ノ空女学院スクールアイドルクラブ",color:"#fb8a9b",releasedOn:"2026-04-15"},
-  {id:"826",name:"一生に夢が咲くように",artist:"蓮ノ空女学院スクールアイドルクラブ",color:"#fb8a9b",releasedOn:"2026-04-15"},
-  {id:"889",name:"ハナ咲けばユメ駆ける",artist:"蓮ノ空女学院スクールアイドルクラブ",color:"#fb8a9b",releasedOn:"2026-06-03"},
-  {id:"859",name:"雪舞う空と二秒の永遠",artist:"蓮ノ空女学院スクールアイドルクラブ",color:"#fb8a9b",releasedOn:"2026-04-15"}
+  {id:"888",name:"A出るノート",artist:"Edel Note",date:"2026-04-08"},
+  {id:"502",name:"Dream Believers",artist:"蓮ノ空女学院スクールアイドルクラブ",date:"2023-03-29"},
+  {id:"891",name:"光の中で花咲いて",artist:"蓮ノ空女学院スクールアイドルクラブ",date:"2026-06-03"},
+  {id:"854",name:"シアター生き様",artist:"Edel Note",date:"2025-12-10"},
+  {id:"899",name:"Bless you!",artist:"村野さやか",date:"2026-07-01"},
+  {id:"552",name:"Holiday∞Holiday",artist:"スリーズブーケ",date:"2023-06-14"},
+  {id:"504",name:"水彩世界",artist:"スリーズブーケ",date:"2023-03-29"},
+  {id:"748",name:"いったん",artist:"蓮ノ空女学院スクールアイドルクラブ",date:"2025-04-09"},
+  {id:"506",name:"ド！ド！ド！",artist:"みらくらぱーく！",date:"2023-03-29"},
+  {id:"586",name:"青春の輪郭",artist:"DOLLCHESTRA",date:"2023-09-20"},
+  {id:"619",name:"KNOT",artist:"DOLLCHESTRA",date:"2023-11-22"},
+  {id:"898",name:"プレイリスト/「あの日」",artist:"日野下花帆",date:"2026-07-01"},
+  {id:"579",name:"眩耀夜行",artist:"スリーズブーケ",date:"2023-08-09"},
+  {id:"881",name:"アイシイ",artist:"DOLLCHESTRA",date:"2026-04-08"},
+  {id:"835",name:"はじまりの羽音",artist:"蓮ノ空女学院スクールアイドルクラブ",date:"2025-12-24"},
+  {id:"648",name:"Special Thanks",artist:"スリーズブーケ",date:"2024-02-14"},
+  {id:"900",name:"ミジンコトランスフォーメーション",artist:"大沢瑠璃乃",date:"2026-07-01"},
+  {id:"867",name:"Echoes Beyond",artist:"蓮ノ空女学院スクールアイドルクラブ",date:"2026-01-28"},
+  {id:"591",name:"パラレルダンサー",artist:"DOLLCHESTRA",date:"2023-09-20"},
+  {id:"811",name:"フュージョンクラスト",artist:"Edel Note",date:"2025-09-03"},
+  {id:"663",name:"STEP UP !",artist:"蓮ノ空女学院スクールアイドルクラブ",date:"2024-04-03"},
+  {id:"589",name:"ココン東西",artist:"みらくらぱーく！",date:"2023-09-20"},
+  {id:"890",name:"ペレニアル",artist:"日野下花帆、村野さやか、大沢瑠璃乃",date:""},
+  {id:"505",name:"AWOKE",artist:"DOLLCHESTRA",date:"2023-03-29"},
+  {id:"836",name:"チャーミングな花束を！",artist:"蓮ノ空女学院スクールアイドルクラブ",date:"2025-12-24"},
+  {id:"697",name:"ジョーショーキリュー",artist:"みらくらぱーく！",date:"2024-12-04"},
+  {id:"880",name:"不思議と君とライブラリー",artist:"スリーズブーケ",date:"2026-04-08"},
+  {id:"886",name:"センパイ",artist:"みらくらぱーく！",date:"2026-04-08"},
+  {id:"882",name:"EdelinieN",artist:"Edel Note",date:"2026-04-08"},
+  {id:"879",name:"トモダチになれる場所",artist:"みらくらぱーく！",date:"2026-04-08"},
+  {id:"787",name:"アイドゥーミー！",artist:"蓮ノ空女学院スクールアイドルクラブ",date:"2025-07-09"},
+  {id:"756",name:"Retrofuture",artist:"Edel Note",date:"2025-05-21"},
+  {id:"883",name:"今、過去、未来の三原色",artist:"蓮ノ空女学院スクールアイドルクラブ",date:"2026-04-15"},
+  {id:"826",name:"一生に夢が咲くように",artist:"蓮ノ空女学院スクールアイドルクラブ",date:"2026-04-15"},
+  {id:"889",name:"ハナ咲けばユメ駆ける",artist:"蓮ノ空女学院スクールアイドルクラブ",date:"2026-06-03"},
+  {id:"859",name:"雪舞う空と二秒の永遠",artist:"蓮ノ空女学院スクールアイドルクラブ",date:"2026-04-15"}
 ];
-
-const UNIT_COLORS = {
-  '蓮ノ空女学院スクールアイドルクラブ':'#fb8a9b','スリーズブーケ':'#6ab0d9','DOLLCHESTRA':'#e89ac7',
-  'みらくらぱーく！':'#f7c86a','Edel Note':'#a8d8a8','村野さやか':'#ff9eb5','日野下花帆':'#ffd700',
-  '大沢瑠璃乃':'#c8a0e0','日野下花帆、村野さやか、大沢瑠璃乃':'#c9a0dc'
-};
+const SONG_MAP = {}; SONGS.forEach(s => SONG_MAP[s.id] = s);
 
 let profiles = [];
-let currentProfile = null;
+let current = null;
 
-function getSong(id) { return SONGS.find(s => s.id === id); }
+function gs(id){return SONG_MAP[id]}
 
-function getRank(name, songId) {
+function gr(name, sid){
   const p = profiles.find(r => r.name === name);
-  if (!p) return null;
-  const idx = p.ids.indexOf(songId);
-  return idx === -1 ? null : idx + 1;
+  if(!p) return null;
+  const i = p.ids.indexOf(sid);
+  return i === -1 ? null : i + 1;
 }
 
-function parseLine(line) {
-  line = line.trim();
-  if (!line) return null;
-  let namePart = line.replace(/^\d+[\.\)、]\s*/, '');
-  namePart = namePart.replace(/\s*-\s*[^-]+$/, '').trim();
-  namePart = namePart.replace(/[「」"']/g, '');
-  if (!namePart) return null;
-  let m = SONGS.find(s => s.name === namePart);
-  if (m) return m.id;
-  m = SONGS.find(s => s.name.includes(namePart) || namePart.includes(s.name));
+function isName(l){return l.trim()&&!/^\s*\d+[\.\)、]/.test(l)&&!l.includes(' - ')}
+
+function parseProfiles(text){
+  const lines = text.split('\n');
+  const res = [];
+  let cur = null, ids = [], unr = 0;
+  for(const l of lines){
+    if(isName(l)){
+      if(cur&&ids.length) res.push({name:cur,ids,unr});
+      cur=l.trim(); ids=[]; unr=0;
+    } else {
+      const id = parseLine(l);
+      if(id) ids.push(id);
+      else if(l.trim()) unr++;
+    }
+  }
+  if(cur&&ids.length) res.push({name:cur,ids,unr});
+  return res.length ? res : [{name:'unknown',ids:[],unr:0}];
+}
+
+function parseLine(l){
+  l=l.trim(); if(!l) return null;
+  let n = l.replace(/^\d+[\.\)、]\s*/,'').replace(/\s*-\s*[^-]+$/,'').trim().replace(/[「」"']/g,'');
+  if(!n) return null;
+  let m = SONGS.find(s => s.name === n);
+  if(m) return m.id;
+  m = SONGS.find(s => s.name.includes(n) || n.includes(s.name));
   return m ? m.id : null;
 }
 
-function isNameLine(line) {
-  return line.trim() && !/^\s*\d+[\.\)、]/.test(line) && !line.includes(' - ');
-}
-
-function parseProfiles(text) {
-  const lines = text.split('\n');
-  const result = [];
-  let currentName = null;
-  let ids = [];
-  let unmatched = 0;
-  for (const line of lines) {
-    if (isNameLine(line)) {
-      if (currentName && ids.length) result.push({ name: currentName, ids, unmatched });
-      currentName = line.trim();
-      ids = [];
-      unmatched = 0;
-    } else {
-      const id = parseLine(line);
-      if (id) ids.push(id);
-      else if (line.trim()) unmatched++;
-    }
-  }
-  if (currentName && ids.length) result.push({ name: currentName, ids, unmatched });
-  return result.length ? result : [{ name: 'unknown', ids: [], unmatched: 0 }];
-}
-
-async function loadRankings() {
-  try {
+async function load(){
+  try{
     const mr = await fetch('data/rankings/manifest.json');
-    const manifest = await mr.json();
-    const files = manifest.files || manifest;
+    const mf = await mr.json();
+    const files = mf.files || mf;
     profiles = [];
-    for (const f of files) {
-      try {
-        const r = await fetch('data/rankings/' + f);
-        const text = await r.text();
-        profiles.push(...parseProfiles(text));
-      } catch (e) { console.warn('Failed:', f, e); }
+    for(const f of files){
+      try{
+        const r = await fetch('data/rankings/'+f);
+        profiles.push(...parseProfiles(await r.text()));
+      }catch(e){console.warn('Failed:',f,e)}
     }
-  } catch {
-    try {
+  }catch{
+    try{
       const r = await fetch('data/rankings/hasu6thbelluna.txt');
-      const text = await r.text();
-      profiles = parseProfiles(text);
-    } catch {
-      profiles = [{ name: 'trioskosmos', ids: SONGS.map(s => s.id), unmatched: 0 }];
+      profiles = parseProfiles(await r.text());
+    }catch{
+      profiles = [{name:'trioskosmos',ids:SONGS.map(s=>s.id),unr:0}];
     }
   }
-  if (!currentProfile || !profiles.find(p => p.name === currentProfile))
-    currentProfile = profiles[0]?.name || 'trioskosmos';
+  if(!current||!profiles.find(p=>p.name===current))
+    current = profiles[0]?.name||'trioskosmos';
   renderAll();
 }
 
-function renderAll() {
-  renderLegend();
-  renderProfileSelects();
-  renderRanking();
-  if (document.getElementById('section-all').classList.contains('active')) renderAggregate();
-  if (document.getElementById('section-song').classList.contains('active')) renderSongSearch();
-  if (document.getElementById('section-compare').classList.contains('active')) renderCompare();
-}
-
-function renderLegend() {
-  document.getElementById('legend').innerHTML = Object.keys(UNIT_COLORS).map(n =>
-    '<span class="legend-item"><span class="legend-dot" style="background:'+UNIT_COLORS[n]+'"></span>'+n+'</span>'
-  ).join('');
-}
-
-function renderProfileSelects() {
-  const names = profiles.map(p => p.name);
-  ['profileSelect','compareA','compareB'].forEach(id => {
-    const sel = document.getElementById(id);
-    if (!sel) return;
-    const val = sel.value;
-    sel.innerHTML = names.map(n => '<option value="'+n+'">'+n+'</option>').join('');
-    if (names.includes(val)) sel.value = val;
+function rSel(){
+  const names = profiles.map(p=>p.name);
+  ['selProfile','cmpA','cmpB'].forEach(id => {
+    const s = document.getElementById(id); if(!s) return;
+    const v = s.value;
+    s.innerHTML = names.map(n => '<option value="'+n+'">'+n+'</option>').join('');
+    if(names.includes(v)) s.value = v;
   });
-  const ps = document.getElementById('profileSelect');
-  if (ps && names.includes(currentProfile)) ps.value = currentProfile;
-  else if (ps && names.length) { ps.value = names[0]; currentProfile = names[0]; }
+  const ps = document.getElementById('selProfile');
+  if(ps&&names.includes(current)) ps.value = current;
+  else if(ps&&names.length){ps.value=names[0];current=names[0];}
 }
 
-function createSongEl(song, rank) {
-  if (!song) {
+function sortSongs(songs, mode){
+  const copy = [...songs];
+  const cmp = {
+    name: (a,b) => a.name.localeCompare(b.name),
+    'name-desc': (a,b) => b.name.localeCompare(a.name),
+    date: (a,b) => (a.date||'9999').localeCompare(b.date||'9999'),
+    'date-desc': (a,b) => (b.date||'').localeCompare(a.date||''),
+    artist: (a,b) => a.artist.localeCompare(b.artist),
+    'artist-desc': (a,b) => b.artist.localeCompare(a.artist),
+  };
+  if(cmp[mode]) copy.sort(cmp[mode]);
+  return copy;
+}
+
+function makeItem(song, rank){
+  if(!song){
     const d = document.createElement('div');
-    d.className = 'song-item';
-    d.style.opacity = '0.4';
-    d.innerHTML = '<div class="song-info"><div class="song-name" style="color:var(--text-dim)">(unknown)</div></div>';
+    d.className = 'item unr';
+    d.innerHTML = '<div class="inf"><div class="nm" style="color:var(--text-dim)">(unknown)</div></div>';
     return d;
   }
-  const div = document.createElement('div');
-  div.className = 'song-item';
-  div.addEventListener('click', () => showSongDetail(song.id));
-  div.innerHTML = '<div class="song-rank">#'+rank+'</div><div class="song-color-bar" style="background:'+song.color+'"></div><div class="song-info"><div class="song-name">'+song.name+'</div><div class="song-artist">'+song.artist+'</div></div>';
-  return div;
+  const d = document.createElement('div');
+  d.className = 'item';
+  d.addEventListener('click',()=>showSong(song.id));
+  d.innerHTML = '<div class="rk">#'+rank+'</div><div class="inf"><div class="nm">'+song.name+'</div><div class="ar">'+song.artist+(song.date?' · '+song.date:'')+'</div></div>';
+  return d;
 }
 
-function renderRanking() {
+function renderRank(){
   const list = document.getElementById('songList');
-  const p = profiles.find(r => r.name === currentProfile);
-  const info = document.getElementById('profileInfo');
-  if (!p) { list.innerHTML = ''; info.textContent = ''; return; }
-  info.textContent = p.ids.length + ' songs ranked' + (p.unmatched ? ' ('+p.unmatched+' unmatched lines)' : '');
-  list.innerHTML = '';
-  const set = new Set(p.ids);
-  p.ids.forEach((id, i) => list.appendChild(createSongEl(getSong(id), i + 1)));
-  SONGS.filter(s => !set.has(s.id)).forEach(s => { const el = createSongEl(s, '—'); el.style.opacity = '0.5'; list.appendChild(el); });
-}
-
-function renderAggregate() {
-  const el = document.getElementById('allContent');
-  const active = profiles.filter(p => p.ids.length > 0);
-  if (!active.length) { el.innerHTML = '<p style="color:var(--text-dim)">No profiles yet.</p>'; return; }
-  const total = active.length;
-  const data = SONGS.map(song => {
-    const ranks = active.map(p => { const i = p.ids.indexOf(song.id); return i === -1 ? 36 : i + 1; });
-    return { song, avg: ranks.reduce((a,b)=>a+b,0)/total };
-  }).sort((a,b) => a.avg - b.avg);
-  el.innerHTML = '<div class="stats-grid">' + data.map((item,i) => {
-    const s = item.song;
-    return '<div class="stat-card" onclick="showSongDetail(\''+s.id+'\')"><div class="rn">#'+(i+1)+'</div><div class="sn">'+s.name+'</div><div class="sa">'+s.artist+' · avg '+item.avg.toFixed(1)+'</div><div class="bar"><div class="bf" style="width:'+((1-i/SONGS.length)*100)+'%;background:'+s.color+'"></div></div></div>';
-  }).join('') + '</div>';
-}
-
-function showSongDetail(songId) {
-  switchTab('song');
-  const song = getSong(songId);
-  if (!song) return;
-  document.getElementById('songDetail').innerHTML = '<div class="song-detail"><h2>'+song.name+'</h2><div class="meta"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+song.color+';margin-right:6px;vertical-align:middle"></span>'+song.artist+(song.releasedOn?' · '+song.releasedOn:'')+'</div></div>';
-  const list = profiles.map(p => ({ name: p.name, pos: getRank(p.name, songId) })).filter(r => r.pos !== null).sort((a,b) => a.pos - b.pos);
-  document.getElementById('songRankingList').innerHTML = list.length ? list.map(r => '<div class="ranking-item"><span class="pos">#'+r.pos+'</span><span class="name">'+r.name+'</span></div>').join('') : '<p style="color:var(--text-dim);padding:12px">Not ranked by anyone yet.</p>';
-  document.getElementById('songSearch').value = song.name;
-}
-
-function renderSongSearch() {
-  const q = document.getElementById('songSearch').value.toLowerCase();
-  const list = document.getElementById('songRankingList');
-  const matching = q ? SONGS.filter(s => s.name.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q)) : [];
-  list.innerHTML = matching.length ? matching.map(s => {
-    const c = profiles.filter(p => p.ids.includes(s.id)).length;
-    return '<div class="song-item" onclick="showSongDetail(\''+s.id+'\')"><div class="song-color-bar" style="background:'+s.color+'"></div><div class="song-info"><div class="song-name">'+s.name+'</div><div class="song-artist">'+s.artist+' · ranked by '+c+'</div></div></div>';
-  }).join('') : '<p style="color:var(--text-dim);padding:12px">No matching songs.</p>';
-  if (!q) list.innerHTML = '<p style="color:var(--text-dim);padding:12px">Type a song name to search.</p>';
-}
-
-function renderCompare() {
-  const el = document.getElementById('compareContent');
-  const aName = document.getElementById('compareA').value;
-  const bName = document.getElementById('compareB').value;
-  if (!aName || !bName || !profiles.find(p=>p.name===aName) || !profiles.find(p=>p.name===bName)) {
-    el.innerHTML = '<p style="color:var(--text-dim)">Select two profiles.</p>'; return;
+  const p = profiles.find(r=>r.name===current);
+  const info = document.getElementById('info');
+  if(!p){list.innerHTML='';info.textContent='';return;}
+  info.textContent = p.ids.length + ' songs ranked' + (p.unr?' ('+p.unr+' unmatched lines)':'');
+  const mode = document.getElementById('sortRank').value;
+  const ranked = p.ids.map(id=>gs(id)).filter(Boolean);
+  const unranked = SONGS.filter(s => !p.ids.includes(s.id));
+  if(mode === 'default'){
+    list.innerHTML = '';
+    ranked.forEach((s,i)=>list.appendChild(makeItem(s,i+1)));
+    unranked.forEach(s=>{const e=makeItem(s,'—');e.classList.add('unr');list.appendChild(e);});
+  } else {
+    const all = sortSongs([...ranked,...unranked], mode);
+    list.innerHTML = '';
+    all.forEach((s,i)=>{
+      const e = makeItem(s, i+1);
+      if(unranked.includes(s)) e.classList.add('unr');
+      list.appendChild(e);
+    });
   }
-  const aIds = profiles.find(p=>p.name===aName).ids;
-  const bIds = profiles.find(p=>p.name===bName).ids;
-  const aSongs = aIds.map(id => getSong(id)).filter(Boolean);
-  const bSongs = bIds.map(id => getSong(id)).filter(Boolean);
-  const diffs = SONGS.map(s => {
-    const pA = getRank(aName, s.id) || 36;
-    const pB = getRank(bName, s.id) || 36;
-    return { song: s, pA, pB, absDiff: Math.abs(pA - pB) };
-  }).sort((a,b) => b.absDiff - a.absDiff);
-  const close = diffs.filter(d => d.absDiff <= 3).length;
-  el.innerHTML = '<div class="agreement-bar"><span>Agreement: <strong>'+(close/SONGS.length*100).toFixed(0)+'%</strong> within ±3</span><div class="bt"><div class="bf" style="width:'+(close/SONGS.length*100).toFixed(0)+'%;background:var(--pink)"></div></div></div><div class="compare-container"><div class="compare-col"><h3>'+aName+' ('+aSongs.length+')</h3>'+aSongs.map((s,i)=>'<div class="song-item" onclick="showSongDetail(\''+s.id+'\')"><div class="song-rank">#'+(i+1)+'</div><div class="song-color-bar" style="background:'+s.color+'"></div><div class="song-info"><div class="song-name">'+s.name+'</div></div></div>').join('')+'</div><div class="compare-col"><h3>'+bName+' ('+bSongs.length+')</h3>'+bSongs.map((s,i)=>'<div class="song-item" onclick="showSongDetail(\''+s.id+'\')"><div class="song-rank">#'+(i+1)+'</div><div class="song-color-bar" style="background:'+s.color+'"></div><div class="song-info"><div class="song-name">'+s.name+'</div></div></div>').join('')+'</div></div><h3 style="color:var(--pink);margin:20px 0 10px">Biggest Differences</h3>'+diffs.slice(0,10).map(d=>'<div class="ranking-item" onclick="showSongDetail(\''+d.song.id+'\')"><div class="song-color-bar" style="background:'+d.song.color+';width:4px;height:30px;border-radius:2px;flex-shrink:0"></div><span style="flex:1">'+d.song.name+'</span><span style="color:var(--text-dim);font-size:0.85rem">#'+d.pA+' vs #'+d.pB+'</span></div>').join('');
 }
 
-function switchTab(tab) {
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.getElementById('section-'+tab).classList.add('active');
-  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-  document.querySelector('[data-tab="'+tab+'"]').classList.add('active');
-}
-
-document.querySelectorAll('nav button').forEach(btn => {
-  btn.addEventListener('click', () => {
-    switchTab(btn.dataset.tab);
-    if (btn.dataset.tab === 'all') renderAggregate();
-    if (btn.dataset.tab === 'song') { document.getElementById('songDetail').innerHTML = ''; document.getElementById('songRankingList').innerHTML = '<p style="color:var(--text-dim);padding:12px">Type a song name to search.</p>'; }
-    if (btn.dataset.tab === 'compare') renderCompare();
+function renderAgg(){
+  const el = document.getElementById('aggContent');
+  const mode = document.getElementById('sortAgg').value;
+  const active = profiles.filter(p=>p.ids.length>0);
+  if(!active.length){el.innerHTML='<p style="color:var(--text-dim)">No profiles.</p>';return;}
+  const t = active.length;
+  let data = SONGS.map(song => {
+    const ranks = active.map(p=>{const i=p.ids.indexOf(song.id);return i===-1?36:i+1;});
+    return {song,avg:ranks.reduce((a,b)=>a+b,0)/t};
   });
-});
-document.getElementById('profileSelect').addEventListener('change', () => { currentProfile = document.getElementById('profileSelect').value; renderRanking(); });
-document.getElementById('songSearch').addEventListener('input', renderSongSearch);
-['compareA','compareB'].forEach(id => document.getElementById(id).addEventListener('change', renderCompare));
+  const c = {
+    rank: (a,b)=>a.avg-b.avg,
+    'rank-desc': (a,b)=>b.avg-a.avg,
+    name: (a,b)=>a.song.name.localeCompare(b.song.name),
+    date: (a,b)=>(a.song.date||'9999').localeCompare(b.song.date||'9999'),
+    artist: (a,b)=>a.song.artist.localeCompare(b.song.artist),
+  };
+  if(c[mode]) data.sort(c[mode]);
+  el.innerHTML = '<div class="grid">'+data.map((item,i)=>{
+    const s=item.song;
+    return '<div class="card" onclick="showSong(\''+s.id+'\')"><div class="rn">#'+(i+1)+'</div><div class="sn">'+s.name+'</div><div class="sa">'+s.artist+' · avg '+item.avg.toFixed(1)+'</div><div class="ba"><div class="bf" style="width:'+((1-i/SONGS.length)*100)+'%"></div></div></div>';
+  }).join('')+'</div>';
+}
 
-loadRankings();
+function showSong(sid){
+  switchTab('song');
+  const s = gs(sid); if(!s) return;
+  document.getElementById('songDetail').innerHTML = '<div class="det"><h2>'+s.name+'</h2><div class="mt">'+s.artist+(s.date?' · '+s.date:'')+'</div></div>';
+  const list = profiles.map(p=>({name:p.name,pos:gr(p.name,sid)})).filter(r=>r.pos!==null).sort((a,b)=>a.pos-b.pos);
+  document.getElementById('songResults').innerHTML = list.length
+    ? list.map(r=>'<div class="ritem"><span class="pos">#'+r.pos+'</span><span class="nm2">'+r.name+'</span></div>').join('')
+    : '<p style="color:var(--text-dim);padding:12px">Not ranked by anyone yet.</p>';
+  document.getElementById('songSearch').value = s.name;
+}
+
+function renderSearch(){
+  const q = document.getElementById('songSearch').value.toLowerCase();
+  const list = document.getElementById('songResults');
+  const m = q ? SONGS.filter(s=>s.name.toLowerCase().includes(q)||s.artist.toLowerCase().includes(q)) : [];
+  list.innerHTML = m.length ? m.map(s=>{
+    const c = profiles.filter(p=>p.ids.includes(s.id)).length;
+    return '<div class="item" onclick="showSong(\''+s.id+'\')"><div class="inf"><div class="nm">'+s.name+'</div><div class="ar">'+s.artist+' · ranked by '+c+'</div></div></div>';
+  }).join('') : '<p style="color:var(--text-dim);padding:12px">No matching songs.</p>';
+  if(!q) list.innerHTML = '<p style="color:var(--text-dim);padding:12px">Type a song name to search.</p>';
+}
+
+function renderCmp(){
+  const el = document.getElementById('cmpContent');
+  const aN = document.getElementById('cmpA').value;
+  const bN = document.getElementById('cmpB').value;
+  if(!aN||!bN||!profiles.find(p=>p.name===aN)||!profiles.find(p=>p.name===bN)){
+    el.innerHTML='<p style="color:var(--text-dim)">Select two profiles.</p>';return;
+  }
+  const aIds = profiles.find(p=>p.name===aN).ids;
+  const bIds = profiles.find(p=>p.name===bN).ids;
+  const aS = aIds.map(id=>gs(id)).filter(Boolean);
+  const bS = bIds.map(id=>gs(id)).filter(Boolean);
+  const diffs = SONGS.map(s=>{
+    const pA = gr(aN,s.id)||36;
+    const pB = gr(bN,s.id)||36;
+    return {song:s,pA,pB,abs:Math.abs(pA-pB)};
+  }).sort((a,b)=>b.abs-a.abs);
+  const close = diffs.filter(d=>d.abs<=3).length;
+  el.innerHTML = '<div class="abar"><span>Agreement: <strong>'+(close/SONGS.length*100).toFixed(0)+'%</strong> within ±3</span><div class="bt"><div class="bf" style="width:'+(close/SONGS.length*100).toFixed(0)+'%"></div></div></div><div class="cc"><div class="cl"><h3>'+aN+' ('+aS.length+')</h3>'+aS.map((s,i)=>'<div class="item" onclick="showSong(\''+s.id+'\')"><div class="rk">#'+(i+1)+'</div><div class="inf"><div class="nm">'+s.name+'</div></div></div>').join('')+'</div><div class="cl"><h3>'+bN+' ('+bS.length+')</h3>'+bS.map((s,i)=>'<div class="item" onclick="showSong(\''+s.id+'\')"><div class="rk">#'+(i+1)+'</div><div class="inf"><div class="nm">'+s.name+'</div></div></div>').join('')+'</div></div><h3 style="color:var(--pink);margin:20px 0 10px">Biggest Differences</h3>'+diffs.slice(0,10).map(d=>'<div class="ritem" onclick="showSong(\''+d.song.id+'\')" style="cursor:pointer"><span style="flex:1">'+d.song.name+'</span><span style="color:var(--text-dim);font-size:.85rem">#'+d.pA+' vs #'+d.pB+'</span></div>').join('');
+}
+
+function switchTab(t){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('section-'+t).classList.add('active');
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  document.querySelector('[data-tab="'+t+'"]').classList.add('active');
+  if(t==='agg') renderAgg();
+  if(t==='song'){document.getElementById('songDetail').innerHTML='';document.getElementById('songResults').innerHTML='<p style="color:var(--text-dim);padding:12px">Type a song name to search.</p>';}
+  if(t==='cmp') renderCmp();
+}
+
+function renderAll(){rSel();renderRank();}
+
+document.querySelectorAll('nav button').forEach(b=>{
+  b.addEventListener('click',()=>switchTab(b.dataset.tab));
+});
+document.getElementById('selProfile').addEventListener('change',()=>{
+  current=document.getElementById('selProfile').value;renderRank();
+});
+document.getElementById('sortRank').addEventListener('change',renderRank);
+document.getElementById('sortAgg').addEventListener('change',renderAgg);
+document.getElementById('songSearch').addEventListener('input',renderSearch);
+['cmpA','cmpB'].forEach(id=>document.getElementById(id).addEventListener('change',renderCmp));
+
+load();
 </script>
 </body>
 </html>

@@ -211,8 +211,10 @@ function renderAgg(){
   const allS=getFilteredSongs(fS,fA),t=active.length;
   const hideZero=document.getElementById('hideUnranked').checked;
   let data=allS.map(song=>{
-    const allRanks=active.map(p=>{const i=p.ids.indexOf(song.id);return i===-1?36:i+1;});
-    const avg=t>0?allRanks.reduce((a,b)=>a+b,0)/t:0;const rankedRanks=allRanks.filter(r=>r<36),med=median(rankedRanks.length?rankedRanks:[36]),sd=stddev(allRanks,avg);
+    const allRanks=active.map(p=>{const i=p.ids.indexOf(song.id);return i===-1?null:i+1;});
+    const avgVals=allRanks.map(r=>r===null?36:r);
+    const avg=t>0?avgVals.reduce((a,b)=>a+b,0)/t:0;
+    const rankedRanks=allRanks.filter(r=>r!==null),med=median(rankedRanks.length?rankedRanks:[36]),sd=stddev(avgVals,avg);
     let hi={name:'',pos:999},lo={name:'',pos:0};
     active.forEach(p=>{const r=gr(p.name,song.id);if(r!==null){if(r<hi.pos){hi={name:p.name,pos:r}}if(r>lo.pos){lo={name:p.name,pos:r}}}});
     return{song,avg,med,sd,hi,lo,count:rankedRanks.length};
@@ -247,7 +249,7 @@ function renderCmp(){
   const cmpSongs=[...allIds].map(id=>gs(id)).filter(Boolean);
   if(!cmpSongs.length){document.getElementById('cmpGrid').innerHTML='<p style="color:var(--text-dim)">No songs in rankings.</p>';return;}
   const n=names.length;
-  const matrix=names.map(a=>names.map(b=>{if(a===b)return null;let c=0;cmpSongs.forEach(s=>{const pA=gr(a,s.id)||36,pB=gr(b,s.id)||36;if(Math.abs(pA-pB)<=3)c++;});return Math.round(c/cmpSongs.length*100);}));
+  const matrix=names.map(a=>names.map(b=>{if(a===b)return null;let c=0;cmpSongs.forEach(s=>{const pA=gr(a,s.id),pB=gr(b,s.id);if(pA!==null&&pB!==null&&Math.abs(pA-pB)<=3)c++;});return Math.round(c/cmpSongs.length*100);}));
   let html='<div class="matrix" style="grid-template-columns:'+Math.min(80,Math.floor(700/n))+'px repeat('+n+',minmax(40px,1fr))">';
   html+='<div class="ml" style="grid-column:1;grid-row:1"></div>';
   names.forEach((nm,i)=>{html+='<div class="mt" style="grid-column:'+(i+2)+';grid-row:1" title="'+nm+'">'+nm+'</div>';});
@@ -275,7 +277,7 @@ function closeCmpDetail(){document.getElementById('cmpCover').classList.remove('
 function showCmpDetail(aN,bN){
   const allIds=new Set();profiles.forEach(p=>p.ids.forEach(id=>allIds.add(id)));
   const cmpSongs=[...allIds].map(id=>gs(id)).filter(Boolean).sort((a,b)=>a.name.localeCompare(b.name));
-  const diffs=cmpSongs.map(s=>{const pA=gr(aN,s.id)||null,pB=gr(bN,s.id)||null;return{song:s,pA,pB,rA:pA||36,rB:pB||36,abs:Math.abs((pA||36)-(pB||36)),both:pA&&pB};}).sort((a,b)=>b.abs-a.abs);
+  const diffs=cmpSongs.map(s=>{const pA=gr(aN,s.id),pB=gr(bN,s.id);const rA=pA||36,rB=pB||36;return{song:s,pA,pB,rA,rB,abs:Math.abs(rA-rB),both:pA!==null&&pB!==null};}).sort((a,b)=>b.abs-a.abs);
   const bothCount=diffs.filter(d=>d.both).length;
   const closeCount=diffs.filter(d=>d.both&&d.abs<=3).length;
   const aP=profiles.find(p=>p.name===aN),bP=profiles.find(p=>p.name===bN);

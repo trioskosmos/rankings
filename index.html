@@ -3,88 +3,87 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hasunosora Song Rankings</title>
+<title>Love Live! Song Rankings</title>
 <style>
-:root{--pink:#fb8a9b;--bg:#1a1a2e;--bg-card:#222244;--bg-card2:#2a2a4a;--text:#eee;--text-dim:#999;--border:#333366}
+:root{--bg:#1a1a2e;--bg-card:#222244;--bg-card2:#2a2a4a;--text:#eee;--text-dim:#999;--border:#333366}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-.container{max-width:1000px;margin:0 auto;padding:20px}
-header{text-align:center;padding:30px 0;border-bottom:2px solid var(--pink);margin-bottom:30px}
-header h1{font-size:2rem;color:var(--pink)}
-header p{color:var(--text-dim);margin-top:5px;font-size:.9rem}
-nav{display:flex;gap:10px;justify-content:center;margin:20px 0;flex-wrap:wrap}
-nav button{background:var(--bg-card);color:var(--text);border:1px solid var(--border);padding:10px 24px;border-radius:8px;cursor:pointer;font-size:.95rem;transition:all .2s}
-nav button:hover,nav button.active{border-color:var(--pink);color:var(--pink)}
-nav button.active{background:var(--pink);color:#fff;border-color:var(--pink)}
+.container{max-width:1100px;margin:0 auto;padding:20px}
+header{text-align:center;padding:24px 0;border-bottom:2px solid #fb8a9b;margin-bottom:20px}
+header h1{font-size:1.8rem;color:#fb8a9b}
+header p{color:var(--text-dim);margin-top:4px;font-size:.85rem}
+nav{display:flex;gap:8px;justify-content:center;margin:16px 0;flex-wrap:wrap}
+nav button{background:var(--bg-card);color:var(--text);border:1px solid var(--border);padding:8px 20px;border-radius:6px;cursor:pointer;font-size:.9rem;transition:all .2s}
+nav button:hover,nav button.active{border-color:#fb8a9b;color:#fb8a9b}
+nav button.active{background:#fb8a9b;color:#fff;border-color:#fb8a9b}
 .section{display:none}
 .section.active{display:block}
-.bar{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
-.bar label{color:var(--text-dim);font-size:.9rem}
-.bar select{background:var(--bg-card);color:var(--text);border:1px solid var(--border);padding:8px 12px;border-radius:6px;font-size:.95rem}
-.list{display:flex;flex-direction:column;gap:6px}
-.item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;transition:all .2s;cursor:pointer}
-.item:hover{border-color:var(--pink)}
-.rk{font-size:1.2rem;font-weight:bold;width:36px;text-align:center;color:var(--pink);flex-shrink:0}
+.bar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.bar label{color:var(--text-dim);font-size:.85rem}
+.bar select{background:var(--bg-card);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:5px;font-size:.9rem;max-width:200px}
+.list{display:flex;flex-direction:column;gap:5px}
+.item{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;transition:all .2s;cursor:pointer}
+.item:hover{border-color:#fb8a9b}
+.rk{font-size:1.1rem;font-weight:bold;width:32px;text-align:center;color:#fb8a9b;flex-shrink:0}
+.delta{font-size:.85rem;font-weight:bold;width:48px;text-align:center;flex-shrink:0}
+.delta.d0{color:var(--text-dim)}
+.delta.dp{color:#4caf50}
+.delta.dn{color:#ff7043}
+.sc{width:4px;height:36px;border-radius:2px;flex-shrink:0}
 .inf{flex:1;min-width:0}
-.nm{font-size:1rem;font-weight:500}
-.ar{font-size:.8rem;color:var(--text-dim);margin-top:2px}
-.det{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:20px}
-.det h2{font-size:1.5rem;margin-bottom:4px}
-.det .mt{color:var(--text-dim);font-size:.9rem;margin-bottom:16px}
-.rlist{display:flex;flex-direction:column;gap:6px}
-.ritem{display:flex;align-items:center;gap:12px;padding:8px 14px;background:var(--bg-card2);border-radius:6px;cursor:pointer}
-.ritem .pos{font-weight:bold;color:var(--pink);width:30px}
+.nm{font-size:.95rem;font-weight:500}
+.ar{font-size:.78rem;color:var(--text-dim);margin-top:1px}
+.det{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px}
+.det h2{font-size:1.3rem;margin-bottom:3px}
+.det .mt{color:var(--text-dim);font-size:.85rem;margin-bottom:12px}
+.rlist{display:flex;flex-direction:column;gap:5px}
+.ritem{display:flex;align-items:center;gap:10px;padding:6px 12px;background:var(--bg-card2);border-radius:5px;cursor:pointer}
+.ritem .pos{font-weight:bold;color:#fb8a9b;width:28px}
 .ritem .nm2{flex:1}
-.cc{display:flex;gap:20px;flex-wrap:wrap}
-.cl{flex:1;min-width:280px}
-.cl h3{color:var(--pink);margin-bottom:10px}
-.sbox{width:100%;padding:10px 14px;background:var(--bg-card);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:1rem;margin-bottom:12px}
-.sbox:focus{outline:none;border-color:var(--pink)}
-.abar{display:flex;align-items:center;gap:24px;padding:8px 14px;background:var(--bg-card2);border-radius:6px;margin-bottom:16px;font-size:.85rem;flex-wrap:wrap}
-.abar .bt{flex:1;height:6px;background:var(--bg);border-radius:3px;overflow:hidden;min-width:80px}
-.abar .bf{height:100%;border-radius:3px;background:var(--pink)}
-.unr{opacity:.45}
-.votes{font-size:.8rem;color:var(--text-dim);margin-top:3px;display:flex;gap:16px;flex-wrap:wrap}
-.votes span{white-space:nowrap}
+.cc{display:flex;gap:16px;flex-wrap:wrap}
+.cl{flex:1;min-width:260px}
+.cl h3{color:#fb8a9b;font-size:1rem;margin-bottom:8px}
+.sbox{width:100%;padding:8px 12px;background:var(--bg-card);color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:.9rem;margin-bottom:10px}
+.sbox:focus{outline:none;border-color:#fb8a9b}
+.abar{display:flex;align-items:center;gap:16px;padding:6px 12px;background:var(--bg-card2);border-radius:5px;margin-bottom:12px;font-size:.82rem;flex-wrap:wrap}
+.abar .bt{flex:1;height:5px;background:var(--bg);border-radius:3px;overflow:hidden;min-width:60px}
+.abar .bf{height:100%;border-radius:3px;background:#fb8a9b}
+.unr{opacity:.4}
+.votes{font-size:.78rem;color:var(--text-dim);margin-top:2px;display:flex;gap:12px;flex-wrap:wrap}
 .votes .hi{color:#4caf50}
 .votes .lo{color:#ff7043}
-/* Compare grid */
-.cgrid{display:grid;gap:4px;margin-bottom:20px}
-.cgrid .ch{font-size:.8rem;color:var(--text-dim);padding:6px;text-align:center;font-weight:bold;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cgrid .cc{background:var(--bg-card);border:1px solid var(--border);border-radius:4px;text-align:center;padding:8px 4px;cursor:pointer;font-size:.85rem;transition:all .2s}
-.cgrid .cc:hover{border-color:var(--pink);background:var(--bg-card2)}
-.cgrid .cc.sel{border-color:var(--pink);background:var(--pink);color:#fff}
-.cgrid .cc.di{opacity:.3;cursor:default}
-.cgrid .cc.di:hover{border-color:var(--border);background:var(--bg-card)}
-.cdetail{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:20px;display:none}
+.cgrid{display:grid;gap:3px;margin-bottom:16px}
+.cgrid .ch{font-size:.7rem;color:var(--text-dim);padding:3px;text-align:center;font-weight:bold;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cgrid .cc{background:var(--bg-card);border:1px solid var(--border);border-radius:3px;text-align:center;padding:5px 2px;cursor:pointer;font-size:.8rem;transition:all .2s}
+.cgrid .cc:hover{border-color:#fb8a9b}
+.cgrid .cc.sel{border-color:#fb8a9b;color:#fff}
+.cgrid .cc.di{cursor:default}
+.cgrid .cc.di:hover{border-color:var(--border)}
+.cdetail{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;display:none}
 .cdetail.show{display:block}
-.cdetail .cname{color:var(--pink);font-size:1.1rem;margin-bottom:12px}
-@media(max-width:600px){.container{padding:12px}header h1{font-size:1.4rem}.item{padding:8px 10px}.rk{width:28px;font-size:1rem}.bar{flex-direction:column;align-items:stretch}.cc{flex-direction:column}.cgrid .ch{font-size:.7rem}.cgrid .cc{font-size:.75rem;padding:4px 2px}}
+.cdetail .cname{color:#fb8a9b;font-size:1rem;margin-bottom:10px}
+.count{font-size:.75rem;color:var(--text-dim);margin-left:4px}
+@media(max-width:700px){.container{padding:10px}header h1{font-size:1.3rem}.item{padding:6px 8px}.rk{width:26px;font-size:1rem}.bar{flex-direction:column;align-items:stretch}.cc{flex-direction:column}.cgrid .ch{font-size:.6rem}.cgrid .cc{font-size:.65rem;padding:2px 1px}.delta{width:36px;font-size:.75rem}}
 </style>
 </head>
 <body>
 <div class="container">
   <header>
-    <h1>♡ Hasunosora Song Rankings ♡</h1>
-    <p>蓮ノ空女学院スクールアイドルクラブ — submit via PR: add <code>.txt</code> to <code>data/rankings/</code> + update <code>manifest.json</code></p>
+    <h1>♡ Love Live! Song Rankings ♡</h1>
+    <p>Rank any songs from the data — submit via PR: add <code>.txt</code> to <code>data/rankings/</code> + update <code>manifest.json</code></p>
   </header>
   <nav id="nav">
-    <button data-tab="agg">Aggregate</button>
+    <button class="active" data-tab="agg">Aggregate</button>
     <button data-tab="rank">Ranking</button>
     <button data-tab="song">Per Song</button>
-    <button class="active" data-tab="cmp">Compare</button>
+    <button data-tab="cmp">Compare</button>
   </nav>
 
-  <div class="section" id="section-agg">
+  <div class="section active" id="section-agg">
     <div class="bar">
-      <label>Sort:</label>
-      <select id="sortAgg">
-        <option value="rank">Average rank (best)</option>
-        <option value="rank-desc">Average rank (worst)</option>
-        <option value="name">Name A-Z</option>
-        <option value="date">Release date</option>
-        <option value="artist">Artist</option>
-      </select>
+      <label>Sort:</label><select id="sortAgg"><option value="rank">Avg rank</option><option value="rank-desc">Avg rank (worst)</option><option value="name">Name A-Z</option><option value="date">Release date</option><option value="artist">Artist</option><option value="series">Series</option></select>
+      <label>Series:</label><select id="filterAgg"><option value="">All series</option></select>
+      <label>Artist:</label><select id="filterAggArtist"><option value="">All artists</option></select>
     </div>
     <div id="aggContent"></div>
   </div>
@@ -92,18 +91,11 @@ nav button.active{background:var(--pink);color:#fff;border-color:var(--pink)}
   <div class="section" id="section-rank">
     <div class="bar">
       <label>Profile:</label><select id="selProfile"></select>
-      <label>Sort:</label>
-      <select id="sortRank">
-        <option value="default">Default (rank)</option>
-        <option value="name">Name A-Z</option>
-        <option value="name-desc">Name Z-A</option>
-        <option value="date">Release date (old)</option>
-        <option value="date-desc">Release date (new)</option>
-        <option value="artist">Artist A-Z</option>
-        <option value="artist-desc">Artist Z-A</option>
-      </select>
+      <label>Sort:</label><select id="sortRank"><option value="default">Default (rank)</option><option value="name">Name A-Z</option><option value="name-desc">Name Z-A</option><option value="date">Release (old)</option><option value="date-desc">Release (new)</option><option value="artist">Artist A-Z</option><option value="artist-desc">Artist Z-A</option><option value="series">Series</option></select>
+      <label>Series:</label><select id="filterRank"><option value="">All series</option></select>
+      <label>Artist:</label><select id="filterRankArtist"><option value="">All artists</option></select>
     </div>
-    <div id="info" style="color:var(--text-dim);font-size:.9rem;margin-bottom:12px"></div>
+    <div id="info" style="color:var(--text-dim);font-size:.85rem;margin-bottom:10px"></div>
     <div class="list" id="songList"></div>
   </div>
 
@@ -113,7 +105,7 @@ nav button.active{background:var(--pink);color:#fff;border-color:var(--pink)}
     <div id="songResults"></div>
   </div>
 
-  <div class="section active" id="section-cmp">
+  <div class="section" id="section-cmp">
     <div id="cmpGrid"></div>
     <div class="cdetail" id="cmpDetail">
       <div class="cname" id="cmpDetailTitle"></div>
@@ -122,51 +114,67 @@ nav button.active{background:var(--pink);color:#fff;border-color:var(--pink)}
   </div>
 </div>
 <script>
-const SONGS = [
-  {id:"888",name:"A出るノート",artist:"Edel Note",date:"2026-04-08"},
-  {id:"502",name:"Dream Believers",artist:"蓮ノ空女学院スクールアイドルクラブ",date:"2023-03-29"},
-  {id:"891",name:"光の中で花咲いて",artist:"蓮ノ空女学院スクールアイドルクラブ",date:"2026-06-03"},
-  {id:"854",name:"シアター生き様",artist:"Edel Note",date:"2025-12-10"},
-  {id:"899",name:"Bless you!",artist:"村野さやか",date:"2026-07-01"},
-  {id:"552",name:"Holiday∞Holiday",artist:"スリーズブーケ",date:"2023-06-14"},
-  {id:"504",name:"水彩世界",artist:"スリーズブーケ",date:"2023-03-29"},
-  {id:"748",name:"いったん",artist:"蓮ノ空女学院スクールアイドルクラブ",date:"2025-04-09"},
-  {id:"506",name:"ド！ド！ド！",artist:"みらくらぱーく！",date:"2023-03-29"},
-  {id:"586",name:"青春の輪郭",artist:"DOLLCHESTRA",date:"2023-09-20"},
-  {id:"619",name:"KNOT",artist:"DOLLCHESTRA",date:"2023-11-22"},
-  {id:"898",name:"プレイリスト/「あの日」",artist:"日野下花帆",date:"2026-07-01"},
-  {id:"579",name:"眩耀夜行",artist:"スリーズブーケ",date:"2023-08-09"},
-  {id:"881",name:"アイシイ",artist:"DOLLCHESTRA",date:"2026-04-08"},
-  {id:"835",name:"はじまりの羽音",artist:"蓮ノ空女学院スクールアイドルクラブ",date:"2025-12-24"},
-  {id:"648",name:"Special Thanks",artist:"スリーズブーケ",date:"2024-02-14"},
-  {id:"900",name:"ミジンコトランスフォーメーション",artist:"大沢瑠璃乃",date:"2026-07-01"},
-  {id:"867",name:"Echoes Beyond",artist:"蓮ノ空女学院スクールアイドルクラブ",date:"2026-01-28"},
-  {id:"591",name:"パラレルダンサー",artist:"DOLLCHESTRA",date:"2023-09-20"},
-  {id:"811",name:"フュージョンクラスト",artist:"Edel Note",date:"2025-09-03"},
-  {id:"663",name:"STEP UP !",artist:"蓮ノ空女学院スクールアイドルクラブ",date:"2024-04-03"},
-  {id:"589",name:"ココン東西",artist:"みらくらぱーく！",date:"2023-09-20"},
-  {id:"890",name:"ペレニアル",artist:"日野下花帆、村野さやか、大沢瑠璃乃",date:""},
-  {id:"505",name:"AWOKE",artist:"DOLLCHESTRA",date:"2023-03-29"},
-  {id:"836",name:"チャーミングな花束を！",artist:"蓮ノ空女学院スクールアイドルクラブ",date:"2025-12-24"},
-  {id:"697",name:"ジョーショーキリュー",artist:"みらくらぱーく！",date:"2024-12-04"},
-  {id:"880",name:"不思議と君とライブラリー",artist:"スリーズブーケ",date:"2026-04-08"},
-  {id:"886",name:"センパイ",artist:"みらくらぱーく！",date:"2026-04-08"},
-  {id:"882",name:"EdelinieN",artist:"Edel Note",date:"2026-04-08"},
-  {id:"879",name:"トモダチになれる場所",artist:"みらくらぱーく！",date:"2026-04-08"},
-  {id:"787",name:"アイドゥーミー！",artist:"蓮ノ空女学院スクールアイドルクラブ",date:"2025-07-09"},
-  {id:"756",name:"Retrofuture",artist:"Edel Note",date:"2025-05-21"},
-  {id:"883",name:"今、過去、未来の三原色",artist:"蓮ノ空女学院スクールアイドルクラブ",date:"2026-04-15"},
-  {id:"826",name:"一生に夢が咲くように",artist:"蓮ノ空女学院スクールアイドルクラブ",date:"2026-04-15"},
-  {id:"889",name:"ハナ咲けばユメ駆ける",artist:"蓮ノ空女学院スクールアイドルクラブ",date:"2026-06-03"},
-  {id:"859",name:"雪舞う空と二秒の永遠",artist:"蓮ノ空女学院スクールアイドルクラブ",date:"2026-04-15"}
-];
-const SM = {}; SONGS.forEach(s => SM[s.id] = s);
+// ---- DATA LOADING ----
+let SONGS = [];
+let SM = {};
+let SERIES = {};
+let SERIES_COLORS = {};
+let ARTIST_NAMES = {};
+let ARTISTS_LIST = [];
+let SERIES_LIST = [];
 
+async function loadData() {
+  try {
+    const [sr, ar] = await Promise.all([
+      fetch('data/series-info.json').then(r=>r.json()),
+      fetch('data/artists-info.json').then(r=>r.json())
+    ]);
+    sr.forEach(s => { SERIES[s.id] = s.name; SERIES_COLORS[s.id] = s.color; });
+    ar.forEach(a => { ARTIST_NAMES[a.id] = a.name; });
+    const songsRes = await fetch('data/song-info.json');
+    const songsData = await songsRes.json();
+    SONGS = songsData.map(s => {
+      const artistId = s.artists && s.artists.length > 0 ? s.artists[0].id : null;
+      const artistName = artistId ? (ARTIST_NAMES[artistId] || 'Unknown') : 'Unknown';
+      const seriesId = s.seriesIds && s.seriesIds.length > 0 ? String(s.seriesIds[0]) : null;
+      const seriesName = seriesId ? (SERIES[seriesId] || 'Unknown') : 'Unknown';
+      const seriesColor = seriesId ? (SERIES_COLORS[seriesId] || '#888') : '#888';
+      const allArtists = [...new Set(s.artists.map(a => ARTIST_NAMES[a.id] || 'Unknown').filter(Boolean))];
+      return {
+        id: String(s.id), name: s.name, en: s.englishName || '',
+        artist: artistName, allArtists, series: seriesName, color: seriesColor,
+        date: s.releasedOn || '', seriesId
+      };
+    });
+    SONGS.forEach(s => SM[s.id] = s);
+    const aSet = new Set(); const sSet = new Set();
+    SONGS.forEach(s => { s.allArtists.forEach(a => aSet.add(a)); sSet.add(s.series); });
+    ARTISTS_LIST = [...aSet].sort();
+    SERIES_LIST = [...sSet].sort();
+    populateSelect('filterRank', 'All series', SERIES_LIST);
+    populateSelect('filterAgg', 'All series', SERIES_LIST);
+    populateSelect('filterRankArtist', 'All artists', ARTISTS_LIST);
+    populateSelect('filterAggArtist', 'All artists', ARTISTS_LIST);
+    await loadRankings();
+  } catch(e) {
+    console.error('Failed:', e);
+    document.body.innerHTML = '<div class="container"><p style="color:red">Failed to load data.</p></div>';
+  }
+}
+
+function populateSelect(id, empty, items){
+  const sel = document.getElementById(id);
+  if(!sel) return;
+  const v = sel.value;
+  sel.innerHTML = '<option value="">'+empty+'</option>' + items.map(i => '<option value="'+i+'">'+i+'</option>').join('');
+  if(items.includes(v)) sel.value = v;
+}
+
+// ---- RANKINGS ----
 let profiles = [];
 let current = null;
 
 function gs(id){return SM[id]}
-
 function gr(name, sid){
   const p = profiles.find(r => r.name === name);
   if(!p) return null;
@@ -175,80 +183,89 @@ function gr(name, sid){
 }
 
 function isName(l){return l.trim()&&!/^\s*\d+[\.\)、]/.test(l)&&!l.includes(' - ')}
+function parseLine(l){
+  l=l.trim();if(!l)return null;
+  let n=l.replace(/^\d+[\.\)、]\s*/,'').replace(/\s*-\s*[^-]+$/,'').trim().replace(/[「」"']/g,'');
+  if(!n)return null;
+  let m=SONGS.find(s=>s.name===n);if(m)return m.id;
+  m=SONGS.find(s=>s.name.includes(n)||n.includes(s.name)||s.en.includes(n));return m?m.id:null;
+}
 
 function parseProfiles(text){
-  const lines = text.split('\n');
-  const res = []; let cur = null, ids = [], unr = 0;
+  const lines=text.split('\n');const res=[];
+  let cur=null,ids=[],unr=0;
   for(const l of lines){
-    if(isName(l)){
-      if(cur&&ids.length) res.push({name:cur,ids,unr});
-      cur=l.trim(); ids=[]; unr=0;
-    } else { const id = parseLine(l); if(id) ids.push(id); else if(l.trim()) unr++; }
+    if(isName(l)){if(cur&&ids.length)res.push({name:cur,ids,unr});cur=l.trim();ids=[];unr=0;}
+    else{const id=parseLine(l);if(id)ids.push(id);else if(l.trim())unr++;}
   }
-  if(cur&&ids.length) res.push({name:cur,ids,unr});
-  return res.length ? res : [{name:'unknown',ids:[],unr:0}];
+  if(cur&&ids.length)res.push({name:cur,ids,unr});
+  return res.length?res:[{name:'unknown',ids:[],unr:0}];
 }
 
-function parseLine(l){
-  l=l.trim(); if(!l) return null;
-  let n = l.replace(/^\d+[\.\)、]\s*/,'').replace(/\s*-\s*[^-]+$/,'').trim().replace(/[「」"']/g,'');
-  if(!n) return null;
-  let m = SONGS.find(s => s.name === n);
-  if(m) return m.id;
-  m = SONGS.find(s => s.name.includes(n) || n.includes(s.name));
-  return m ? m.id : null;
-}
-
-async function load(){
+async function loadRankings(){
   try{
-    const mr = await fetch('data/rankings/manifest.json');
-    const mf = await mr.json();
-    const files = mf.files || mf;
-    profiles = [];
+    const mr=await fetch('data/rankings/manifest.json');
+    const mf=await mr.json();
+    const files=mf.files||mf; profiles=[];
     for(const f of files){
       try{const r=await fetch('data/rankings/'+f);profiles.push(...parseProfiles(await r.text()));}
       catch(e){console.warn('Failed:',f,e)}
     }
   }catch{
     try{const r=await fetch('data/rankings/hasu6thbelluna.txt');profiles=parseProfiles(await r.text());}
-    catch{profiles=[{name:'trioskosmos',ids:SONGS.map(s=>s.id),unr:0}]}
+    catch{profiles=[{name:'default',ids:[],unr:0}]}
   }
-  if(!current||!profiles.find(p=>p.name===current)) current=profiles[0]?.name||'trioskosmos';
+  if(!current||!profiles.find(p=>p.name===current))current=profiles[0]?.name||'default';
   renderAll();
 }
 
 function rSel(){
-  const names = profiles.map(p=>p.name);
-  ['selProfile'].forEach(id => {
-    const s = document.getElementById(id); if(!s) return;
-    const v = s.value; s.innerHTML = names.map(n => '<option value="'+n+'">'+n+'</option>').join('');
-    if(names.includes(v)) s.value = v;
-  });
-  const ps = document.getElementById('selProfile');
-  if(ps&&names.includes(current)) ps.value = current;
-  else if(ps&&names.length){ps.value=names[0];current=names[0];}
+  const names=profiles.map(p=>p.name);
+  const s=document.getElementById('selProfile');if(!s)return;
+  const v=s.value;s.innerHTML=names.map(n=>'<option value="'+n+'">'+n+'</option>').join('');
+  if(names.includes(v))s.value=v;else if(names.length){s.value=names[0];current=names[0];}
 }
 
-function sortSongs(songs, mode){
-  const copy = [...songs];
-  const cmp = {
-    name: (a,b) => a.name.localeCompare(b.name),
-    'name-desc': (a,b) => b.name.localeCompare(a.name),
-    date: (a,b) => (a.date||'9999').localeCompare(b.date||'9999'),
-    'date-desc': (a,b) => (b.date||'').localeCompare(a.date||''),
-    artist: (a,b) => a.artist.localeCompare(b.artist),
-    'artist-desc': (a,b) => b.artist.localeCompare(a.artist),
+function sortSongs(songs,mode){
+  const c=[...songs];
+  const cmp={
+    name:(a,b)=>a.name.localeCompare(b.name),'name-desc':(a,b)=>b.name.localeCompare(a.name),
+    date:(a,b)=>(a.date||'9999').localeCompare(b.date||'9999'),'date-desc':(a,b)=>(b.date||'').localeCompare(a.date||''),
+    artist:(a,b)=>a.artist.localeCompare(b.artist),'artist-desc':(a,b)=>b.artist.localeCompare(a.artist),
+    series:(a,b)=>a.series.localeCompare(b.series)||a.name.localeCompare(b.name),
   };
-  if(cmp[mode]) copy.sort(cmp[mode]);
-  return copy;
+  if(cmp[mode])c.sort(cmp[mode]);return c;
 }
 
-function makeItem(song, rank, extra){
+function songHTML(song,extra){
+  return '<div class="sc" style="background:'+(song.color||'#888')+'"></div><div class="inf"><div class="nm">'+song.name+'</div><div class="ar">'+song.artist+(song.series?' · '+song.series:'')+(song.date?' · '+song.date:'')+'</div>'+(extra||'')+'</div>';
+}
+
+function makeItem(song,rank,extra){
   if(!song){const d=document.createElement('div');d.className='item unr';d.innerHTML='<div class="inf"><div class="nm" style="color:var(--text-dim)">(unknown)</div></div>';return d;}
   const d=document.createElement('div');d.className='item';
   d.addEventListener('click',()=>showSong(song.id));
-  d.innerHTML='<div class="rk">#'+rank+'</div><div class="inf"><div class="nm">'+song.name+'</div><div class="ar">'+song.artist+(song.date?' · '+song.date:'')+'</div>'+(extra||'')+'</div>';
+  d.innerHTML='<div class="rk">#'+rank+'</div>'+songHTML(song,extra);
   return d;
+}
+
+function getFilteredSongs(fSeries, fArtist){
+  let s = SONGS;
+  if(fSeries) s = s.filter(x => x.series === fSeries);
+  if(fArtist) s = s.filter(x => x.allArtists.includes(fArtist));
+  return s;
+}
+
+function median(arr){
+  if(!arr.length) return 0;
+  const s=[...arr].sort((a,b)=>a-b);
+  const m=Math.floor(s.length/2);
+  return s.length%2?s[m]:(s[m-1]+s[m])/2;
+}
+
+function stddev(arr, mean){
+  if(arr.length<2) return 0;
+  return Math.sqrt(arr.reduce((sum,v)=>sum+(v-mean)**2,0)/arr.length);
 }
 
 // ---- RANKING ----
@@ -257,171 +274,183 @@ function renderRank(){
   const p=profiles.find(r=>r.name===current);
   const info=document.getElementById('info');
   if(!p){list.innerHTML='';info.textContent='';return;}
-  info.textContent=p.ids.length+' songs ranked'+(p.unr?' ('+p.unr+' unmatched lines)':'');
+  const fS=document.getElementById('filterRank').value;
+  const fA=document.getElementById('filterRankArtist').value;
+  const allS=getFilteredSongs(fS,fA);
+  const ranked=p.ids.map(id=>gs(id)).filter(Boolean).filter(s=>allS.includes(s));
+  const unranked=allS.filter(s=>!p.ids.includes(s.id));
+  info.textContent=p.ids.length+' songs ranked · '+allS.length+' match filters';
   const mode=document.getElementById('sortRank').value;
-  const ranked=p.ids.map(id=>gs(id)).filter(Boolean);
-  const unranked=SONGS.filter(s=>!p.ids.includes(s.id));
-  if(mode==='default'){
-    list.innerHTML='';
-    ranked.forEach((s,i)=>list.appendChild(makeItem(s,i+1)));
-    unranked.forEach(s=>{const e=makeItem(s,'—');e.classList.add('unr');list.appendChild(e);});
-  } else {
-    const all=sortSongs([...ranked,...unranked],mode);
-    list.innerHTML='';
-    all.forEach((s,i)=>{const e=makeItem(s,i+1);if(unranked.includes(s))e.classList.add('unr');list.appendChild(e);});
-  }
+  const display=mode==='default'?[...ranked,...unranked]:sortSongs([...ranked,...unranked],mode);
+  list.innerHTML='';
+  display.forEach((s,i)=>{const e=makeItem(s,i+1);if(!p.ids.includes(s.id))e.classList.add('unr');list.appendChild(e);});
 }
 
 // ---- AGGREGATE ----
 function renderAgg(){
   const el=document.getElementById('aggContent');
   const mode=document.getElementById('sortAgg').value;
+  const fS=document.getElementById('filterAgg').value;
+  const fA=document.getElementById('filterAggArtist').value;
   const active=profiles.filter(p=>p.ids.length>0);
   if(!active.length){el.innerHTML='<p style="color:var(--text-dim)">No profiles.</p>';return;}
+  const allS=getFilteredSongs(fS,fA);
   const t=active.length;
-  let data = SONGS.map(song => {
-    const ranks = active.map(p=>{const i=p.ids.indexOf(song.id);return i===-1?null:i+1;}).filter(r=>r!==null);
-    const allRanks = active.map(p=>{const i=p.ids.indexOf(song.id);return i===-1?36:i+1;});
-    const avg = allRanks.reduce((a,b)=>a+b,0)/t;
-    // Who ranked highest/lowest
-    let hi={name:'',pos:999}, lo={name:'',pos:0};
-    active.forEach(p=>{
-      const r = gr(p.name, song.id);
-      if(r!==null){
-        if(r<hi.pos){hi={name:p.name,pos:r};}
-        if(r>lo.pos){lo={name:p.name,pos:r};}
-      }
-    });
-    return {song,avg,hi,lo,count:ranks.length};
+  let data=allS.map(song=>{
+    const allRanks=active.map(p=>{const i=p.ids.indexOf(song.id);return i===-1?36:i+1;});
+    const avg=t>0?allRanks.reduce((a,b)=>a+b,0)/t:0;
+    const rankedRanks=allRanks.filter(r=>r<36);
+    const med=median(rankedRanks.length?rankedRanks:[36]);
+    const sd=stddev(allRanks,avg);
+    let hi={name:'',pos:999},lo={name:'',pos:0};
+    active.forEach(p=>{const r=gr(p.name,song.id);if(r!==null){if(r<hi.pos){hi={name:p.name,pos:r}}if(r>lo.pos){lo={name:p.name,pos:r}}}});
+    return{song,avg,med,sd,hi,lo,count:rankedRanks.length};
   });
-  const cmp = {
-    rank: (a,b)=>a.avg-b.avg, 'rank-desc': (a,b)=>b.avg-a.avg,
-    name: (a,b)=>a.song.name.localeCompare(b.song.name),
-    date: (a,b)=>(a.song.date||'9999').localeCompare(b.song.date||'9999'),
-    artist: (a,b)=>a.song.artist.localeCompare(b.song.artist),
+  const cmp={
+    rank:(a,b)=>a.avg-b.avg,'rank-desc':(a,b)=>b.avg-a.avg,
+    name:(a,b)=>a.song.name.localeCompare(b.song.name),
+    date:(a,b)=>(a.song.date||'9999').localeCompare(b.song.date||'9999'),
+    artist:(a,b)=>a.song.artist.localeCompare(b.song.artist),
+    series:(a,b)=>a.song.series.localeCompare(b.song.series)||a.song.name.localeCompare(b.song.name),
   };
-  if(cmp[mode]) data.sort(cmp[mode]);
-  el.innerHTML = '<div class="list">'+data.map((item,i)=>{
+  if(cmp[mode])data.sort(cmp[mode]);
+  if(!data.length){el.innerHTML='<p style="color:var(--text-dim)">No songs match filters.</p>';return;}
+  el.innerHTML='<div class="list">'+data.map((item,i)=>{
     const s=item.song;
-    return '<div class="item" onclick="showSong(\''+s.id+'\')"><div class="rk">#'+(i+1)+'</div><div class="inf"><div class="nm">'+s.name+'</div><div class="ar">'+s.artist+' · avg '+item.avg.toFixed(1)+' ('+item.count+' rankings)</div><div class="votes"><span class="hi">▲ '+item.hi.name+' (#'+item.hi.pos+')</span><span class="lo">▼ '+item.lo.name+' (#'+item.lo.pos+')</span></div></div></div>';
+    return '<div class="item" onclick="showSong(\''+s.id+'\')"><div class="rk">#'+(i+1)+'</div>'+songHTML(s,'<div class="votes"><span>avg '+item.avg.toFixed(1)+' · med '+item.med.toFixed(1)+' · σ '+item.sd.toFixed(1)+' ('+item.count+'/'+t+' ranked)</span>'+(item.hi.name?'<span class="hi">▲ '+item.hi.name+' (#'+item.hi.pos+')</span>':'')+(item.lo.name?'<span class="lo">▼ '+item.lo.name+' (#'+item.lo.pos+')</span>':'')+'</div>')+'</div>';
   }).join('')+'</div>';
 }
 
 // ---- PER SONG ----
 function showSong(sid){
   switchTab('song');
-  const s=gs(sid); if(!s) return;
-  document.getElementById('songDetail').innerHTML = '<div class="det"><h2>'+s.name+'</h2><div class="mt">'+s.artist+(s.date?' · '+s.date:'')+'</div></div>';
-  const list = profiles.map(p=>({name:p.name,pos:gr(p.name,sid)})).filter(r=>r.pos!==null).sort((a,b)=>a.pos-b.pos);
-  document.getElementById('songResults').innerHTML = list.length
+  const s=gs(sid);if(!s)return;
+  document.getElementById('songDetail').innerHTML='<div class="det"><h2>'+s.name+'</h2><div class="mt">'+(s.en?s.en+' · ':'')+s.artist+' · '+s.series+(s.date?' · '+s.date:'')+'</div></div>';
+  const list=profiles.map(p=>({name:p.name,pos:gr(p.name,sid)})).filter(r=>r.pos!==null).sort((a,b)=>a.pos-b.pos);
+  document.getElementById('songResults').innerHTML=list.length
     ? list.map(r=>'<div class="ritem"><span class="pos">#'+r.pos+'</span><span class="nm2">'+r.name+'</span></div>').join('')
-    : '<p style="color:var(--text-dim);padding:12px">Not ranked by anyone yet.</p>';
-  document.getElementById('songSearch').value = s.name;
+    : '<p style="color:var(--text-dim);padding:12px">Not ranked by anyone.</p>';
+  document.getElementById('songSearch').value=s.name;
 }
 
 function renderSearch(){
   const q=document.getElementById('songSearch').value.toLowerCase();
   const list=document.getElementById('songResults');
-  const m=q?SONGS.filter(s=>s.name.toLowerCase().includes(q)||s.artist.toLowerCase().includes(q)):[];
+  const m=q?SONGS.filter(s=>s.name.toLowerCase().includes(q)||s.artist.toLowerCase().includes(q)||(s.en&&s.en.toLowerCase().includes(q))):[];
   list.innerHTML=m.length?m.map(s=>{
     const c=profiles.filter(p=>p.ids.includes(s.id)).length;
-    return '<div class="item" onclick="showSong(\''+s.id+'\')"><div class="inf"><div class="nm">'+s.name+'</div><div class="ar">'+s.artist+' · ranked by '+c+'</div></div></div>';
-  }).join(''):'<p style="color:var(--text-dim);padding:12px">No matching songs.</p>';
-  if(!q) list.innerHTML='<p style="color:var(--text-dim);padding:12px">Type a song name to search.</p>';
+    return '<div class="item" onclick="showSong(\''+s.id+'\')">'+songHTML(s,'<div class="ar">ranked by '+c+'</div>')+'</div>';
+  }).join(''):'<p style="color:var(--text-dim);padding:12px">No matches.</p>';
+  if(!q)list.innerHTML='<p style="color:var(--text-dim);padding:12px">Type a song name to search.</p>';
 }
 
-// ---- COMPARE (Grid) ----
-let cmpSelected = null;
+// ---- COMPARE ----
+let cmpSel=null;
 
 function renderCmp(){
-  const names = profiles.map(p=>p.name);
+  const names=profiles.map(p=>p.name);
   if(names.length<2){document.getElementById('cmpGrid').innerHTML='<p style="color:var(--text-dim)">Need at least 2 profiles.</p>';return;}
-  // Build agreement matrix
-  const matrix = names.map(a => names.map(b => {
-    if(a===b) return null;
-    let close=0;
-    SONGS.forEach(s=>{
-      const pA = gr(a,s.id)||36, pB = gr(b,s.id)||36;
-      if(Math.abs(pA-pB)<=3) close++;
-    });
-    return Math.round(close/SONGS.length*100);
-  }));
-  // Render grid
+  const allIds=new Set();profiles.forEach(p=>p.ids.forEach(id=>allIds.add(id)));
+  const cmpSongs=[...allIds].map(id=>gs(id)).filter(Boolean);
+  if(!cmpSongs.length){document.getElementById('cmpGrid').innerHTML='<p style="color:var(--text-dim)">No songs in rankings.</p>';return;}
   const n=names.length;
-  const grid = document.getElementById('cmpGrid');
-  grid.style.gridTemplateColumns = '120px repeat('+n+', 1fr)';
-  // Headers
-  let html = '<div class="ch"></div>';
-  names.forEach(n=>html+='<div class="ch" title="'+n+'">'+n+'</div>');
+  const matrix=names.map(a=>names.map(b=>{
+    if(a===b)return null;
+    let c=0;cmpSongs.forEach(s=>{const pA=gr(a,s.id)||36,pB=gr(b,s.id)||36;if(Math.abs(pA-pB)<=3)c++;});
+    return Math.round(c/cmpSongs.length*100);
+  }));
+  const grid=document.getElementById('cmpGrid');
+  grid.style.gridTemplateColumns='120px repeat('+n+', 1fr)';
+  let html='';
+  // header row
+  html+='<div class="ch" style="grid-column:1;grid-row:1"></div>';
+  names.forEach((nm,i)=>{html+='<div class="ch" style="grid-column:'+(i+2)+';grid-row:1" title="'+nm+'">'+nm+'</div>';});
   for(let i=0;i<n;i++){
-    html += '<div class="ch" title="'+names[i]+'">'+names[i]+'</div>';
+    html+='<div class="ch" style="grid-column:1;grid-row:'+(i+2)+'" title="'+names[i]+'">'+names[i]+'</div>';
     for(let j=0;j<n;j++){
-      if(i===j) html += '<div class="cc di">—</div>';
-      else {
-        const v = matrix[i][j];
-        const sel = cmpSelected && cmpSelected[0]===i && cmpSelected[1]===j ? ' sel' : '';
-        html += '<div class="cc'+sel+'" style="background:'+(v>=75?'#2e7d32':v>=50?'#795548':v>=25?'#5d4037':'#3e2723')+'" onclick="pickCmp('+i+','+j+')">'+v+'%</div>';
+      if(i===j)html+='<div class="cc di" style="grid-column:'+(j+2)+';grid-row:'+(i+2)+'">—</div>';
+      else{
+        const v=matrix[i][j];
+        const sel=cmpSel&&cmpSel[0]===i&&cmpSel[1]===j?' sel':'';
+        const bg=v>=80?'#1b5e20':v>=60?'#4e342e':v>=40?'#3e2723':'#1a1a1a';
+        html+='<div class="cc'+sel+'" style="background:'+bg+';grid-column:'+(j+2)+';grid-row:'+(i+2)+'" onclick="pickCmp('+i+','+j+')">'+v+'%<span class="count">'+cmpSongs.length+'</span></div>';
       }
     }
   }
-  grid.innerHTML = html;
-  // Show detail if selected
-  if(cmpSelected){
-    const [ai,bi]=cmpSelected;
-    showCmpDetail(names[ai],names[bi]);
-  }
+  grid.innerHTML=html;
+  if(cmpSel)showCmpDetail(names[cmpSel[0]],names[cmpSel[1]]);
+  else if(names.length>=2){cmpSel=[0,1];showCmpDetail(names[0],names[1]);}
 }
 
 function pickCmp(i,j){
-  cmpSelected = [i,j];
-  const names=profiles.map(p=>p.name);
-  // Remove sel class from all cells
+  cmpSel=[i,j];
   document.querySelectorAll('#cmpGrid .cc').forEach(c=>c.classList.remove('sel'));
-  // Re-render grid
   renderCmp();
 }
 
 function showCmpDetail(aN,bN){
-  const detail=document.getElementById('cmpDetail');
-  detail.classList.add('show');
-  document.getElementById('cmpDetailTitle').textContent = aN + ' vs ' + bN;
-  const aIds=profiles.find(p=>p.name===aN).ids;
-  const bIds=profiles.find(p=>p.name===bN).ids;
-  const aS=aIds.map(id=>gs(id)).filter(Boolean);
-  const bS=bIds.map(id=>gs(id)).filter(Boolean);
-  const diffs=SONGS.map(s=>{
-    const pA=gr(aN,s.id)||36,pB=gr(bN,s.id)||36;
-    return {song:s,pA,pB,abs:Math.abs(pA-pB)};
+  const detail=document.getElementById('cmpDetail');detail.classList.add('show');
+  document.getElementById('cmpDetailTitle').textContent=aN+' vs '+bN;
+  const allIds=new Set();profiles.forEach(p=>p.ids.forEach(id=>allIds.add(id)));
+  const cmpSongs=[...allIds].map(id=>gs(id)).filter(Boolean).sort((a,b)=>a.name.localeCompare(b.name));
+  const diffs=cmpSongs.map(s=>{
+    const pA=gr(aN,s.id)||null,pB=gr(bN,s.id)||null;
+    const rA=pA||36,rB=pB||36;
+    return{song:s,pA,pB,rA,rB,abs:Math.abs(rA-rB),both:pA&&pB,onlyA:pA&&!pB,onlyB:!pA&&pB};
   }).sort((a,b)=>b.abs-a.abs);
-  const close=diffs.filter(d=>d.abs<=3).length;
-  document.getElementById('cmpDetailBody').innerHTML = `
-    <div class="abar"><span>Agreement: <strong>${(close/SONGS.length*100).toFixed(0)}%</strong> within ±3</span><div class="bt"><div class="bf" style="width:${(close/SONGS.length*100).toFixed(0)}%"></div></div></div>
-    <div class="cc"><div class="cl"><h3>${aN} (${aS.length})</h3>${aS.map((s,i)=>'<div class="item" onclick="showSong(\''+s.id+'\')"><div class="rk">#'+(i+1)+'</div><div class="inf"><div class="nm">'+s.name+'</div></div></div>').join('')}</div><div class="cl"><h3>${bN} (${bS.length})</h3>${bS.map((s,i)=>'<div class="item" onclick="showSong(\''+s.id+'\')"><div class="rk">#'+(i+1)+'</div><div class="inf"><div class="nm">'+s.name+'</div></div></div>').join('')}</div></div>
-    <h3 style="color:var(--pink);margin:20px 0 10px">Biggest Differences</h3>
-    ${diffs.slice(0,10).map(d=>'<div class="ritem" onclick="showSong(\''+d.song.id+'\')"><span style="flex:1">'+d.song.name+'</span><span style="color:var(--text-dim);font-size:.85rem">#'+d.pA+' vs #'+d.pB+'</span></div>').join('')}`;
+  const bothCount=diffs.filter(d=>d.both).length;
+  const closeCount=diffs.filter(d=>d.both&&d.abs<=3).length;
+  document.getElementById('cmpDetailBody').innerHTML=`
+    <div class="abar" style="gap:12px">
+      <span>Agreement: <strong>${cmpSongs.length?Math.round(closeCount/cmpSongs.length*100):0}%</strong> within ±3</span>
+      <span>Both: ${bothCount} · Only ${aN}: ${diffs.filter(d=>d.onlyA).length} · Only ${bN}: ${diffs.filter(d=>d.onlyB).length}</span>
+      <div class="bt" style="min-width:100px"><div class="bf" style="width:${cmpSongs.length?Math.round(closeCount/cmpSongs.length*100):0}%"></div></div>
+    </div>
+    <div class="list" style="margin-bottom:16px"><div class="item" style="cursor:default;background:var(--bg-card2);font-weight:bold;font-size:.82rem;color:var(--text-dim)">
+      <div class="delta" style="width:28px">Δ</div><div class="rk" style="width:28px">#</div><div class="inf">Song</div><div class="rk" style="width:28px">#</div></div>
+    ${diffs.map(d=>{
+      const cls=d.onlyA||d.onlyB?' unr':'';
+      const dc=d.abs===0?'d0':d.rA<d.rB?'dp':'dn';
+      return '<div class="item'+cls+'" onclick="showSong(\''+d.song.id+'\')"><div class="delta '+dc+'">'+(!d.both?'—':(d.rA-d.rB>0?'+':'')+(d.rA-d.rB))+'</div><div class="rk" style="width:28px;font-size:.9rem">'+(d.pA?'#'+d.pA:'—')+'</div>'+songHTML(d.song)+'<div class="rk" style="width:28px;font-size:.9rem">'+(d.pB?'#'+d.pB:'—')+'</div></div>';
+    }).join('')}</div>
+    <h3 style="color:#fb8a9b;margin:16px 0 8px;font-size:.95rem">Full Rankings</h3>
+    <div class="cc"><div class="cl"><h3>${aN} (${profiles.find(p=>p.name===aN).ids.length})</h3>${profiles.find(p=>p.name===aN).ids.map(id=>gs(id)).filter(Boolean).map((s,i)=>'<div class="item" onclick="showSong(\''+s.id+'\')"><div class="rk">#'+(i+1)+'</div>'+songHTML(s)+'</div>').join('')}</div><div class="cl"><h3>${bN} (${profiles.find(p=>p.name===bN).ids.length})</h3>${profiles.find(p=>p.name===bN).ids.map(id=>gs(id)).filter(Boolean).map((s,i)=>'<div class="item" onclick="showSong(\''+s.id+'\')"><div class="rk">#'+(i+1)+'</div>'+songHTML(s)+'</div>').join('')}</div></div>`;
 }
 
 // ---- NAV ----
+let currentTab = 'agg';
 function switchTab(t){
+  currentTab=t;
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.getElementById('section-'+t).classList.add('active');
   document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
   document.querySelector('[data-tab="'+t+'"]').classList.add('active');
-  if(t==='agg') renderAgg();
-  if(t==='rank') renderRank();
+  if(t==='agg')renderAgg();
+  if(t==='rank')renderRank();
   if(t==='song'){document.getElementById('songDetail').innerHTML='';document.getElementById('songResults').innerHTML='<p style="color:var(--text-dim);padding:12px">Type a song name to search.</p>';}
-  if(t==='cmp') renderCmp();
+  if(t==='cmp')renderCmp();
 }
 
-function renderAll(){rSel();renderAgg();renderRank();}
+function renderAll(){
+  rSel();
+  // Render the currently-active tab
+  if(currentTab==='agg')renderAgg();
+  else if(currentTab==='rank')renderRank();
+  else if(currentTab==='cmp')renderCmp();
+  else if(currentTab==='song'){document.getElementById('songDetail').innerHTML='';document.getElementById('songResults').innerHTML='<p style="color:var(--text-dim);padding:12px">Type a song name to search.</p>';}
+}
 
 document.querySelectorAll('nav button').forEach(b=>{b.addEventListener('click',()=>switchTab(b.dataset.tab));});
 document.getElementById('selProfile').addEventListener('change',()=>{current=document.getElementById('selProfile').value;renderRank();});
 document.getElementById('sortRank').addEventListener('change',renderRank);
 document.getElementById('sortAgg').addEventListener('change',renderAgg);
+document.getElementById('filterRank').addEventListener('change',renderRank);
+document.getElementById('filterAgg').addEventListener('change',renderAgg);
+document.getElementById('filterRankArtist').addEventListener('change',renderRank);
+document.getElementById('filterAggArtist').addEventListener('change',renderAgg);
 document.getElementById('songSearch').addEventListener('input',renderSearch);
 
-load();
+loadData();
 </script>
 </body>
 </html>

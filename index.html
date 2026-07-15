@@ -85,6 +85,7 @@ nav button.active{background:#fb8a9b;color:#fff;border-color:#fb8a9b}
     <button data-tab="rank">Ranking</button>
     <button data-tab="song">Per Song</button>
     <button data-tab="cmp">Compare</button>
+    <button data-tab="spread">Spread</button>
   </nav>
 
   <div class="section active" id="section-agg">
@@ -117,6 +118,23 @@ nav button.active{background:#fb8a9b;color:#fff;border-color:#fb8a9b}
 
   <div class="section" id="section-cmp">
     <div class="matrix-wrap" id="cmpGrid"></div>
+  </div>
+
+  <div class="section" id="section-spread">
+    <div class="bar">
+      <label>Profile:</label><select id="selSpread"></select>
+      <label>Samples:</label>
+      <select id="spreadCount">
+        <option value="5">5</option>
+        <option value="10" selected>10</option>
+        <option value="15">15</option>
+        <option value="20">20</option>
+        <option value="30">30</option>
+        <option value="50">50</option>
+      </select>
+    </div>
+    <div id="spreadInfo" style="color:var(--text-dim);font-size:.85rem;margin-bottom:10px"></div>
+    <div class="list" id="spreadList"></div>
   </div>
 </div>
 
@@ -161,38 +179,50 @@ function parseLine(l){
   let m=SONGS.find(s=>s.name===n||cleanName(s.name)===n);if(m)return m.id;
   m=SONGS.find(s=>s.name.includes(n)||n.includes(s.name)||cleanName(s.name).includes(n)||n.includes(cleanName(s.name))||(s.en&&s.en.includes(n)));return m?m.id:null;
 }
-function parseProfiles(text){
+function parseProfiles(text, sourceFile){
   const lines=text.split('\n'),res=[];let cur=null,ids=[],unr=0;
   for(const l of lines){
-    if(isName(l)){if(cur&&ids.length)res.push({name:cur,ids,unr});cur=l.trim();ids=[];unr=0;}
+    if(isName(l)){if(cur&&ids.length)res.push({name:cur.trim(),ids,unr,source:sourceFile||''});cur=l.trim();ids=[];unr=0;}
     else{const id=parseLine(l);if(id)ids.push(id);else if(l.trim())unr++;}
   }
-  if(cur&&ids.length)res.push({name:cur,ids,unr});
-  return res.length?res:[{name:'unknown',ids:[],unr:0}];
+  if(cur&&ids.length)res.push({name:cur.trim(),ids,unr,source:sourceFile||''});
+  return res.length?res:[{name:'unknown',ids:[],unr:0,source:sourceFile||''}];
 }
 async function loadRankings(){
   try{
     const dir=await fetch('https://api.github.com/repos/trioskosmos/rankings/contents/data/rankings');
     const files=await dir.json();
-    profiles=[];
+    const raw=[]; // temp array before dedup
     for(const f of files){
       if(!f.name.endsWith('.txt')) continue;
       try{
         const r=await fetch(f.download_url);
-        profiles.push(...parseProfiles(await r.text()));
+        raw.push(...parseProfiles(await r.text(), f.name));
       }catch(e){console.warn('Failed:',f.name,e)}
     }
+    // Dedup: if same name appears from different files, append source label
+    const nameCount={}; raw.forEach(p=>{nameCount[p.name]=(nameCount[p.name]||0)+1;});
+    profiles = raw.map(p => {
+      if(nameCount[p.name]>1 && p.source) p.label = p.name+' ('+p.source.replace('.txt','')+')';
+      else p.label = p.name;
+      return p;
+    });
   }catch{
     try{const r=await fetch('data/rankings/hasu6thbelluna.txt');profiles=parseProfiles(await r.text());}
-    catch{profiles=[{name:'default',ids:[],unr:0}]}
+    catch{profiles=[{name:'default',ids:[],unr:0,label:'default'}]}
   }
+  profiles.forEach(p=>{if(!p.label)p.label=p.name;});
   if(!current||!profiles.find(p=>p.name===current))current=profiles[0]?.name||'default';
   renderAll();
 }
 function rSel(){
   const names=profiles.map(p=>p.name);const s=document.getElementById('selProfile');if(!s)return;
-  const v=s.value;s.innerHTML=names.map(n=>'<option value="'+n+'">'+n+'</option>').join('');
+  const v=s.value;s.innerHTML=profiles.map(p=>'<option value="'+p.name+'">'+p.label+'</option>').join('');
   if(names.includes(v))s.value=v;else if(names.length){s.value=names[0];current=names[0];}
+  // Also populate spread selector
+  const ss=document.getElementById('selSpread');if(!ss)return;
+  const sv=ss.value;ss.innerHTML=profiles.map(p=>'<option value="'+p.name+'">'+p.label+'</option>').join('');
+  if(names.includes(sv))ss.value=sv;
 }
 function sortSongs(songs,mode){
   const c=[...songs];const cmp={name:(a,b)=>a.name.localeCompare(b.name),'name-desc':(a,b)=>b.name.localeCompare(a.name),date:(a,b)=>(a.date||'9999').localeCompare(b.date||'9999'),'date-desc':(a,b)=>(b.date||'').localeCompare(a.date||''),artist:(a,b)=>a.artist.localeCompare(b.artist),'artist-desc':(a,b)=>b.artist.localeCompare(a.artist),series:(a,b)=>a.series.localeCompare(b.series)||a.name.localeCompare(b.name)};
@@ -315,6 +345,31 @@ function showCmpDetail(aN,bN){
   document.getElementById('cmpCover').scrollTop=0;
 }
 
+// ---- SPREAD ----
+function renderSpread(){
+  const list=document.getElementById('spreadList'),info=document.getElementById('spreadInfo');
+  const name=document.getElementById('selSpread').value;
+  const p=profiles.find(r=>r.name===name);
+  if(!p||!p.ids.length){list.innerHTML='';info.textContent='Select a profile.';return;}
+  const count=parseInt(document.getElementById('spreadCount').value);
+  const ids=p.ids;const total=ids.length;
+  const step=Math.max(1,Math.floor(total/count));
+  const positions=[];
+  for(let i=0;i<count&&i*step<total;i++) positions.push(i*step);
+  // Always include last position
+  if(positions[positions.length-1]!==total-1) positions.push(total-1);
+  info.textContent=p.label+': '+total+' songs, showing '+positions.length+' evenly-spaced samples';
+  list.innerHTML='';
+  positions.forEach(pos=>{
+    const song=gs(ids[pos]);
+    if(!song){const d=document.createElement('div');d.className='item unr';d.innerHTML='<div class="inf"><div class="nm" style="color:var(--text-dim)">(unknown)</div></div>';list.appendChild(d);return;}
+    const e=document.createElement('div');e.className='item';
+    e.addEventListener('click',()=>showSong(song.id));
+    e.innerHTML='<div class="rk">#'+(pos+1)+'</div>'+songHTML(song,'<div class="ar">position '+(pos+1)+' of '+total+'</div>');
+    list.appendChild(e);
+  });
+}
+
 // ---- NAV ----
 let currentTab='agg';
 function switchTab(t){
@@ -327,8 +382,9 @@ function switchTab(t){
   if(t==='rank')renderRank();
   if(t==='song'){document.getElementById('songDetail').innerHTML='';document.getElementById('songResults').innerHTML='<p style="color:var(--text-dim);padding:12px">Type a song name to search.</p>';}
   if(t==='cmp'){closeCmpDetail();renderCmp();}
+  if(t==='spread')renderSpread();
 }
-function renderAll(){rSel();if(currentTab==='agg')renderAgg();else if(currentTab==='rank')renderRank();else if(currentTab==='cmp')renderCmp();else if(currentTab==='song'){document.getElementById('songDetail').innerHTML='';document.getElementById('songResults').innerHTML='<p style="color:var(--text-dim);padding:12px">Type a song name to search.</p>';}}
+function renderAll(){rSel();if(currentTab==='agg')renderAgg();else if(currentTab==='rank')renderRank();else if(currentTab==='cmp')renderCmp();else if(currentTab==='spread')renderSpread();else if(currentTab==='song'){document.getElementById('songDetail').innerHTML='';document.getElementById('songResults').innerHTML='<p style="color:var(--text-dim);padding:12px">Type a song name to search.</p>';}}
 
 document.querySelectorAll('nav button').forEach(b=>{b.addEventListener('click',()=>switchTab(b.dataset.tab));});
 document.getElementById('selProfile').addEventListener('change',()=>{current=document.getElementById('selProfile').value;renderRank();});
@@ -340,6 +396,8 @@ document.getElementById('filterRankArtist').addEventListener('change',renderRank
 document.getElementById('filterAggArtist').addEventListener('change',renderAgg);
 document.getElementById('hideUnranked').addEventListener('change',renderAgg);
 document.getElementById('hideUnrankedRank').addEventListener('change',renderRank);
+document.getElementById('selSpread').addEventListener('change',renderSpread);
+document.getElementById('spreadCount').addEventListener('change',renderSpread);
 document.getElementById('songSearch').addEventListener('input',renderSearch);
 
 loadData();

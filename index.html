@@ -169,7 +169,11 @@ async function loadData(){
 // ---- RANKINGS ----
 let profiles=[],current=null;
 function gs(id){return SM[id]}
-function gr(name,sid){const p=profiles.find(r=>r.name===name);if(!p)return null;const i=p.ids.indexOf(sid);return i===-1?null:i+1;}
+function gr(profile, sid){
+  if(!profile)return null;
+  const i=profile.ids.indexOf(sid);
+  return i===-1?null:i+1;
+}
 function isName(l){return l.trim()&&!/^\s*\d+[\.\)、]/.test(l)&&!l.includes(' - ')}
 function cleanName(n){return n.replace(/[「」"'（）\(\)]/g,'').trim();}
 function parseLine(l){
@@ -192,7 +196,7 @@ async function loadRankings(){
   try{
     const dir=await fetch('https://api.github.com/repos/trioskosmos/rankings/contents/data/rankings');
     const files=await dir.json();
-    const raw=[]; // temp array before dedup
+    const raw=[];
     for(const f of files){
       if(!f.name.endsWith('.txt')) continue;
       try{
@@ -200,29 +204,42 @@ async function loadRankings(){
         raw.push(...parseProfiles(await r.text(), f.name));
       }catch(e){console.warn('Failed:',f.name,e)}
     }
-    // Dedup: if same name appears from different files, append source label
-    const nameCount={}; raw.forEach(p=>{nameCount[p.name]=(nameCount[p.name]||0)+1;});
-    profiles = raw.map(p => {
-      if(nameCount[p.name]>1 && p.source) p.label = p.name+' ('+p.source.replace('.txt','')+')';
-      else p.label = p.name;
-      return p;
+    // Assign unique IDs and build final profile list
+    // Dedup: for same name across files, keep only the one with most songs
+    const byName={};
+    raw.forEach(p=>{
+      if(!byName[p.name]||p.ids.length>byName[p.name].ids.length) byName[p.name]=p;
+    });
+    profiles=Object.values(byName);
+    profiles.forEach((p,i)=>{p._uid='p'+i; p._label=p.label||p.name;});
+    // If we deduped, also keep smaller versions as separate entries
+    // Actually the user wants: if multiple files for same name, only keep the biggest
+    // But still label with source for clarity
+    raw.forEach(p=>{
+      const existing=profiles.find(x=>x.name===p.name);
+      if(existing&&existing!==p) {
+        // This one was deduped - add it as a separate profile with full label
+        p._uid='p'+profiles.length;
+        p._label=p.name+' ('+(p.source||'').replace('.txt','')+')';
+        profiles.push(p);
+      }
     });
   }catch{
     try{const r=await fetch('data/rankings/hasu6thbelluna.txt');profiles=parseProfiles(await r.text());}
-    catch{profiles=[{name:'default',ids:[],unr:0,label:'default'}]}
+    catch{profiles=[]}
+    profiles.forEach((p,i)=>{p._uid='p'+i;p._label=p.label||p.name;});
   }
-  profiles.forEach(p=>{if(!p.label)p.label=p.name;});
-  if(!current||!profiles.find(p=>p.name===current))current=profiles[0]?.name||'default';
+  if(!current||!profiles.find(p=>p._uid===current))
+    current=profiles[0]?._uid||'p0';
   renderAll();
 }
 function rSel(){
-  const names=profiles.map(p=>p.name);const s=document.getElementById('selProfile');if(!s)return;
-  const v=s.value;s.innerHTML=profiles.map(p=>'<option value="'+p.name+'">'+p.label+'</option>').join('');
-  if(names.includes(v))s.value=v;else if(names.length){s.value=names[0];current=names[0];}
-  // Also populate spread selector
+  const uids=profiles.map(p=>p._uid);
+  const s=document.getElementById('selProfile');if(!s)return;
+  s.innerHTML=profiles.map(p=>'<option value="'+p._uid+'">'+p._label+'</option>').join('');
+  if(uids.includes(current))s.value=current;else if(profiles.length){s.value=profiles[0]._uid;current=profiles[0]._uid;}
   const ss=document.getElementById('selSpread');if(!ss)return;
-  const sv=ss.value;ss.innerHTML=profiles.map(p=>'<option value="'+p.name+'">'+p.label+'</option>').join('');
-  if(names.includes(sv))ss.value=sv;
+  ss.innerHTML=profiles.map(p=>'<option value="'+p._uid+'">'+p._label+'</option>').join('');
 }
 function sortSongs(songs,mode){
   const c=[...songs];const cmp={name:(a,b)=>a.name.localeCompare(b.name),'name-desc':(a,b)=>b.name.localeCompare(a.name),date:(a,b)=>(a.date||'9999').localeCompare(b.date||'9999'),'date-desc':(a,b)=>(b.date||'').localeCompare(a.date||''),artist:(a,b)=>a.artist.localeCompare(b.artist),'artist-desc':(a,b)=>b.artist.localeCompare(a.artist),series:(a,b)=>a.series.localeCompare(b.series)||a.name.localeCompare(b.name)};
@@ -236,7 +253,7 @@ function stddev(arr,m){if(arr.length<2)return 0;return Math.sqrt(arr.reduce((s,v
 
 // ---- RANKING ----
 function renderRank(){
-  const list=document.getElementById('songList'),p=profiles.find(r=>r.name===current),info=document.getElementById('info');
+  const list=document.getElementById('songList'),p=profiles.find(r=>r._uid===current),info=document.getElementById('info');
   if(!p){list.innerHTML='';info.textContent='';return;}
   const fS=document.getElementById('filterRank').value,fA=document.getElementById('filterRankArtist').value,hideUR=document.getElementById('hideUnrankedRank').checked;
   const allS=getFilteredSongs(fS,fA),ranked=p.ids.map(id=>gs(id)).filter(Boolean).filter(s=>allS.includes(s)),unranked=allS.filter(s=>!p.ids.includes(s.id));
@@ -260,7 +277,7 @@ function renderAgg(){
     const avg=t>0?avgVals.reduce((a,b)=>a+b,0)/t:0;
     const rankedRanks=allRanks.filter(r=>r!==null),med=median(rankedRanks.length?rankedRanks:[36]),sd=stddev(avgVals,avg);
     let hi={name:'',pos:999},lo={name:'',pos:0};
-    active.forEach(p=>{const r=gr(p.name,song.id);if(r!==null){if(r<hi.pos){hi={name:p.name,pos:r}}if(r>lo.pos){lo={name:p.name,pos:r}}}});
+    active.forEach(p=>{const r=gr(p,song.id);if(r!==null){if(r<hi.pos){hi={name:p.name,pos:r}}if(r>lo.pos){lo={name:p.name,pos:r}}}});
     return{song,avg,med,sd,hi,lo,count:rankedRanks.length};
   }).filter(d=>!hideZero||d.count>0);
   const cmp={rank:(a,b)=>a.avg-b.avg,'rank-desc':(a,b)=>b.avg-a.avg,median:(a,b)=>a.med-b.med,stddev:(a,b)=>a.sd-b.sd,name:(a,b)=>a.song.name.localeCompare(b.song.name),date:(a,b)=>(a.song.date||'9999').localeCompare(b.song.date||'9999'),artist:(a,b)=>a.song.artist.localeCompare(b.song.artist),series:(a,b)=>a.song.series.localeCompare(b.song.series)||a.song.name.localeCompare(b.song.name)};
@@ -276,7 +293,7 @@ function renderAgg(){
 function showSong(sid){
   switchTab('song');const s=gs(sid);if(!s)return;
   document.getElementById('songDetail').innerHTML='<div class="det"><h2>'+s.name+'</h2><div class="mt">'+(s.en?s.en+' · ':'')+s.artist+' · '+s.series+(s.date?' · '+s.date:'')+'</div></div>';
-  const list=profiles.map(p=>({name:p.name,pos:gr(p.name,sid)})).filter(r=>r.pos!==null).sort((a,b)=>a.pos-b.pos);
+  const list=profiles.map(p=>({name:p.name,pos:gr(p,sid)})).filter(r=>r.pos!==null).sort((a,b)=>a.pos-b.pos);
   document.getElementById('songResults').innerHTML=list.length?list.map(r=>'<div class="ritem"><span class="pos">#'+r.pos+'</span><span class="nm2">'+r.name+'</span></div>').join(''):'<p style="color:var(--text-dim);padding:12px">Not ranked by anyone.</p>';
   document.getElementById('songSearch').value=s.name;
 }
@@ -290,19 +307,18 @@ function renderSearch(){
 // ---- COMPARE ----
 let cmpSel=null;
 function renderCmp(){
-  const names=profiles.map(p=>p.name);
-  if(names.length<2){document.getElementById('cmpGrid').innerHTML='<p style="color:var(--text-dim)">Need at least 2 profiles.</p>';return;}
+  if(profiles.length<2){document.getElementById('cmpGrid').innerHTML='<p style="color:var(--text-dim)">Need at least 2 profiles.</p>';return;}
   const allIds=new Set();profiles.forEach(p=>p.ids.forEach(id=>allIds.add(id)));
   const cmpSongs=[...allIds].map(id=>gs(id)).filter(Boolean);
   if(!cmpSongs.length){document.getElementById('cmpGrid').innerHTML='<p style="color:var(--text-dim)">No songs in rankings.</p>';return;}
-  const n=names.length;
-  const matrix=names.map(a=>names.map(b=>{if(a===b)return null;let c=0;cmpSongs.forEach(s=>{const pA=gr(a,s.id),pB=gr(b,s.id);if(pA!==null&&pB!==null&&Math.abs(pA-pB)<=3)c++;});return Math.round(c/cmpSongs.length*100);}));
-  let html='<div class="matrix" style="grid-template-columns:'+Math.min(80,Math.floor(700/n))+'px repeat('+n+',minmax(40px,1fr))">';
+  const allProfiles=[...profiles];
+  const matrix=allProfiles.map(a=>allProfiles.map(b=>{if(a===b)return null;let c=0;cmpSongs.forEach(s=>{const pA=gr(a,s.id),pB=gr(b,s.id);if(pA!==null&&pB!==null&&Math.abs(pA-pB)<=3)c++;});return Math.round(c/cmpSongs.length*100);}));
+  let html='<div class="matrix" style="grid-template-columns:'+Math.min(80,Math.floor(700/allProfiles.length))+'px repeat('+allProfiles.length+',minmax(40px,1fr))">';
   html+='<div class="ml" style="grid-column:1;grid-row:1"></div>';
-  names.forEach((nm,i)=>{html+='<div class="mt" style="grid-column:'+(i+2)+';grid-row:1" title="'+nm+'">'+nm+'</div>';});
-  for(let i=0;i<n;i++){
-    html+='<div class="ml" style="grid-column:1;grid-row:'+(i+2)+'" title="'+names[i]+'">'+names[i]+'</div>';
-    for(let j=0;j<n;j++){
+  allProfiles.forEach((p,i)=>{html+='<div class="mt" style="grid-column:'+(i+2)+';grid-row:1" title="'+p.name+'">'+p.name+'</div>';});
+  for(let i=0;i<allProfiles.length;i++){
+    html+='<div class="ml" style="grid-column:1;grid-row:'+(i+2)+'" title="'+allProfiles[i].name+'">'+allProfiles[i].name+'</div>';
+    for(let j=0;j<allProfiles.length;j++){
       if(i===j)html+='<div class="mc di" style="grid-column:'+(j+2)+';grid-row:'+(i+2)+'"><span class="pct" style="color:var(--text-dim)">—</span></div>';
       else{
         const v=matrix[i][j];const r=v/100;
@@ -317,30 +333,29 @@ function renderCmp(){
 }
 function openCmp(i,j){
   cmpSel=[i,j];
-  const names=profiles.map(p=>p.name);
-  showCmpDetail(names[i],names[j]);
+  const allProfiles=[...profiles];
+  showCmpDetail(allProfiles[i],allProfiles[j]);
 }
 function closeCmpDetail(){document.getElementById('cmpCover').classList.remove('show');}
-function showCmpDetail(aN,bN){
+function showCmpDetail(pa,pb){
   const allIds=new Set();profiles.forEach(p=>p.ids.forEach(id=>allIds.add(id)));
   const cmpSongs=[...allIds].map(id=>gs(id)).filter(Boolean).sort((a,b)=>a.name.localeCompare(b.name));
-  const diffs=cmpSongs.map(s=>{const pA=gr(aN,s.id),pB=gr(bN,s.id);const rA=pA||36,rB=pB||36;return{song:s,pA,pB,rA,rB,abs:Math.abs(rA-rB),both:pA!==null&&pB!==null};}).sort((a,b)=>b.abs-a.abs);
+  const diffs=cmpSongs.map(s=>{const pA=gr(pa,s.id),pB=gr(pb,s.id);const rA=pA||36,rB=pB||36;return{song:s,pA,pB,rA,rB,abs:Math.abs(rA-rB),both:pA!==null&&pB!==null};}).sort((a,b)=>b.abs-a.abs);
   const bothCount=diffs.filter(d=>d.both).length;
   const closeCount=diffs.filter(d=>d.both&&d.abs<=3).length;
-  const aP=profiles.find(p=>p.name===aN),bP=profiles.find(p=>p.name===bN);
-  const aList=cmpSongs.map(s=>({song:s,pos:gr(aN,s.id)})).sort((a,b)=>(a.pos||999)-(b.pos||999));
-  const bList=cmpSongs.map(s=>({song:s,pos:gr(bN,s.id)})).sort((a,b)=>(a.pos||999)-(b.pos||999));
-  document.getElementById('cmpDetailTitle').textContent=aN+' vs '+bN;
+  const aList=cmpSongs.map(s=>({song:s,pos:gr(pa,s.id)})).sort((a,b)=>(a.pos||999)-(b.pos||999));
+  const bList=cmpSongs.map(s=>({song:s,pos:gr(pb,s.id)})).sort((a,b)=>(a.pos||999)-(b.pos||999));
+  document.getElementById('cmpDetailTitle').textContent=pa.name+' vs '+pb.name;
   document.getElementById('cmpDetailBody').innerHTML=`
     <div class="abar" style="gap:12px">
       <span>Agreement: <strong>${cmpSongs.length?Math.round(closeCount/cmpSongs.length*100):0}%</strong> within ±3</span>
-      <span>Both: ${bothCount} · Only ${aN}: ${diffs.filter(d=>!d.both&&d.pA).length} · Only ${bN}: ${diffs.filter(d=>!d.both&&d.pB).length}</span>
+      <span>Both: ${bothCount} · Only ${pa.name}: ${diffs.filter(d=>!d.both&&d.pA).length} · Only ${pb.name}: ${diffs.filter(d=>!d.both&&d.pB).length}</span>
       <div class="bt" style="min-width:100px"><div class="bf" style="width:${cmpSongs.length?Math.round(closeCount/cmpSongs.length*100):0}%"></div></div>
     </div>
     <div class="list" style="margin-bottom:16px"><div class="item" style="cursor:default;background:var(--bg-card2);font-weight:bold;font-size:.82rem;color:var(--text-dim)"><div style="width:28px;text-align:center">Δ</div><div class="rk" style="width:28px">#</div><div class="inf">Song</div><div class="rk" style="width:28px">#</div></div>
     ${diffs.map(d=>{const cls=d.both?'':' unr';const dc=d.abs===0?'d0':d.rA<d.rB?'dp':'dn';return '<div class="item'+cls+'" onclick="closeCmpDetail();showSong(\''+d.song.id+'\')"><div class="delta '+dc+'">'+(!d.both?'—':(d.rA-d.rB>0?'+':'')+(d.rA-d.rB))+'</div><div class="rk" style="width:28px;font-size:.9rem">'+(d.pA?'#'+d.pA:'—')+'</div>'+songHTML(d.song)+'<div class="rk" style="width:28px;font-size:.9rem">'+(d.pB?'#'+d.pB:'—')+'</div></div>';}).join('')}</div>
     <h3 style="color:#fb8a9b;margin:16px 0 8px;font-size:.95rem">Full Rankings (all songs)</h3>
-    <div class="cc"><div class="cl"><h3>${aN} (${aP.ids.length} ranked of ${cmpSongs.length})</h3>${aList.map(({song,pos})=>'<div class="item'+(pos===null?' unr':'')+'" onclick="closeCmpDetail();showSong(\''+song.id+'\')"><div class="rk" style="font-size:.9rem">'+(pos?'#'+pos:'—')+'</div>'+songHTML(song)+'</div>').join('')}</div><div class="cl"><h3>${bN} (${bP.ids.length} ranked of ${cmpSongs.length})</h3>${bList.map(({song,pos})=>'<div class="item'+(pos===null?' unr':'')+'" onclick="closeCmpDetail();showSong(\''+song.id+'\')"><div class="rk" style="font-size:.9rem">'+(pos?'#'+pos:'—')+'</div>'+songHTML(song)+'</div>').join('')}</div></div>`;
+    <div class="cc"><div class="cl"><h3>${pa.name} (${pa.ids.length} ranked of ${cmpSongs.length})</h3>${aList.map(({song,pos})=>'<div class="item'+(pos===null?' unr':'')+'" onclick="closeCmpDetail();showSong(\''+song.id+'\')"><div class="rk" style="font-size:.9rem">'+(pos?'#'+pos:'—')+'</div>'+songHTML(song)+'</div>').join('')}</div><div class="cl"><h3>${pb.name} (${pb.ids.length} ranked of ${cmpSongs.length})</h3>${bList.map(({song,pos})=>'<div class="item'+(pos===null?' unr':'')+'" onclick="closeCmpDetail();showSong(\''+song.id+'\')"><div class="rk" style="font-size:.9rem">'+(pos?'#'+pos:'—')+'</div>'+songHTML(song)+'</div>').join('')}</div></div>`;
   document.getElementById('cmpCover').classList.add('show');
   document.getElementById('cmpCover').scrollTop=0;
 }
@@ -349,7 +364,7 @@ function showCmpDetail(aN,bN){
 function renderSpread(){
   const list=document.getElementById('spreadList'),info=document.getElementById('spreadInfo');
   const name=document.getElementById('selSpread').value;
-  const p=profiles.find(r=>r.name===name);
+  const p=profiles.find(r=>r._uid===name);
   if(!p||!p.ids.length){list.innerHTML='';info.textContent='Select a profile.';return;}
   const count=parseInt(document.getElementById('spreadCount').value);
   const ids=p.ids;const total=ids.length;

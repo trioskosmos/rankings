@@ -460,8 +460,8 @@ function startSort(){
   const shuffled=[...items];shuffle(shuffled);
   sortState={
     sorted:[shuffled[0]],
-    remaining:shuffled.slice(1),
-    inserting:shuffled[1],
+    remaining:shuffled.slice(2),
+    inserting:shuffled[1]||null,
     lo:0,hi:1,
     comparisons:0,
     history:[]

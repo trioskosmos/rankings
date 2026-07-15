@@ -304,8 +304,9 @@ function renderCmp(){
       if(a===b)return null;
       const shared=a.ids.filter(id=>b.ids.includes(id));
       if(!shared.length)return 0;
-      const threshold=Math.max(3,Math.round(shared.length*0.08));
-      let c=0;shared.forEach(sid=>{const pA=gr(a,sid),pB=gr(b,sid);if(Math.abs(pA-pB)<=threshold)c++;});
+      const total=shared.length;
+      let sum=0;shared.forEach(sid=>{const pA=gr(a,sid),pB=gr(b,sid);sum+=1-Math.abs(pA-pB)/total;});
+      return Math.round(sum/total*100);
       return Math.round(c/shared.length*100);
     }));
     let html='<div class="matrix" style="grid-template-columns:'+Math.min(80,Math.floor(700/n))+'px repeat('+n+',minmax(40px,1fr))">';
@@ -341,12 +342,14 @@ function showCmpDetail(pa,pb){
   const cmpSongs=sharedIds.map(id=>gs(id)).filter(Boolean).sort((a,b)=>a.name.localeCompare(b.name));
   if(!cmpSongs.length){document.getElementById('cmpDetailBody').innerHTML='<p style="color:var(--text-dim)">No shared songs.</p>';document.getElementById('cmpCover').classList.add('show');return;}
   const diffs=cmpSongs.map(s=>{const pA=gr(pa,s.id),pB=gr(pb,s.id);return{song:s,pA,pB,abs:Math.abs(pA-pB)};}).sort((a,b)=>b.abs-a.abs);
-  const closeCount=diffs.filter(d=>d.abs<=Math.max(3,Math.round(cmpSongs.length*0.08))).length;
-  document.getElementById('cmpDetailTitle').textContent=pa.name+' vs '+pb.name+' ('+cmpSongs.length+' shared)';
+  const total=cmpSongs.length;
+  const sum=diffs.reduce((s,d)=>s+(1-d.abs/total),0);
+  const agreePct=total?Math.round(sum/total*100):0;
+  document.getElementById('cmpDetailTitle').textContent=pa.name+' vs '+pb.name+' ('+total+' shared)';
   document.getElementById('cmpDetailBody').innerHTML=`
     <div class="abar" style="gap:12px">
-      <span>Agreement: <strong>${Math.round(closeCount/cmpSongs.length*100)}%</strong> within 8% on ${cmpSongs.length} shared songs</span>
-      <div class="bt" style="min-width:100px"><div class="bf" style="width:${Math.round(closeCount/cmpSongs.length*100)}%"></div></div>
+      <span>Agreement: <strong>${agreePct}%</strong> (normalized rank diff) on ${total} shared songs</span>
+      <div class="bt" style="min-width:100px"><div class="bf" style="width:${agreePct}%"></div></div>
     </div>
     <div class="list" style="margin-bottom:16px"><div class="item" style="cursor:default;background:var(--bg-card2);font-weight:bold;font-size:.82rem;color:var(--text-dim)"><div style="width:28px;text-align:center">Δ</div><div class="rk" style="width:28px">#</div><div class="inf">Song</div><div class="rk" style="width:28px">#</div></div>
     ${diffs.map(d=>{const dc=d.abs===0?'d0':d.pA<d.pB?'dp':'dn';return '<div class="item" onclick="closeCmpDetail();showSong(\''+d.song.id+'\')"><div class="delta '+dc+'">'+(d.pA-d.pB>0?'+':'')+(d.pA-d.pB)+'</div><div class="rk" style="width:28px;font-size:.9rem">#'+d.pA+'</div>'+songHTML(d.song)+'<div class="rk" style="width:28px;font-size:.9rem">#'+d.pB+'</div></div>';}).join('')}</div>

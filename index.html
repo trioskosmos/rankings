@@ -494,10 +494,9 @@ function renderSortMeta(){
     const aList=a.ids.map((id,i)=>({song:gs(id),pos:i+1})).filter(x=>x.song);
     const bList=b.ids.map((id,i)=>({song:gs(id),pos:i+1})).filter(x=>x.song);
     document.getElementById('sortCards').innerHTML=
-      '<div class="sortcards"><div class="sortcol" onclick="pickSortMeta(true)"><h3>'+(blind?'Profile A':a._label)+' ('+a.ids.length+')</h3>'+aList.map(x=>'<div class="item" style="cursor:default"><div class="rk" style="font-size:.9rem">#'+x.pos+'</div><div class="inf"><div class="nm">'+x.song.name+'</div></div></div>').join('')+'</div>'+
+      '<div style="text-align:center;margin-bottom:8px;color:var(--text-dim);font-size:.85rem">Click the profile you agree with more</div><div class="sortcards"><div class="sortcol" onclick="pickSortMeta(true)"><h3>'+(blind?'Profile A':a._label)+' ('+a.ids.length+')</h3>'+aList.map(x=>'<div class="item" style="cursor:default"><div class="rk" style="font-size:.9rem">#'+x.pos+'</div><div class="inf"><div class="nm">'+x.song.name+'</div></div></div>').join('')+'</div>'+
       '<div style="display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:1.2rem;padding:0 4px">vs</div>'+
-      '<div class="sortcol" onclick="pickSortMeta(false)"><h3>'+(blind?'Profile B':b._label)+' ('+b.ids.length+')</h3>'+bList.map(x=>'<div class="item" style="cursor:default"><div class="rk" style="font-size:.9rem">#'+x.pos+'</div><div class="inf"><div class="nm">'+x.song.name+'</div></div></div>').join('')+'</div></div>'+
-      '<div style="text-align:center;margin-top:8px;color:var(--text-dim);font-size:.85rem">Click the profile you agree with more</div>';
+      '<div class="sortcol" onclick="pickSortMeta(false)"><h3>'+(blind?'Profile B':b._label)+' ('+b.ids.length+')</h3>'+bList.map(x=>'<div class="item" style="cursor:default"><div class="rk" style="font-size:.9rem">#'+x.pos+'</div><div class="inf"><div class="nm">'+x.song.name+'</div></div></div>').join('')+'</div></div>';
   }
   saveSortMeta();
 }

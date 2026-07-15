@@ -170,8 +170,35 @@ async function loadData(){
     SONGS.forEach(s=>SM[s.id]=s);
     const aS=new Set(),sS=new Set();SONGS.forEach(s=>{s.allArtists.forEach(a=>aS.add(a));sS.add(s.series);});
     ARTISTS_LIST=[...aS].sort();SERIES_LIST=[...sS].sort();
-    ['filterRank','filterAgg'].forEach(id=>{const s=document.getElementById(id);if(!s)return;const v=s.value;s.innerHTML='<option value="">All series</option>'+SERIES_LIST.map(i=>'<option value="'+i+'">'+i+'</option>').join('');if(SERIES_LIST.includes(v))s.value=v;});
-    ['filterRankArtist','filterAggArtist'].forEach(id=>{const s=document.getElementById(id);if(!s)return;const v=s.value;s.innerHTML='<option value="">All artists</option>'+ARTISTS_LIST.map(i=>'<option value="'+i+'">'+i+'</option>').join('');if(ARTISTS_LIST.includes(v))s.value=v;});
+    // Build series↔artist mapping for cross-limiting filters
+    const SA={},AS={};
+    SONGS.forEach(s=>{
+      if(!SA[s.series])SA[s.series]=new Set();
+      s.allArtists.forEach(a=>{SA[s.series].add(a);if(!AS[a])AS[a]=new Set();AS[a].add(s.series);});
+    });
+    window._SA=SA;window._AS=AS;
+    populateFilters();
+  }catch(e){console.error('Failed:',e);document.body.innerHTML='<div class="container"><p style="color:red">Failed to load data.</p></div>';}
+}
+function populateFilters(){
+  const SA=window._SA||{},AS=window._AS||{};
+  const fS=document.getElementById('filterAgg').value,fA=document.getElementById('filterAggArtist').value;
+  let availArtists=ARTISTS_LIST,availSeries=SERIES_LIST;
+  if(fS&&SA[fS]){availArtists=[...SA[fS]].sort();}
+  if(fA&&AS[fA]){availSeries=[...AS[fA]].sort();}
+  ['filterRank','filterAgg'].forEach(id=>{
+    const s=document.getElementById(id);if(!s)return;
+    const v=s.value;
+    s.innerHTML='<option value="">All series</option>'+availSeries.map(i=>'<option value="'+i+'">'+i+'</option>').join('');
+    if(availSeries.includes(v))s.value=v;else s.value='';
+  });
+  ['filterRankArtist','filterAggArtist'].forEach(id=>{
+    const s=document.getElementById(id);if(!s)return;
+    const v=s.value;
+    s.innerHTML='<option value="">All artists</option>'+availArtists.map(i=>'<option value="'+i+'">'+i+'</option>').join('');
+    if(availArtists.includes(v))s.value=v;else s.value='';
+  });
+}
     await loadRankings();
   }catch(e){console.error('Failed:',e);document.body.innerHTML='<div class="container"><p style="color:red">Failed to load data.</p></div>';}
 }
@@ -565,10 +592,10 @@ document.querySelectorAll('nav button').forEach(b=>{b.addEventListener('click',(
 document.getElementById('selProfile').addEventListener('change',()=>{current=document.getElementById('selProfile').value;renderRank();});
 document.getElementById('sortRank').addEventListener('change',renderRank);
 document.getElementById('sortAgg').addEventListener('change',renderAgg);
-document.getElementById('filterRank').addEventListener('change',renderRank);
-document.getElementById('filterAgg').addEventListener('change',renderAgg);
-document.getElementById('filterRankArtist').addEventListener('change',renderRank);
-document.getElementById('filterAggArtist').addEventListener('change',renderAgg);
+document.getElementById('filterRank').addEventListener('change',()=>{populateFilters();renderRank();});
+document.getElementById('filterAgg').addEventListener('change',()=>{populateFilters();renderAgg();});
+document.getElementById('filterRankArtist').addEventListener('change',()=>{populateFilters();renderRank();});
+document.getElementById('filterAggArtist').addEventListener('change',()=>{populateFilters();renderAgg();});
 document.getElementById('hideUnranked').addEventListener('change',renderAgg);
 document.getElementById('hideUnrankedRank').addEventListener('change',renderRank);
 document.getElementById('sortStartBtn')?.addEventListener('click',startSort);

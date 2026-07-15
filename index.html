@@ -142,8 +142,11 @@ async function loadData(){
     const[sr,ar]=await Promise.all([fetch('data/series-info.json').then(r=>r.json()),fetch('data/artists-info.json').then(r=>r.json())]);
     sr.forEach(s=>{SERIES[s.id]=s.name;SERIES_COLORS[s.id]=s.color;});
     ar.forEach(a=>{ARTIST_NAMES[a.id]=a.name;});
-    const songsData=await(await fetch('data/song-info.json')).json();
-    SONGS=songsData.map(s=>({id:String(s.id),name:s.name,en:s.englishName||'',artist:(s.artists&&s.artists.length?ARTIST_NAMES[s.artists[0].id]||'Unknown':'Unknown'),allArtists:[...new Set(s.artists.map(a=>ARTIST_NAMES[a.id]||'Unknown').filter(Boolean))],series:(s.seriesIds&&s.seriesIds.length?SERIES[String(s.seriesIds[0])]||'Unknown':'Unknown'),color:(s.seriesIds&&s.seriesIds.length?SERIES_COLORS[String(s.seriesIds[0])]||'#888':'#888'),date:s.releasedOn||''}));
+    // Cache song data in localStorage (370KB, well under 5MB limit)
+    const SONG_CACHE='ll_songs_v1';
+    let raw=localStorage.getItem(SONG_CACHE);
+    if(raw){raw=JSON.parse(raw);}else{raw=await(await fetch('data/song-info.json')).json();localStorage.setItem(SONG_CACHE,JSON.stringify(raw));}
+    SONGS=raw.map(s=>({id:String(s.id),name:s.name,en:s.englishName||'',artist:(s.artists&&s.artists.length?ARTIST_NAMES[s.artists[0].id]||'Unknown':'Unknown'),allArtists:[...new Set(s.artists.map(a=>ARTIST_NAMES[a.id]||'Unknown').filter(Boolean))],series:(s.seriesIds&&s.seriesIds.length?SERIES[String(s.seriesIds[0])]||'Unknown':'Unknown'),color:(s.seriesIds&&s.seriesIds.length?SERIES_COLORS[String(s.seriesIds[0])]||'#888':'#888'),date:s.releasedOn||''}));
     SONGS.forEach(s=>SM[s.id]=s);
     const aS=new Set(),sS=new Set();SONGS.forEach(s=>{s.allArtists.forEach(a=>aS.add(a));sS.add(s.series);});
     ARTISTS_LIST=[...aS].sort();SERIES_LIST=[...sS].sort();
@@ -181,8 +184,15 @@ function parseProfiles(text, sourceFile){
 }
 async function loadRankings(){
   try{
-    const dir=await fetch('https://api.github.com/repos/trioskosmos/rankings/contents/data/rankings');
-    const files=await dir.json();
+    // Cache GitHub API file list (rate limited, rarely changes)
+    const FILE_CACHE='ll_files_v1';let files;
+    const cached=localStorage.getItem(FILE_CACHE);
+    if(cached){const d=JSON.parse(cached);if(Date.now()-d.time<3600000)files=d.data;}
+    if(!files){
+      const dir=await fetch('https://api.github.com/repos/trioskosmos/rankings/contents/data/rankings');
+      files=await dir.json();
+      localStorage.setItem(FILE_CACHE,JSON.stringify({data:files,time:Date.now()}));
+    }
     const raw=[];
     for(const f of files){
       if(!f.name.endsWith('.txt')) continue;
@@ -275,20 +285,19 @@ function renderAgg(){
   const allSongIds=pool?[...pool]:[...new Set(active.flatMap(p=>p.ids))];
   const hideZero=document.getElementById('hideUnranked').checked;
   const t=active.length;
+  // Pre-compute reRanked arrays once per profile (not once per song)
+  const reranked={};active.forEach(p=>{reranked[p._uid]=reRank(p,pool||null);});
   const totalSongs=allSongIds.length;
   let data=allSongIds.map(id=>gs(id)).filter(Boolean).map(song=>{
-    // For each active profile, compute re-ranked position within the pool
     const allRanks=active.map(p=>{
-      const reranked=reRank(p,pool||null);
-      const i=reranked.indexOf(song.id);
+      const i=reranked[p._uid].indexOf(song.id);
       return i===-1?totalSongs:i+1;
     });
     const avg=allRanks.reduce((a,b)=>a+b,0)/t;
     const rankedRanks=allRanks.filter(r=>r<totalSongs),med=median(rankedRanks.length?rankedRanks:[totalSongs]),sd=stddev(allRanks,avg);
     let hi={name:'',pos:999},lo={name:'',pos:0};
     active.forEach(p=>{
-      const reranked=reRank(p,pool||null);
-      const r=reranked.indexOf(song.id)+1;
+      const r=reranked[p._uid].indexOf(song.id)+1;
       if(r<=totalSongs){if(r<hi.pos){hi={name:p._label,pos:r}}if(r>lo.pos){lo={name:p._label,pos:r}}}
     });
     return{song,avg,med,sd,hi,lo,count:rankedRanks.length};
@@ -449,7 +458,8 @@ document.getElementById('hideUnrankedRank').addEventListener('change',renderRank
 document.getElementById('filterRankFile')?.addEventListener('change',()=>{rSel();renderRank();});
 document.getElementById('filterAggFile')?.addEventListener('change',renderAgg);
 document.getElementById('filterSongFile')?.addEventListener('change',renderSearch);
-document.getElementById('songSearch').addEventListener('input',renderSearch);
+let searchTimer;
+document.getElementById('songSearch').addEventListener('input',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(renderSearch,150);});
 
 loadData();
 </script>

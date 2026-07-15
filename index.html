@@ -209,8 +209,9 @@ async function loadRankings(){
   const srcs=[...new Set(profiles.map(p=>p.source).filter(Boolean))].sort();
   ['filterAggFile','filterRankFile','filterSongFile'].forEach(id=>{
     const s=document.getElementById(id);if(!s)return;
-    const v=s.value;s.innerHTML='<option value="">All files</option>'+srcs.map(f=>'<option value="'+f+'">'+f.replace('.txt','')+'</option>').join('');
-    if(srcs.includes(v))s.value=v;
+    const v=s.value;
+    s.innerHTML=srcs.map(f=>'<option value="'+f+'">'+f.replace('.txt','')+'</option>').join('')+'<option value="">All files</option>';
+    if(srcs.includes(v))s.value=v;else if(srcs.length)s.value=srcs[0];
   });
   renderAll();
 }

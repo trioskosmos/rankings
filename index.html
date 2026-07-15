@@ -90,6 +90,7 @@ nav button.active{background:#fb8a9b;color:#fff;border-color:#fb8a9b}
   <div class="section active" id="section-agg">
     <div class="bar">
       <label>Sort:</label><select id="sortAgg"><option value="rank">Avg rank</option><option value="rank-desc">Avg rank (worst)</option><option value="median">Median</option><option value="stddev">Std deviation</option><option value="name">Name A-Z</option><option value="date">Release date</option><option value="artist">Artist</option><option value="series">Series</option></select>
+      <label>File:</label><select id="filterAggFile"><option value="">All files</option></select>
       <label>Series:</label><select id="filterAgg"><option value="">All series</option></select>
       <label>Artist:</label><select id="filterAggArtist"><option value="">All artists</option></select>
       <label class="cb"><input type="checkbox" id="hideUnranked" checked> Hide unranked</label>
@@ -101,6 +102,7 @@ nav button.active{background:#fb8a9b;color:#fff;border-color:#fb8a9b}
     <div class="bar">
       <label>Profile:</label><select id="selProfile"></select>
       <label>Sort:</label><select id="sortRank"><option value="default">Default (rank)</option><option value="name">Name A-Z</option><option value="name-desc">Name Z-A</option><option value="date">Release (old)</option><option value="date-desc">Release (new)</option><option value="artist">Artist A-Z</option><option value="artist-desc">Artist Z-A</option><option value="series">Series</option></select>
+      <label>File:</label><select id="filterRankFile"><option value="">All files</option></select>
       <label>Series:</label><select id="filterRank"><option value="">All series</option></select>
       <label>Artist:</label><select id="filterRankArtist"><option value="">All artists</option></select>
       <label class="cb"><input type="checkbox" id="hideUnrankedRank" checked> Hide unranked</label>
@@ -200,12 +202,22 @@ async function loadRankings(){
   }
   if(!current||!profiles.find(p=>p._uid===current))
     current=profiles[0]?._uid||'p0';
+  // Populate file filter dropdowns
+  const srcs=[...new Set(profiles.map(p=>p.source).filter(Boolean))].sort();
+  ['filterAggFile','filterRankFile'].forEach(id=>{
+    const s=document.getElementById(id);if(!s)return;
+    const v=s.value;s.innerHTML='<option value="">All files</option>'+srcs.map(f=>'<option value="'+f+'">'+f.replace('.txt','')+'</option>').join('');
+    if(srcs.includes(v))s.value=v;
+  });
   renderAll();
 }
 function rSel(){
+  const fileFilter=document.getElementById('filterRankFile')?.value||'';
+  const filtered=fileFilter?profiles.filter(p=>p.source===fileFilter):profiles;
   const s=document.getElementById('selProfile');if(!s)return;
-  s.innerHTML=profiles.map(p=>'<option value="'+p._uid+'">'+p._label+'</option>').join('');
-  if(!s.value&&profiles.length){s.value=profiles[0]._uid;current=profiles[0]._uid;}
+  s.innerHTML=filtered.map(p=>'<option value="'+p._uid+'">'+p._label+'</option>').join('');
+  if(!s.value&&filtered.length){s.value=filtered[0]._uid;current=filtered[0]._uid;}
+  else if(!filtered.length){s.innerHTML='<option value="">No profiles in this file</option>';}
 }
 function sortSongs(songs,mode){
   const c=[...songs];const cmp={name:(a,b)=>a.name.localeCompare(b.name),'name-desc':(a,b)=>b.name.localeCompare(a.name),date:(a,b)=>(a.date||'9999').localeCompare(b.date||'9999'),'date-desc':(a,b)=>(b.date||'').localeCompare(a.date||''),artist:(a,b)=>a.artist.localeCompare(b.artist),'artist-desc':(a,b)=>b.artist.localeCompare(a.artist),series:(a,b)=>a.series.localeCompare(b.series)||a.name.localeCompare(b.name)};
@@ -234,7 +246,8 @@ function renderRank(){
 function renderAgg(){
   const el=document.getElementById('aggContent'),mode=document.getElementById('sortAgg').value;
   const fS=document.getElementById('filterAgg').value,fA=document.getElementById('filterAggArtist').value;
-  const active=profiles.filter(p=>p.ids.length>0);if(!active.length){el.innerHTML='<p style="color:var(--text-dim)">No profiles.</p>';return;}
+  const fileFilter=document.getElementById('filterAggFile')?.value||'';
+  const active=(fileFilter?profiles.filter(p=>p.source===fileFilter):profiles).filter(p=>p.ids.length>0);if(!active.length){el.innerHTML='<p style="color:var(--text-dim)">No profiles.</p>';return;}
   const allS=getFilteredSongs(fS,fA),t=active.length;
   const hideZero=document.getElementById('hideUnranked').checked;
   let data=allS.map(song=>{
@@ -291,7 +304,8 @@ function renderCmp(){
       if(a===b)return null;
       const shared=a.ids.filter(id=>b.ids.includes(id));
       if(!shared.length)return 0;
-      let c=0;shared.forEach(sid=>{const pA=gr(a,sid),pB=gr(b,sid);if(Math.abs(pA-pB)<=3)c++;});
+      const threshold=Math.max(3,Math.round(shared.length*0.08));
+      let c=0;shared.forEach(sid=>{const pA=gr(a,sid),pB=gr(b,sid);if(Math.abs(pA-pB)<=threshold)c++;});
       return Math.round(c/shared.length*100);
     }));
     let html='<div class="matrix" style="grid-template-columns:'+Math.min(80,Math.floor(700/n))+'px repeat('+n+',minmax(40px,1fr))">';
@@ -327,13 +341,11 @@ function showCmpDetail(pa,pb){
   const cmpSongs=sharedIds.map(id=>gs(id)).filter(Boolean).sort((a,b)=>a.name.localeCompare(b.name));
   if(!cmpSongs.length){document.getElementById('cmpDetailBody').innerHTML='<p style="color:var(--text-dim)">No shared songs.</p>';document.getElementById('cmpCover').classList.add('show');return;}
   const diffs=cmpSongs.map(s=>{const pA=gr(pa,s.id),pB=gr(pb,s.id);return{song:s,pA,pB,abs:Math.abs(pA-pB)};}).sort((a,b)=>b.abs-a.abs);
-  const closeCount=diffs.filter(d=>d.abs<=3).length;
-  const aList=cmpSongs.map(s=>({song:s,pos:gr(pa,s.id)})).sort((a,b)=>(a.pos||999)-(b.pos||999));
-  const bList=cmpSongs.map(s=>({song:s,pos:gr(pb,s.id)})).sort((a,b)=>(a.pos||999)-(b.pos||999));
+  const closeCount=diffs.filter(d=>d.abs<=Math.max(3,Math.round(cmpSongs.length*0.08))).length;
   document.getElementById('cmpDetailTitle').textContent=pa.name+' vs '+pb.name+' ('+cmpSongs.length+' shared)';
   document.getElementById('cmpDetailBody').innerHTML=`
     <div class="abar" style="gap:12px">
-      <span>Agreement: <strong>${Math.round(closeCount/cmpSongs.length*100)}%</strong> within ±3 on ${cmpSongs.length} shared songs</span>
+      <span>Agreement: <strong>${Math.round(closeCount/cmpSongs.length*100)}%</strong> within 8% on ${cmpSongs.length} shared songs</span>
       <div class="bt" style="min-width:100px"><div class="bf" style="width:${Math.round(closeCount/cmpSongs.length*100)}%"></div></div>
     </div>
     <div class="list" style="margin-bottom:16px"><div class="item" style="cursor:default;background:var(--bg-card2);font-weight:bold;font-size:.82rem;color:var(--text-dim)"><div style="width:28px;text-align:center">Δ</div><div class="rk" style="width:28px">#</div><div class="inf">Song</div><div class="rk" style="width:28px">#</div></div>
@@ -369,6 +381,8 @@ document.getElementById('filterRankArtist').addEventListener('change',renderRank
 document.getElementById('filterAggArtist').addEventListener('change',renderAgg);
 document.getElementById('hideUnranked').addEventListener('change',renderAgg);
 document.getElementById('hideUnrankedRank').addEventListener('change',renderRank);
+document.getElementById('filterRankFile')?.addEventListener('change',()=>{rSel();renderRank();});
+document.getElementById('filterAggFile')?.addEventListener('change',renderAgg);
 document.getElementById('songSearch').addEventListener('input',renderSearch);
 
 loadData();

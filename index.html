@@ -479,26 +479,33 @@ function renderSortMeta(){
   const done=sortState.sorted.length;
   document.getElementById('sortStatus').textContent=`Ranking profiles: ${done} of ${total} · ${sortState.comparisons} comparisons`;
   document.getElementById('sortUndoBtn').style.display=sortState.history.length?'inline-block':'none';
-  // Insert if lo >= hi before showing the comparison
-  if(sortState.inserting&&sortState.lo>=sortState.hi){
+  // Show comparison
+  if(!sortState.inserting){saveSortMeta();return;}
+  // If binary search is done, insert before showing next
+  if(sortState.lo>=sortState.hi){
     sortState.sorted.splice(sortState.lo,0,sortState.inserting);
     sortState.history=[];
     if(!sortState.remaining.length){finishSortMeta();return;}
     sortState.inserting=sortState.remaining.shift();
     sortState.lo=0;sortState.hi=sortState.sorted.length;
   }
-  // Now show the comparison
-  if(sortState.inserting&&sortState.lo<sortState.hi){
-    const mid=Math.floor((sortState.lo+sortState.hi)/2);
-    const a=sortState.inserting,b=sortState.sorted[mid];
-    const blind=document.getElementById('sortBlind').checked;
-    const aList=a.ids.map((id,i)=>({song:gs(id),pos:i+1})).filter(x=>x.song);
-    const bList=b.ids.map((id,i)=>({song:gs(id),pos:i+1})).filter(x=>x.song);
-    document.getElementById('sortCards').innerHTML=
-      '<div style="text-align:center;width:100%;margin-bottom:8px;color:var(--text-dim);font-size:.85rem">Click the profile you agree with more</div><div class="sortcards"><div class="sortcol" onclick="pickSortMeta(true)"><h3>'+(blind?'Profile A':a._label)+' ('+a.ids.length+')</h3>'+aList.map(x=>'<div class="item" style="cursor:default"><div class="rk" style="font-size:.9rem">#'+x.pos+'</div><div class="inf"><div class="nm">'+x.song.name+'</div></div></div>').join('')+'</div>'+
-      '<div style="display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:1.2rem;padding:0 4px">vs</div>'+
-      '<div class="sortcol" onclick="pickSortMeta(false)"><h3>'+(blind?'Profile B':b._label)+' ('+b.ids.length+')</h3>'+bList.map(x=>'<div class="item" style="cursor:default"><div class="rk" style="font-size:.9rem">#'+x.pos+'</div><div class="inf"><div class="nm">'+x.song.name+'</div></div></div>').join('')+'</div></div>';
-  }
+  const mid=Math.floor((sortState.lo+sortState.hi)/2);
+  const a=sortState.inserting,b=sortState.sorted[mid];
+  const blind=document.getElementById('sortBlind').checked;
+  const aList=a.ids.map((id,i)=>({song:gs(id),pos:i+1})).filter(x=>x.song);
+  const bList=b.ids.map((id,i)=>({song:gs(id),pos:i+1})).filter(x=>x.song);
+  const cards=document.getElementById('sortCards');
+  cards.innerHTML='<div style="text-align:center;width:100%;margin-bottom:8px;color:var(--text-dim);font-size:.85rem">Click the profile you agree with more</div><div class="sortcards"></div>';
+  const wrap=cards.querySelector('.sortcards');
+  const left=document.createElement('div');left.className='sortcol';
+  left.innerHTML='<h3>'+(blind?'Profile A':a._label)+' ('+a.ids.length+')</h3>'+aList.map(x=>'<div class="item" style="cursor:default"><div class="rk" style="font-size:.9rem">#'+x.pos+'</div><div class="inf"><div class="nm">'+x.song.name+'</div></div></div>').join('');
+  left.addEventListener('click',()=>pickSortMeta(true));
+  const right=document.createElement('div');right.className='sortcol';
+  right.innerHTML='<h3>'+(blind?'Profile B':b._label)+' ('+b.ids.length+')</h3>'+bList.map(x=>'<div class="item" style="cursor:default"><div class="rk" style="font-size:.9rem">#'+x.pos+'</div><div class="inf"><div class="nm">'+x.song.name+'</div></div></div>').join('');
+  right.addEventListener('click',()=>pickSortMeta(false));
+  const vs=document.createElement('div');vs.style.cssText='display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:1.2rem;padding:0 4px';
+  vs.textContent='vs';
+  wrap.appendChild(left);wrap.appendChild(vs);wrap.appendChild(right);
   saveSortMeta();
 }
 function pickSortMeta(userPrefersNew){

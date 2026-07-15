@@ -71,12 +71,10 @@ nav button.active{background:#fb8a9b;color:#fff;border-color:#fb8a9b}
 .delta.d0{color:var(--text-dim)}
 .delta.dp{color:#4caf50}
 .delta.dn{color:#ff7043}
-.cmpcard{flex:1;max-width:400px;min-width:200px;background:var(--bg-card);border:2px solid var(--border);border-radius:12px;padding:24px;cursor:pointer;transition:all .2s;text-align:center}
-.cmpcard:hover{border-color:#fb8a9b;transform:scale(1.02)}
-.cmpcard .sc{width:100%;height:4px;border-radius:2px;margin-bottom:12px}
-.cmpcard .nm{font-size:1.2rem;font-weight:600;margin-bottom:4px}
-.cmpcard .ar{font-size:.9rem;color:var(--text-dim)}
-.cmpcard .label{font-size:.75rem;color:var(--text-dim);margin-top:12px}
+.sortcards{display:flex;gap:16px;flex-wrap:wrap}
+.sortcol{flex:1;min-width:280px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px;cursor:pointer;transition:all .2s}
+.sortcol:hover{border-color:#fb8a9b}
+.sortcol h3{color:#fb8a9b;margin-bottom:4px}
 @media(max-width:700px){.container{padding:10px}header h1{font-size:1.3rem}.item{padding:6px 8px}.rk{width:26px;font-size:1rem}.bar{flex-direction:column;align-items:stretch}.cc{flex-direction:column}}
 </style>
 </head>
@@ -480,38 +478,26 @@ function renderSortMeta(){
   const done=sortState.sorted.length;
   document.getElementById('sortStatus').textContent=`Ranking profiles: ${done} of ${total} · ${sortState.comparisons} comparisons`;
   document.getElementById('sortUndoBtn').style.display=sortState.history.length?'inline-block':'none';
-  if(sortState.inserting&&sortState.lo<sortState.hi){
-    const mid=Math.floor((sortState.lo+sortState.hi)/2);
-    sortState.mid=mid;
-    const a=sortState.inserting,b=sortState.sorted[mid];
-    const blind=document.getElementById('sortBlind').checked;
-    // Show ALL songs of each profile
-    const aSongs=a.ids.map(id=>gs(id)).filter(Boolean);
-    const bSongs=b.ids.map(id=>gs(id)).filter(Boolean);
-    const totalSongs=a.ids.length;
-    document.getElementById('sortCards').innerHTML=
-      `<div class="cmpcard" onclick="pickSortMeta(true)" style="cursor:pointer;max-width:45%;min-width:200px;overflow-y:auto;max-height:70vh">
-        <h3 style="color:#fb8a9b;margin-bottom:8px;position:sticky;top:0;background:var(--bg-card);padding:4px 0">${blind?'Profile A':a._label}</h3>
-        <div style="font-size:.75rem;color:var(--text-dim);margin-bottom:6px">${a.ids.length} songs</div>
-        ${aSongs.map((s,i)=>'<div style="display:flex;gap:8px;padding:2px 0;font-size:.82rem"><span style="color:var(--text-dim);width:28px;text-align:right;flex-shrink:0">#'+(i+1)+'</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+s.name+'</span></div>').join('')}
-        <div class="label" style="margin-top:8px;position:sticky;bottom:0;background:var(--bg-card);padding:4px 0;color:#fb8a9b;font-size:.85rem">▼ rank higher</div>
-      </div>`+
-      `<div style="display:flex;align-items:center;color:var(--text-dim);font-size:1.5rem">or</div>`+
-      `<div class="cmpcard" onclick="pickSortMeta(false)" style="cursor:pointer;max-width:45%;min-width:200px;overflow-y:auto;max-height:70vh">
-        <h3 style="color:#fb8a9b;margin-bottom:8px;position:sticky;top:0;background:var(--bg-card);padding:4px 0">${blind?'Profile B':b._label}</h3>
-        <div style="font-size:.75rem;color:var(--text-dim);margin-bottom:6px">${b.ids.length} songs</div>
-        ${bSongs.map((s,i)=>'<div style="display:flex;gap:8px;padding:2px 0;font-size:.82rem"><span style="color:var(--text-dim);width:28px;text-align:right;flex-shrink:0">#'+(i+1)+'</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+s.name+'</span></div>').join('')}
-        <div class="label" style="margin-top:8px;position:sticky;bottom:0;background:var(--bg-card);padding:4px 0;color:#fb8a9b;font-size:.85rem">▼ rank higher</div>
-      </div>`;
-  } else if(sortState.inserting){
+  // Insert if lo >= hi before showing the comparison
+  if(sortState.inserting&&sortState.lo>=sortState.hi){
     sortState.sorted.splice(sortState.lo,0,sortState.inserting);
     sortState.history=[];
-    if(sortState.remaining.length){
-      sortState.inserting=sortState.remaining.shift();
-      sortState.lo=0;sortState.hi=sortState.sorted.length;
-    } else {
-      finishSortMeta();return;
-    }
+    if(!sortState.remaining.length){finishSortMeta();return;}
+    sortState.inserting=sortState.remaining.shift();
+    sortState.lo=0;sortState.hi=sortState.sorted.length;
+  }
+  // Now show the comparison
+  if(sortState.inserting&&sortState.lo<sortState.hi){
+    const mid=Math.floor((sortState.lo+sortState.hi)/2);
+    const a=sortState.inserting,b=sortState.sorted[mid];
+    const blind=document.getElementById('sortBlind').checked;
+    const aList=a.ids.map((id,i)=>({song:gs(id),pos:i+1})).filter(x=>x.song);
+    const bList=b.ids.map((id,i)=>({song:gs(id),pos:i+1})).filter(x=>x.song);
+    document.getElementById('sortCards').innerHTML=
+      '<div class="sortcards"><div class="sortcol" onclick="pickSortMeta(true)"><h3>'+(blind?'Profile A':a._label)+' ('+a.ids.length+')</h3>'+aList.map(x=>'<div class="item" style="cursor:default"><div class="rk" style="font-size:.9rem">#'+x.pos+'</div><div class="inf"><div class="nm">'+x.song.name+'</div></div></div>').join('')+'</div>'+
+      '<div style="display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:1.2rem;padding:0 4px">vs</div>'+
+      '<div class="sortcol" onclick="pickSortMeta(false)"><h3>'+(blind?'Profile B':b._label)+' ('+b.ids.length+')</h3>'+bList.map(x=>'<div class="item" style="cursor:default"><div class="rk" style="font-size:.9rem">#'+x.pos+'</div><div class="inf"><div class="nm">'+x.song.name+'</div></div></div>').join('')+'</div></div>'+
+      '<div style="text-align:center;margin-top:8px;color:var(--text-dim);font-size:.85rem">Click the profile you agree with more</div>';
   }
   saveSortMeta();
 }

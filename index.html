@@ -112,6 +112,9 @@ nav button.active{background:#fb8a9b;color:#fff;border-color:#fb8a9b}
   </div>
 
   <div class="section" id="section-song">
+    <div class="bar">
+      <label>File:</label><select id="filterSongFile"><option value="">All files</option></select>
+    </div>
     <input class="sbox" id="songSearch" placeholder="Search songs...">
     <div id="songDetail"></div>
     <div id="songResults"></div>
@@ -204,7 +207,7 @@ async function loadRankings(){
     current=profiles[0]?._uid||'p0';
   // Populate file filter dropdowns
   const srcs=[...new Set(profiles.map(p=>p.source).filter(Boolean))].sort();
-  ['filterAggFile','filterRankFile'].forEach(id=>{
+  ['filterAggFile','filterRankFile','filterSongFile'].forEach(id=>{
     const s=document.getElementById(id);if(!s)return;
     const v=s.value;s.innerHTML='<option value="">All files</option>'+srcs.map(f=>'<option value="'+f+'">'+f.replace('.txt','')+'</option>').join('');
     if(srcs.includes(v))s.value=v;
@@ -271,10 +274,20 @@ function renderAgg(){
 // ---- PER SONG ----
 function showSong(sid){
   switchTab('song');const s=gs(sid);if(!s)return;
+  const fileFilter=document.getElementById('filterSongFile')?.value||'';
+  const filtered=fileFilter?profiles.filter(p=>p.source===fileFilter):profiles;
   document.getElementById('songDetail').innerHTML='<div class="det"><h2>'+s.name+'</h2><div class="mt">'+(s.en?s.en+' · ':'')+s.artist+' · '+s.series+(s.date?' · '+s.date:'')+'</div></div>';
-  const list=profiles.map(p=>({name:p.name,pos:gr(p,sid)})).filter(r=>r.pos!==null).sort((a,b)=>a.pos-b.pos);
+  const list=filtered.map(p=>({name:p._label,pos:gr(p,sid)})).filter(r=>r.pos!==null).sort((a,b)=>a.pos-b.pos);
   document.getElementById('songResults').innerHTML=list.length?list.map(r=>'<div class="ritem"><span class="pos">#'+r.pos+'</span><span class="nm2">'+r.name+'</span></div>').join(''):'<p style="color:var(--text-dim);padding:12px">Not ranked by anyone.</p>';
   document.getElementById('songSearch').value=s.name;
+}
+function renderSearch(){
+  const q=document.getElementById('songSearch').value.toLowerCase(),list=document.getElementById('songResults');
+  const fileFilter=document.getElementById('filterSongFile')?.value||'';
+  const filtered=fileFilter?profiles.filter(p=>p.source===fileFilter):profiles;
+  const m=q?SONGS.filter(s=>s.name.toLowerCase().includes(q)||s.artist.toLowerCase().includes(q)||(s.en&&s.en.toLowerCase().includes(q))):[];
+  list.innerHTML=m.length?m.map(s=>{const c=filtered.filter(p=>p.ids.includes(s.id)).length;return '<div class="item" onclick="showSong(\''+s.id+'\')">'+songHTML(s,'<div class="ar">ranked by '+c+'</div>')+'</div>';}).join(''):'<p style="color:var(--text-dim);padding:12px">No matches.</p>';
+  if(!q)list.innerHTML='<p style="color:var(--text-dim);padding:12px">Type a song name to search.</p>';
 }
 function renderSearch(){
   const q=document.getElementById('songSearch').value.toLowerCase(),list=document.getElementById('songResults');
@@ -386,6 +399,7 @@ document.getElementById('hideUnranked').addEventListener('change',renderAgg);
 document.getElementById('hideUnrankedRank').addEventListener('change',renderRank);
 document.getElementById('filterRankFile')?.addEventListener('change',()=>{rSel();renderRank();});
 document.getElementById('filterAggFile')?.addEventListener('change',renderAgg);
+document.getElementById('filterSongFile')?.addEventListener('change',renderSearch);
 document.getElementById('songSearch').addEventListener('input',renderSearch);
 
 loadData();

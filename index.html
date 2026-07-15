@@ -71,6 +71,12 @@ nav button.active{background:#fb8a9b;color:#fff;border-color:#fb8a9b}
 .delta.d0{color:var(--text-dim)}
 .delta.dp{color:#4caf50}
 .delta.dn{color:#ff7043}
+.cmpcard{flex:1;max-width:400px;min-width:200px;background:var(--bg-card);border:2px solid var(--border);border-radius:12px;padding:24px;cursor:pointer;transition:all .2s;text-align:center}
+.cmpcard:hover{border-color:#fb8a9b;transform:scale(1.02)}
+.cmpcard .sc{width:100%;height:4px;border-radius:2px;margin-bottom:12px}
+.cmpcard .nm{font-size:1.2rem;font-weight:600;margin-bottom:4px}
+.cmpcard .ar{font-size:.9rem;color:var(--text-dim)}
+.cmpcard .label{font-size:.75rem;color:var(--text-dim);margin-top:12px}
 @media(max-width:700px){.container{padding:10px}header h1{font-size:1.3rem}.item{padding:6px 8px}.rk{width:26px;font-size:1rem}.bar{flex-direction:column;align-items:stretch}.cc{flex-direction:column}}
 </style>
 </head>
@@ -85,6 +91,7 @@ nav button.active{background:#fb8a9b;color:#fff;border-color:#fb8a9b}
     <button data-tab="rank">Ranking</button>
     <button data-tab="song">Per Song</button>
     <button data-tab="cmp">Compare</button>
+    <button data-tab="sort">Sort</button>
   </nav>
 
   <div class="section active" id="section-agg">
@@ -122,6 +129,32 @@ nav button.active{background:#fb8a9b;color:#fff;border-color:#fb8a9b}
 
   <div class="section" id="section-cmp">
     <div class="matrix-wrap" id="cmpGrid"></div>
+  </div>
+
+  <div class="section" id="section-sort">
+    <div class="bar">
+      <label>Pool:</label>
+      <select id="sortPool">
+        <option value="all">All songs</option>
+        <option value="series">By series...</option>
+      </select>
+      <select id="sortSeries" style="display:none"></select>
+      <label class="cb"><input type="checkbox" id="sortBlind" checked> Blind</label>
+      <button class="btn sec" id="sortStartBtn">Start</button>
+      <button class="btn sec" id="sortUndoBtn" style="display:none">Undo</button>
+    </div>
+    <div id="sortStatus" style="color:var(--text-dim);font-size:.9rem;margin-bottom:12px"></div>
+    <div id="sortArea" style="display:none">
+      <div class="cc" id="sortCards" style="justify-content:center;gap:20px"></div>
+      <div id="sortResult" style="display:none" class="det">
+        <h2>Sorting Complete!</h2>
+        <div id="sortResultName" style="margin:10px 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <input id="sortProfileName" placeholder="Profile name..." style="background:var(--bg-card2);color:var(--text);border:1px solid var(--border);padding:8px 12px;border-radius:6px;font-size:.95rem;flex:1;min-width:150px">
+          <button class="btn" id="sortSaveBtn">Save as profile</button>
+        </div>
+        <div class="list" id="sortResultList"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -430,6 +463,129 @@ function showCmpDetail(pa,pb){
   document.getElementById('cmpCover').scrollTop=0;
 }
 
+// ---- SORT ----
+let sortState=null;
+function getSortableSongs(){
+  const p=document.getElementById('sortPool').value;
+  if(p==='all')return SONGS;
+  const series=document.getElementById('sortSeries').value;
+  return series?SONGS.filter(s=>s.series===series):SONGS;
+}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}}
+function startSort(){
+  const items=getSortableSongs();
+  if(items.length<2)return;
+  const ids=items.map(s=>s.id);
+  shuffle(ids);
+  sortState={
+    sorted:[ids[0]],
+    remaining:ids.slice(1),
+    inserting:ids[1],
+    lo:0,hi:1,
+    comparisons:0,
+    history:[],
+    done:false
+  };
+  saveSort();
+  renderSortStep();
+}
+function saveSort(){localStorage.setItem('ll_sort_v1',JSON.stringify(sortState));}
+function renderSortStep(){
+  if(!sortState||sortState.done)return;
+  // Show progress
+  const total=sortState.sorted.length+sortState.remaining.length;
+  const done=sortState.sorted.length;
+  document.getElementById('sortArea').style.display='block';
+  document.getElementById('sortResult').style.display='none';
+  document.getElementById('sortStatus').textContent=`Placing song ${done} of ${total} · ${sortState.comparisons} comparisons`;
+  document.getElementById('sortUndoBtn').style.display=sortState.history.length?'inline-block':'none';
+  // Show the current comparison if we're in binary search
+  if(sortState.inserting!==null&&sortState.lo<sortState.hi){
+    const mid=Math.floor((sortState.lo+sortState.hi)/2);
+    sortState.mid=mid;
+    const cur=gs(sortState.inserting);
+    const against=gs(sortState.sorted[mid]);
+    const blind=document.getElementById('sortBlind').checked;
+    document.getElementById('sortCards').innerHTML=
+      `<div class="cmpcard" onclick="pickSort(true)"><div class="sc" style="background:${cur?cur.color:'#888'}"></div><div class="nm">${blind?'Song A':(cur?cur.name:'?')}</div><div class="ar">${blind?'':(cur?cur.artist+(cur.series?' · '+cur.series:'')+(cur.date?' · '+cur.date:''):'')}</div><div class="label">▼ rank higher</div></div>`+
+      `<div style="display:flex;align-items:center;color:var(--text-dim);font-size:1.5rem">or</div>`+
+      `<div class="cmpcard" onclick="pickSort(false)"><div class="sc" style="background:${against?against.color:'#888'}"></div><div class="nm">${blind?'Song B':(against?against.name:'?')}</div><div class="ar">${blind?'':(against?against.artist+(against.series?' · '+against.series:'')+(against.date?' · '+against.date:''):'')}</div><div class="label">▼ rank higher</div></div>`;
+  } else if(sortState.inserting!==null){
+    // lo >= hi, insert and move to next
+    sortState.sorted.splice(sortState.lo,0,sortState.inserting);
+    sortState.history=[];
+    if(sortState.remaining.length){
+      const next=sortState.remaining.shift();
+      // Binary search where next fits in sorted
+      let lo=0,hi=sortState.sorted.length;
+      while(lo<hi){
+        const mid=Math.floor((lo+hi)/2);
+        const nextSong=gs(next),midSong=gs(sortState.sorted[mid]);
+        // We'll need another comparison - so save state and show
+        sortState.inserting=next;sortState.lo=lo;sortState.hi=hi;
+        saveSort();renderSortStep();return;
+      }
+      sortState.inserting=next;sortState.lo=lo;sortState.hi=hi;
+      // Re-render will trigger comparison
+    } else {
+      finishSort();return;
+    }
+  }
+  saveSort();
+}
+function pickSort(userPrefersNew){
+  if(!sortState||sortState.done||sortState.inserting===null)return;
+  const mid=Math.floor((sortState.lo+sortState.hi)/2);
+  sortState.history.push({lo:sortState.lo,hi:sortState.hi,inserting:sortState.inserting});
+  if(userPrefersNew){
+    sortState.hi=mid;
+  } else {
+    sortState.lo=mid+1;
+  }
+  sortState.comparisons++;
+  saveSort();
+  renderSortStep();
+}
+function undoSort(){
+  if(!sortState||!sortState.history.length)return;
+  const last=sortState.history.pop();
+  sortState.lo=last.lo;sortState.hi=last.hi;sortState.inserting=last.inserting;
+  sortState.comparisons=Math.max(0,sortState.comparisons-1);
+  saveSort();
+  renderSortStep();
+}
+function finishSort(){
+  if(!sortState)return;
+  sortState.done=true;
+  const songs=sortState.sorted.map(id=>gs(id)).filter(Boolean);
+  document.getElementById('sortCards').innerHTML='';
+  document.getElementById('sortResult').style.display='block';
+  document.getElementById('sortStatus').textContent=`Done! ${sortState.comparisons} comparisons.`;
+  document.getElementById('sortResultList').innerHTML=songs.map((s,i)=>'<div class="item" onclick="showSong(\''+s.id+'\')"><div class="rk">#'+(i+1)+'</div>'+songHTML(s)+'</div>').join('');
+  localStorage.removeItem('ll_sort_v1');
+  sortState=null;
+}
+function resumeSort(){
+  const saved=localStorage.getItem('ll_sort_v1');
+  if(!saved)return;
+  sortState=JSON.parse(saved);
+  if(!sortState.done)renderSortStep();
+  else finishSort();
+}
+function saveSortResult(){
+  const items=document.getElementById('sortResultList').querySelectorAll('.item');
+  const ids=[];items.forEach(el=>{const m=el.innerHTML.match(/showSong\('(\d+)'\)/);if(m)ids.push(m[1]);});
+  if(!ids.length)return;
+  const name=document.getElementById('sortProfileName').value.trim();
+  if(!name)return;
+  profiles.push({name,ids,_uid:'p'+profiles.length,_label:name,source:'sort'});
+  rSel();
+  switchTab('rank');
+  current=profiles[profiles.length-1]._uid;
+  document.getElementById('selProfile').value=current;
+  renderRank();
+}
+
 // ---- NAV ----
 let currentTab='agg';
 function switchTab(t){
@@ -442,6 +598,7 @@ function switchTab(t){
   if(t==='rank')renderRank();
   if(t==='song'){document.getElementById('songDetail').innerHTML='';document.getElementById('songResults').innerHTML='<p style="color:var(--text-dim);padding:12px">Type a song name to search.</p>';}
   if(t==='cmp'){closeCmpDetail();renderCmp();}
+  if(t==='sort'){document.getElementById('sortSeries').style.display='none';resumeSort();}
 }
 function renderAll(){rSel();if(currentTab==='agg')renderAgg();else if(currentTab==='rank')renderRank();else if(currentTab==='cmp')renderCmp();else if(currentTab==='song'){document.getElementById('songDetail').innerHTML='';document.getElementById('songResults').innerHTML='<p style="color:var(--text-dim);padding:12px">Type a song name to search.</p>';}}
 
@@ -458,6 +615,16 @@ document.getElementById('hideUnrankedRank').addEventListener('change',renderRank
 document.getElementById('filterRankFile')?.addEventListener('change',()=>{rSel();renderRank();});
 document.getElementById('filterAggFile')?.addEventListener('change',renderAgg);
 document.getElementById('filterSongFile')?.addEventListener('change',renderSearch);
+document.getElementById('sortStartBtn')?.addEventListener('click',startSort);
+document.getElementById('sortUndoBtn')?.addEventListener('click',undoSort);
+document.getElementById('sortSaveBtn')?.addEventListener('click',saveSortResult);
+document.getElementById('sortPool')?.addEventListener('change',()=>{
+  const s=document.getElementById('sortSeries');
+  s.style.display=document.getElementById('sortPool').value==='series'?'inline-block':'none';
+});
+document.getElementById('sortBlind')?.addEventListener('change',()=>{if(sortState&&!sortState.done)renderSortStep();});
+// Populate sort series dropdown
+if(document.getElementById('sortSeries'))document.getElementById('sortSeries').innerHTML=SERIES_LIST.map(s=>'<option value="'+s+'">'+s+'</option>').join('');
 let searchTimer;
 document.getElementById('songSearch').addEventListener('input',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(renderSearch,150);});
 

@@ -85,7 +85,6 @@ nav button.active{background:#fb8a9b;color:#fff;border-color:#fb8a9b}
     <button data-tab="rank">Ranking</button>
     <button data-tab="song">Per Song</button>
     <button data-tab="cmp">Compare</button>
-    <button data-tab="spread">Spread</button>
   </nav>
 
   <div class="section active" id="section-agg">
@@ -118,23 +117,6 @@ nav button.active{background:#fb8a9b;color:#fff;border-color:#fb8a9b}
 
   <div class="section" id="section-cmp">
     <div class="matrix-wrap" id="cmpGrid"></div>
-  </div>
-
-  <div class="section" id="section-spread">
-    <div class="bar">
-      <label>Profile:</label><select id="selSpread"></select>
-      <label>Samples:</label>
-      <select id="spreadCount">
-        <option value="5">5</option>
-        <option value="10" selected>10</option>
-        <option value="15">15</option>
-        <option value="20">20</option>
-        <option value="30">30</option>
-        <option value="50">50</option>
-      </select>
-    </div>
-    <div id="spreadInfo" style="color:var(--text-dim);font-size:.85rem;margin-bottom:10px"></div>
-    <div class="list" id="spreadList"></div>
   </div>
 </div>
 
@@ -204,25 +186,12 @@ async function loadRankings(){
         raw.push(...parseProfiles(await r.text(), f.name));
       }catch(e){console.warn('Failed:',f.name,e)}
     }
-    // Assign unique IDs and build final profile list
-    // Dedup: for same name across files, keep only the one with most songs
-    const byName={};
-    raw.forEach(p=>{
-      if(!byName[p.name]||p.ids.length>byName[p.name].ids.length) byName[p.name]=p;
-    });
-    profiles=Object.values(byName);
-    profiles.forEach((p,i)=>{p._uid='p'+i; p._label=p.label||p.name;});
-    // If we deduped, also keep smaller versions as separate entries
-    // Actually the user wants: if multiple files for same name, only keep the biggest
-    // But still label with source for clarity
-    raw.forEach(p=>{
-      const existing=profiles.find(x=>x.name===p.name);
-      if(existing&&existing!==p) {
-        // This one was deduped - add it as a separate profile with full label
-        p._uid='p'+profiles.length;
-        p._label=p.name+' ('+(p.source||'').replace('.txt','')+')';
-        profiles.push(p);
-      }
+    // Keep all profiles, label duplicates with source file
+    const nameCount={}; raw.forEach(p=>{nameCount[p.name]=(nameCount[p.name]||0)+1;});
+    profiles = raw.map((p,i)=>{
+      p._uid='p'+i;
+      p._label = nameCount[p.name]>1 ? p.name+' ('+(p.source||'').replace('.txt','')+')' : p.name;
+      return p;
     });
   }catch{
     try{const r=await fetch('data/rankings/hasu6thbelluna.txt');profiles=parseProfiles(await r.text());}
@@ -234,12 +203,9 @@ async function loadRankings(){
   renderAll();
 }
 function rSel(){
-  const uids=profiles.map(p=>p._uid);
   const s=document.getElementById('selProfile');if(!s)return;
   s.innerHTML=profiles.map(p=>'<option value="'+p._uid+'">'+p._label+'</option>').join('');
-  if(uids.includes(current))s.value=current;else if(profiles.length){s.value=profiles[0]._uid;current=profiles[0]._uid;}
-  const ss=document.getElementById('selSpread');if(!ss)return;
-  ss.innerHTML=profiles.map(p=>'<option value="'+p._uid+'">'+p._label+'</option>').join('');
+  if(!s.value&&profiles.length){s.value=profiles[0]._uid;current=profiles[0]._uid;}
 }
 function sortSongs(songs,mode){
   const c=[...songs];const cmp={name:(a,b)=>a.name.localeCompare(b.name),'name-desc':(a,b)=>b.name.localeCompare(a.name),date:(a,b)=>(a.date||'9999').localeCompare(b.date||'9999'),'date-desc':(a,b)=>(b.date||'').localeCompare(a.date||''),artist:(a,b)=>a.artist.localeCompare(b.artist),'artist-desc':(a,b)=>b.artist.localeCompare(a.artist),series:(a,b)=>a.series.localeCompare(b.series)||a.name.localeCompare(b.name)};
@@ -308,81 +274,74 @@ function renderSearch(){
 let cmpSel=null;
 function renderCmp(){
   if(profiles.length<2){document.getElementById('cmpGrid').innerHTML='<p style="color:var(--text-dim)">Need at least 2 profiles.</p>';return;}
-  const allIds=new Set();profiles.forEach(p=>p.ids.forEach(id=>allIds.add(id)));
-  const cmpSongs=[...allIds].map(id=>gs(id)).filter(Boolean);
-  if(!cmpSongs.length){document.getElementById('cmpGrid').innerHTML='<p style="color:var(--text-dim)">No songs in rankings.</p>';return;}
-  const allProfiles=[...profiles];
-  const matrix=allProfiles.map(a=>allProfiles.map(b=>{if(a===b)return null;let c=0;cmpSongs.forEach(s=>{const pA=gr(a,s.id),pB=gr(b,s.id);if(pA!==null&&pB!==null&&Math.abs(pA-pB)<=3)c++;});return Math.round(c/cmpSongs.length*100);}));
-  let html='<div class="matrix" style="grid-template-columns:'+Math.min(80,Math.floor(700/allProfiles.length))+'px repeat('+allProfiles.length+',minmax(40px,1fr))">';
-  html+='<div class="ml" style="grid-column:1;grid-row:1"></div>';
-  allProfiles.forEach((p,i)=>{html+='<div class="mt" style="grid-column:'+(i+2)+';grid-row:1" title="'+p.name+'">'+p.name+'</div>';});
-  for(let i=0;i<allProfiles.length;i++){
-    html+='<div class="ml" style="grid-column:1;grid-row:'+(i+2)+'" title="'+allProfiles[i].name+'">'+allProfiles[i].name+'</div>';
-    for(let j=0;j<allProfiles.length;j++){
-      if(i===j)html+='<div class="mc di" style="grid-column:'+(j+2)+';grid-row:'+(i+2)+'"><span class="pct" style="color:var(--text-dim)">—</span></div>';
-      else{
-        const v=matrix[i][j];const r=v/100;
-        const grn=Math.round(200*r),red=Math.round(200*(1-r));
-        const sel=cmpSel&&cmpSel[0]===i&&cmpSel[1]===j?' sel':'';
-        html+='<div class="mc'+sel+'" style="grid-column:'+(j+2)+';grid-row:'+(i+2)+';background:rgb('+red+','+grn+',80)" onclick="openCmp('+i+','+j+')"><span class="pct">'+v+'%</span><span class="sub">'+cmpSongs.length+'</span></div>';
+  // Group profiles by source file
+  const groups={}; profiles.forEach(p=>{
+    const key=p.source||'unknown';
+    if(!groups[key])groups[key]=[];
+    groups[key].push(p);
+  });
+  const fileOrder=Object.keys(groups).sort();
+  let allHtml='';
+  fileOrder.forEach(key=>{
+    const list=groups[key];
+    if(list.length<2)return;
+    allHtml+='<h3 style="color:#fb8a9b;font-size:.95rem;margin:16px 0 8px">'+(key==='unknown'?'Other':key.replace('.txt',''))+'</h3>';
+    const n=list.length;
+    const matrix=list.map(a=>list.map(b=>{
+      if(a===b)return null;
+      const shared=a.ids.filter(id=>b.ids.includes(id));
+      if(!shared.length)return 0;
+      let c=0;shared.forEach(sid=>{const pA=gr(a,sid),pB=gr(b,sid);if(Math.abs(pA-pB)<=3)c++;});
+      return Math.round(c/shared.length*100);
+    }));
+    let html='<div class="matrix" style="grid-template-columns:'+Math.min(80,Math.floor(700/n))+'px repeat('+n+',minmax(40px,1fr))">';
+    html+='<div class="ml" style="grid-column:1;grid-row:1"></div>';
+    list.forEach((p,i)=>{html+='<div class="mt" style="grid-column:'+(i+2)+';grid-row:1" title="'+p.name+'">'+p.name+'</div>';});
+    for(let i=0;i<n;i++){
+      html+='<div class="ml" style="grid-column:1;grid-row:'+(i+2)+'" title="'+list[i].name+'">'+list[i].name+'</div>';
+      for(let j=0;j<n;j++){
+        if(i===j)html+='<div class="mc di" style="grid-column:'+(j+2)+';grid-row:'+(i+2)+'"><span class="pct" style="color:var(--text-dim)">—</span></div>';
+        else{
+          const v=matrix[i][j];const r=v/100;
+          const grn=Math.round(200*r),red=Math.round(200*(1-r));
+          const sel=cmpSel&&cmpSel[0]===list[i]&&cmpSel[1]===list[j]?' sel':'';
+          html+='<div class="mc'+sel+'" style="grid-column:'+(j+2)+';grid-row:'+(i+2)+';background:rgb('+red+','+grn+',80)" onclick="openCmp(\''+list[i]._uid+'\',\''+list[j]._uid+'\')"><span class="pct">'+v+'%</span><span class="sub">'+list[i].ids.filter(id=>list[j].ids.includes(id)).length+' shared</span></div>';
+        }
       }
     }
-  }
-  html+='</div>';
-  document.getElementById('cmpGrid').innerHTML=html;
+    html+='</div>';
+    allHtml+=html;
+  });
+  document.getElementById('cmpGrid').innerHTML=allHtml||'<p style="color:var(--text-dim)">No file has 2+ profiles.</p>';
 }
-function openCmp(i,j){
-  cmpSel=[i,j];
-  const allProfiles=[...profiles];
-  showCmpDetail(allProfiles[i],allProfiles[j]);
+function openCmp(uidA,uidB){
+  const pa=profiles.find(p=>p._uid===uidA),pb=profiles.find(p=>p._uid===uidB);
+  if(!pa||!pb)return;
+  cmpSel=[pa,pb];
+  showCmpDetail(pa,pb);
 }
 function closeCmpDetail(){document.getElementById('cmpCover').classList.remove('show');}
 function showCmpDetail(pa,pb){
-  const allIds=new Set();profiles.forEach(p=>p.ids.forEach(id=>allIds.add(id)));
-  const cmpSongs=[...allIds].map(id=>gs(id)).filter(Boolean).sort((a,b)=>a.name.localeCompare(b.name));
-  const diffs=cmpSongs.map(s=>{const pA=gr(pa,s.id),pB=gr(pb,s.id);const rA=pA||36,rB=pB||36;return{song:s,pA,pB,rA,rB,abs:Math.abs(rA-rB),both:pA!==null&&pB!==null};}).sort((a,b)=>b.abs-a.abs);
-  const bothCount=diffs.filter(d=>d.both).length;
-  const closeCount=diffs.filter(d=>d.both&&d.abs<=3).length;
+  // Use intersection — only songs both profiles ranked
+  const sharedIds=pa.ids.filter(id=>pb.ids.includes(id));
+  const cmpSongs=sharedIds.map(id=>gs(id)).filter(Boolean).sort((a,b)=>a.name.localeCompare(b.name));
+  if(!cmpSongs.length){document.getElementById('cmpDetailBody').innerHTML='<p style="color:var(--text-dim)">No shared songs.</p>';document.getElementById('cmpCover').classList.add('show');return;}
+  const diffs=cmpSongs.map(s=>{const pA=gr(pa,s.id),pB=gr(pb,s.id);return{song:s,pA,pB,abs:Math.abs(pA-pB)};}).sort((a,b)=>b.abs-a.abs);
+  const closeCount=diffs.filter(d=>d.abs<=3).length;
   const aList=cmpSongs.map(s=>({song:s,pos:gr(pa,s.id)})).sort((a,b)=>(a.pos||999)-(b.pos||999));
   const bList=cmpSongs.map(s=>({song:s,pos:gr(pb,s.id)})).sort((a,b)=>(a.pos||999)-(b.pos||999));
-  document.getElementById('cmpDetailTitle').textContent=pa.name+' vs '+pb.name;
+  document.getElementById('cmpDetailTitle').textContent=pa.name+' vs '+pb.name+' ('+cmpSongs.length+' shared)';
   document.getElementById('cmpDetailBody').innerHTML=`
     <div class="abar" style="gap:12px">
-      <span>Agreement: <strong>${cmpSongs.length?Math.round(closeCount/cmpSongs.length*100):0}%</strong> within ±3</span>
-      <span>Both: ${bothCount} · Only ${pa.name}: ${diffs.filter(d=>!d.both&&d.pA).length} · Only ${pb.name}: ${diffs.filter(d=>!d.both&&d.pB).length}</span>
-      <div class="bt" style="min-width:100px"><div class="bf" style="width:${cmpSongs.length?Math.round(closeCount/cmpSongs.length*100):0}%"></div></div>
+      <span>Agreement: <strong>${Math.round(closeCount/cmpSongs.length*100)}%</strong> within ±3 on ${cmpSongs.length} shared songs</span>
+      <div class="bt" style="min-width:100px"><div class="bf" style="width:${Math.round(closeCount/cmpSongs.length*100)}%"></div></div>
     </div>
     <div class="list" style="margin-bottom:16px"><div class="item" style="cursor:default;background:var(--bg-card2);font-weight:bold;font-size:.82rem;color:var(--text-dim)"><div style="width:28px;text-align:center">Δ</div><div class="rk" style="width:28px">#</div><div class="inf">Song</div><div class="rk" style="width:28px">#</div></div>
-    ${diffs.map(d=>{const cls=d.both?'':' unr';const dc=d.abs===0?'d0':d.rA<d.rB?'dp':'dn';return '<div class="item'+cls+'" onclick="closeCmpDetail();showSong(\''+d.song.id+'\')"><div class="delta '+dc+'">'+(!d.both?'—':(d.rA-d.rB>0?'+':'')+(d.rA-d.rB))+'</div><div class="rk" style="width:28px;font-size:.9rem">'+(d.pA?'#'+d.pA:'—')+'</div>'+songHTML(d.song)+'<div class="rk" style="width:28px;font-size:.9rem">'+(d.pB?'#'+d.pB:'—')+'</div></div>';}).join('')}</div>
-    <h3 style="color:#fb8a9b;margin:16px 0 8px;font-size:.95rem">Full Rankings (all songs)</h3>
-    <div class="cc"><div class="cl"><h3>${pa.name} (${pa.ids.length} ranked of ${cmpSongs.length})</h3>${aList.map(({song,pos})=>'<div class="item'+(pos===null?' unr':'')+'" onclick="closeCmpDetail();showSong(\''+song.id+'\')"><div class="rk" style="font-size:.9rem">'+(pos?'#'+pos:'—')+'</div>'+songHTML(song)+'</div>').join('')}</div><div class="cl"><h3>${pb.name} (${pb.ids.length} ranked of ${cmpSongs.length})</h3>${bList.map(({song,pos})=>'<div class="item'+(pos===null?' unr':'')+'" onclick="closeCmpDetail();showSong(\''+song.id+'\')"><div class="rk" style="font-size:.9rem">'+(pos?'#'+pos:'—')+'</div>'+songHTML(song)+'</div>').join('')}</div></div>`;
+    ${diffs.map(d=>{const dc=d.abs===0?'d0':d.pA<d.pB?'dp':'dn';return '<div class="item" onclick="closeCmpDetail();showSong(\''+d.song.id+'\')"><div class="delta '+dc+'">'+(d.pA-d.pB>0?'+':'')+(d.pA-d.pB)+'</div><div class="rk" style="width:28px;font-size:.9rem">#'+d.pA+'</div>'+songHTML(d.song)+'<div class="rk" style="width:28px;font-size:.9rem">#'+d.pB+'</div></div>';}).join('')}</div>
+    <h3 style="color:#fb8a9b;margin:16px 0 8px;font-size:.95rem">Full Rankings (shared songs only)</h3>
+    <div class="cc"><div class="cl"><h3>${pa.name} (${pa.ids.length} total)</h3>${sharedIds.map(id=>gs(id)).filter(Boolean).map((s,i)=>'<div class="item" onclick="closeCmpDetail();showSong(\''+s.id+'\')"><div class="rk" style="font-size:.9rem">#'+(i+1)+'</div>'+songHTML(s)+'</div>').join('')}</div><div class="cl"><h3>${pb.name} (${pb.ids.length} total)</h3>${sharedIds.map(id=>gs(id)).filter(Boolean).map((s,i)=>'<div class="item" onclick="closeCmpDetail();showSong(\''+s.id+'\')"><div class="rk" style="font-size:.9rem">#'+(i+1)+'</div>'+songHTML(s)+'</div>').join('')}</div></div>`;
   document.getElementById('cmpCover').classList.add('show');
   document.getElementById('cmpCover').scrollTop=0;
-}
-
-// ---- SPREAD ----
-function renderSpread(){
-  const list=document.getElementById('spreadList'),info=document.getElementById('spreadInfo');
-  const name=document.getElementById('selSpread').value;
-  const p=profiles.find(r=>r._uid===name);
-  if(!p||!p.ids.length){list.innerHTML='';info.textContent='Select a profile.';return;}
-  const count=parseInt(document.getElementById('spreadCount').value);
-  const ids=p.ids;const total=ids.length;
-  const step=Math.max(1,Math.floor(total/count));
-  const positions=[];
-  for(let i=0;i<count&&i*step<total;i++) positions.push(i*step);
-  // Always include last position
-  if(positions[positions.length-1]!==total-1) positions.push(total-1);
-  info.textContent=p.label+': '+total+' songs, showing '+positions.length+' evenly-spaced samples';
-  list.innerHTML='';
-  positions.forEach(pos=>{
-    const song=gs(ids[pos]);
-    if(!song){const d=document.createElement('div');d.className='item unr';d.innerHTML='<div class="inf"><div class="nm" style="color:var(--text-dim)">(unknown)</div></div>';list.appendChild(d);return;}
-    const e=document.createElement('div');e.className='item';
-    e.addEventListener('click',()=>showSong(song.id));
-    e.innerHTML='<div class="rk">#'+(pos+1)+'</div>'+songHTML(song,'<div class="ar">position '+(pos+1)+' of '+total+'</div>');
-    list.appendChild(e);
-  });
 }
 
 // ---- NAV ----
@@ -397,9 +356,8 @@ function switchTab(t){
   if(t==='rank')renderRank();
   if(t==='song'){document.getElementById('songDetail').innerHTML='';document.getElementById('songResults').innerHTML='<p style="color:var(--text-dim);padding:12px">Type a song name to search.</p>';}
   if(t==='cmp'){closeCmpDetail();renderCmp();}
-  if(t==='spread')renderSpread();
 }
-function renderAll(){rSel();if(currentTab==='agg')renderAgg();else if(currentTab==='rank')renderRank();else if(currentTab==='cmp')renderCmp();else if(currentTab==='spread')renderSpread();else if(currentTab==='song'){document.getElementById('songDetail').innerHTML='';document.getElementById('songResults').innerHTML='<p style="color:var(--text-dim);padding:12px">Type a song name to search.</p>';}}
+function renderAll(){rSel();if(currentTab==='agg')renderAgg();else if(currentTab==='rank')renderRank();else if(currentTab==='cmp')renderCmp();else if(currentTab==='song'){document.getElementById('songDetail').innerHTML='';document.getElementById('songResults').innerHTML='<p style="color:var(--text-dim);padding:12px">Type a song name to search.</p>';}}
 
 document.querySelectorAll('nav button').forEach(b=>{b.addEventListener('click',()=>switchTab(b.dataset.tab));});
 document.getElementById('selProfile').addEventListener('change',()=>{current=document.getElementById('selProfile').value;renderRank();});
@@ -411,8 +369,6 @@ document.getElementById('filterRankArtist').addEventListener('change',renderRank
 document.getElementById('filterAggArtist').addEventListener('change',renderAgg);
 document.getElementById('hideUnranked').addEventListener('change',renderAgg);
 document.getElementById('hideUnrankedRank').addEventListener('change',renderRank);
-document.getElementById('selSpread').addEventListener('change',renderSpread);
-document.getElementById('spreadCount').addEventListener('change',renderSpread);
 document.getElementById('songSearch').addEventListener('input',renderSearch);
 
 loadData();

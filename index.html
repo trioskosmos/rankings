@@ -228,6 +228,19 @@ function sortSongs(songs,mode){
 }
 function songHTML(song,extra){return '<div class="sc" style="background:'+(song.color||'#888')+'"></div><div class="inf"><div class="nm">'+song.name+'</div><div class="ar">'+song.artist+(song.series?' · '+song.series:'')+(song.date?' · '+song.date:'')+'</div>'+(extra||'')+'</div>';}
 function makeItem(song,rank,extra){if(!song){const d=document.createElement('div');d.className='item unr';d.innerHTML='<div class="inf"><div class="nm" style="color:var(--text-dim)">(unknown)</div></div>';return d;}const d=document.createElement('div');d.className='item';d.addEventListener('click',()=>showSong(song.id));d.innerHTML='<div class="rk">#'+rank+'</div>'+songHTML(song,extra);return d;}
+function getFilePool(fileFilter){
+  if(!fileFilter) return null;
+  const pool=new Set();
+  profiles.filter(p=>p.source===fileFilter).forEach(p=>p.ids.forEach(id=>pool.add(id)));
+  return pool;
+}
+function reRank(profile, pool){
+  if(!pool) return profile.ids;
+  const subset=profile.ids.filter(id=>pool.has(id));
+  // Also add pool songs not in profile's list at the end
+  const extra=[...pool].filter(id=>!subset.includes(id));
+  return [...subset, ...extra];
+}
 function getFilteredSongs(fS,fA){let s=SONGS;if(fS)s=s.filter(x=>x.series===fS);if(fA)s=s.filter(x=>x.allArtists.includes(fA));return s;}
 function median(arr){if(!arr.length)return 0;const s=[...arr].sort((a,b)=>a-b),m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2;}
 function stddev(arr,m){if(arr.length<2)return 0;return Math.sqrt(arr.reduce((s,v)=>s+(v-m)**2,0)/arr.length);}
@@ -236,13 +249,16 @@ function stddev(arr,m){if(arr.length<2)return 0;return Math.sqrt(arr.reduce((s,v
 function renderRank(){
   const list=document.getElementById('songList'),p=profiles.find(r=>r._uid===current),info=document.getElementById('info');
   if(!p){list.innerHTML='';info.textContent='';return;}
+  const fileFilter=document.getElementById('filterRankFile')?.value||'';
+  const pool=getFilePool(fileFilter);
+  const rankedIds=reRank(p,pool);
   const fS=document.getElementById('filterRank').value,fA=document.getElementById('filterRankArtist').value,hideUR=document.getElementById('hideUnrankedRank').checked;
-  const allS=getFilteredSongs(fS,fA),ranked=p.ids.map(id=>gs(id)).filter(Boolean).filter(s=>allS.includes(s)),unranked=allS.filter(s=>!p.ids.includes(s.id));
-  info.textContent=p.ids.length+' songs ranked · '+allS.length+' match filters'+(hideUR?' (hiding unranked)':'');
+  const allS=getFilteredSongs(fS,fA),ranked=rankedIds.map(id=>gs(id)).filter(Boolean).filter(s=>allS.includes(s)),unranked=allS.filter(s=>!rankedIds.includes(s.id));
+  info.textContent=(pool?rankedIds.length+' songs in pool · ':'')+p.ids.length+' total ranked'+(hideUR?' (hiding unranked)':'');
   const mode=document.getElementById('sortRank').value;
   const items = hideUR ? ranked : (mode==='default' ? [...ranked,...unranked] : sortSongs([...ranked,...unranked],mode));
   list.innerHTML='';
-  items.forEach((s,i)=>{const e=makeItem(s,i+1);if(!p.ids.includes(s.id))e.classList.add('unr');list.appendChild(e);});
+  items.forEach((s,i)=>{const e=makeItem(s,i+1);if(!rankedIds.includes(s.id))e.classList.add('unr');list.appendChild(e);});
 }
 
 // ---- AGGREGATE ----
@@ -250,16 +266,30 @@ function renderAgg(){
   const el=document.getElementById('aggContent'),mode=document.getElementById('sortAgg').value;
   const fS=document.getElementById('filterAgg').value,fA=document.getElementById('filterAggArtist').value;
   const fileFilter=document.getElementById('filterAggFile')?.value||'';
-  const active=(fileFilter?profiles.filter(p=>p.source===fileFilter):profiles).filter(p=>p.ids.length>0);if(!active.length){el.innerHTML='<p style="color:var(--text-dim)">No profiles.</p>';return;}
-  const allS=getFilteredSongs(fS,fA),t=active.length;
+  const pool=getFilePool(fileFilter);
+  // When a file filter is active, only use profiles from that file
+  const active=profiles.filter(p=>p.source===fileFilter||!fileFilter).filter(p=>p.ids.length>0);
+  if(!active.length){el.innerHTML='<p style="color:var(--text-dim)">No profiles.</p>';return;}
+  // Use the file pool as the song universe, or all ranked songs if no filter
+  const allSongIds=pool?[...pool]:[...new Set(active.flatMap(p=>p.ids))];
   const hideZero=document.getElementById('hideUnranked').checked;
-  let data=allS.map(song=>{
-    const allRanks=active.map(p=>{const i=p.ids.indexOf(song.id);return i===-1?null:i+1;});
-    const avgVals=allRanks.map(r=>r===null?36:r);
-    const avg=t>0?avgVals.reduce((a,b)=>a+b,0)/t:0;
-    const rankedRanks=allRanks.filter(r=>r!==null),med=median(rankedRanks.length?rankedRanks:[36]),sd=stddev(avgVals,avg);
+  const t=active.length;
+  const totalSongs=allSongIds.length;
+  let data=allSongIds.map(id=>gs(id)).filter(Boolean).map(song=>{
+    // For each active profile, compute re-ranked position within the pool
+    const allRanks=active.map(p=>{
+      const reranked=reRank(p,pool||null);
+      const i=reranked.indexOf(song.id);
+      return i===-1?totalSongs:i+1;
+    });
+    const avg=allRanks.reduce((a,b)=>a+b,0)/t;
+    const rankedRanks=allRanks.filter(r=>r<totalSongs),med=median(rankedRanks.length?rankedRanks:[totalSongs]),sd=stddev(allRanks,avg);
     let hi={name:'',pos:999},lo={name:'',pos:0};
-    active.forEach(p=>{const r=gr(p,song.id);if(r!==null){if(r<hi.pos){hi={name:p.name,pos:r}}if(r>lo.pos){lo={name:p.name,pos:r}}}});
+    active.forEach(p=>{
+      const reranked=reRank(p,pool||null);
+      const r=reranked.indexOf(song.id)+1;
+      if(r<=totalSongs){if(r<hi.pos){hi={name:p._label,pos:r}}if(r>lo.pos){lo={name:p._label,pos:r}}}
+    });
     return{song,avg,med,sd,hi,lo,count:rankedRanks.length};
   }).filter(d=>!hideZero||d.count>0);
   const cmp={rank:(a,b)=>a.avg-b.avg,'rank-desc':(a,b)=>b.avg-a.avg,median:(a,b)=>a.med-b.med,stddev:(a,b)=>a.sd-b.sd,name:(a,b)=>a.song.name.localeCompare(b.song.name),date:(a,b)=>(a.song.date||'9999').localeCompare(b.song.date||'9999'),artist:(a,b)=>a.song.artist.localeCompare(b.song.artist),series:(a,b)=>a.song.series.localeCompare(b.song.series)||a.song.name.localeCompare(b.song.name)};
@@ -275,18 +305,27 @@ function renderAgg(){
 function showSong(sid){
   switchTab('song');const s=gs(sid);if(!s)return;
   const fileFilter=document.getElementById('filterSongFile')?.value||'';
+  const pool=getFilePool(fileFilter);
   const filtered=fileFilter?profiles.filter(p=>p.source===fileFilter):profiles;
   document.getElementById('songDetail').innerHTML='<div class="det"><h2>'+s.name+'</h2><div class="mt">'+(s.en?s.en+' · ':'')+s.artist+' · '+s.series+(s.date?' · '+s.date:'')+'</div></div>';
-  const list=filtered.map(p=>({name:p._label,pos:gr(p,sid)})).filter(r=>r.pos!==null).sort((a,b)=>a.pos-b.pos);
+  const list=filtered.map(p=>{
+    const reranked=reRank(p,pool||null);
+    const pos=reranked.indexOf(sid)+1;
+    return{name:p._label,pos:pos>0&&pos<=reranked.length?pos:null};
+  }).filter(r=>r.pos!==null).sort((a,b)=>a.pos-b.pos);
   document.getElementById('songResults').innerHTML=list.length?list.map(r=>'<div class="ritem"><span class="pos">#'+r.pos+'</span><span class="nm2">'+r.name+'</span></div>').join(''):'<p style="color:var(--text-dim);padding:12px">Not ranked by anyone.</p>';
   document.getElementById('songSearch').value=s.name;
 }
 function renderSearch(){
   const q=document.getElementById('songSearch').value.toLowerCase(),list=document.getElementById('songResults');
   const fileFilter=document.getElementById('filterSongFile')?.value||'';
+  const pool=getFilePool(fileFilter);
   const filtered=fileFilter?profiles.filter(p=>p.source===fileFilter):profiles;
   const m=q?SONGS.filter(s=>s.name.toLowerCase().includes(q)||s.artist.toLowerCase().includes(q)||(s.en&&s.en.toLowerCase().includes(q))):[];
-  list.innerHTML=m.length?m.map(s=>{const c=filtered.filter(p=>p.ids.includes(s.id)).length;return '<div class="item" onclick="showSong(\''+s.id+'\')">'+songHTML(s,'<div class="ar">ranked by '+c+'</div>')+'</div>';}).join(''):'<p style="color:var(--text-dim);padding:12px">No matches.</p>';
+  list.innerHTML=m.length?m.map(s=>{
+    let c=0;filtered.forEach(p=>{const reranked=reRank(p,pool||null);if(reranked.includes(s.id))c++;});
+    return '<div class="item" onclick="showSong(\''+s.id+'\')">'+songHTML(s,'<div class="ar">ranked by '+c+'</div>')+'</div>';
+  }).join(''):'<p style="color:var(--text-dim);padding:12px">No matches.</p>';
   if(!q)list.innerHTML='<p style="color:var(--text-dim);padding:12px">Type a song name to search.</p>';
 }
 function renderSearch(){
@@ -311,16 +350,18 @@ function renderCmp(){
   fileOrder.forEach(key=>{
     const list=groups[key];
     if(list.length<2)return;
-    allHtml+='<h3 style="color:#fb8a9b;font-size:.95rem;margin:16px 0 8px">'+(key==='unknown'?'Other':key.replace('.txt',''))+'</h3>';
+    const pool=getFilePool(key);
+    allHtml+='<h3 style="color:#fb8a9b;font-size:.95rem;margin:16px 0 8px">'+key.replace('.txt','')+'</h3>';
     const n=list.length;
     const matrix=list.map(a=>list.map(b=>{
       if(a===b)return null;
-      const shared=a.ids.filter(id=>b.ids.includes(id));
+      const rerankedA=reRank(a,pool);
+      const rerankedB=reRank(b,pool);
+      const shared=rerankedA.filter(id=>rerankedB.includes(id));
       if(!shared.length)return 0;
       const total=shared.length;
-      let sum=0;shared.forEach(sid=>{const pA=gr(a,sid),pB=gr(b,sid);sum+=1-Math.abs(pA-pB)/total;});
+      let sum=0;shared.forEach(sid=>{const pA=rerankedA.indexOf(sid)+1,pB=rerankedB.indexOf(sid)+1;sum+=1-Math.abs(pA-pB)/total;});
       return Math.round(sum/total*100);
-      return Math.round(c/shared.length*100);
     }));
     let html='<div class="matrix" style="grid-template-columns:'+Math.min(80,Math.floor(700/n))+'px repeat('+n+',minmax(40px,1fr))">';
     html+='<div class="ml" style="grid-column:1;grid-row:1"></div>';
@@ -332,8 +373,11 @@ function renderCmp(){
         else{
           const v=matrix[i][j];const r=v/100;
           const grn=Math.round(200*r),red=Math.round(200*(1-r));
+          const rerankedA=reRank(list[i],pool);
+          const rerankedB=reRank(list[j],pool);
+          const shared=rerankedA.filter(id=>rerankedB.includes(id));
           const sel=cmpSel&&cmpSel[0]===list[i]&&cmpSel[1]===list[j]?' sel':'';
-          html+='<div class="mc'+sel+'" style="grid-column:'+(j+2)+';grid-row:'+(i+2)+';background:rgb('+red+','+grn+',80)" onclick="openCmp(\''+list[i]._uid+'\',\''+list[j]._uid+'\')"><span class="pct">'+v+'%</span><span class="sub">'+list[i].ids.filter(id=>list[j].ids.includes(id)).length+' shared</span></div>';
+          html+='<div class="mc'+sel+'" style="grid-column:'+(j+2)+';grid-row:'+(i+2)+';background:rgb('+red+','+grn+',80)" onclick="openCmp(\''+list[i]._uid+'\',\''+list[j]._uid+'\')"><span class="pct">'+v+'%</span><span class="sub">'+shared.length+' shared</span></div>';
         }
       }
     }
@@ -350,11 +394,15 @@ function openCmp(uidA,uidB){
 }
 function closeCmpDetail(){document.getElementById('cmpCover').classList.remove('show');}
 function showCmpDetail(pa,pb){
-  // Use intersection — only songs both profiles ranked
-  const sharedIds=pa.ids.filter(id=>pb.ids.includes(id));
+  // Find the file they share, compute re-ranked positions within that file's pool
+  const commonSource=pa.source||pb.source;
+  const pool=getFilePool(commonSource);
+  const rerankedA=reRank(pa,pool);
+  const rerankedB=reRank(pb,pool);
+  const sharedIds=rerankedA.filter(id=>rerankedB.includes(id));
   const cmpSongs=sharedIds.map(id=>gs(id)).filter(Boolean).sort((a,b)=>a.name.localeCompare(b.name));
   if(!cmpSongs.length){document.getElementById('cmpDetailBody').innerHTML='<p style="color:var(--text-dim)">No shared songs.</p>';document.getElementById('cmpCover').classList.add('show');return;}
-  const diffs=cmpSongs.map(s=>{const pA=gr(pa,s.id),pB=gr(pb,s.id);return{song:s,pA,pB,abs:Math.abs(pA-pB)};}).sort((a,b)=>b.abs-a.abs);
+  const diffs=cmpSongs.map(s=>{const pA=rerankedA.indexOf(s.id)+1,pB=rerankedB.indexOf(s.id)+1;return{song:s,pA,pB,abs:Math.abs(pA-pB)};}).sort((a,b)=>b.abs-a.abs);
   const total=cmpSongs.length;
   const sum=diffs.reduce((s,d)=>s+(1-d.abs/total),0);
   const agreePct=total?Math.round(sum/total*100):0;
@@ -367,7 +415,7 @@ function showCmpDetail(pa,pb){
     <div class="list" style="margin-bottom:16px"><div class="item" style="cursor:default;background:var(--bg-card2);font-weight:bold;font-size:.82rem;color:var(--text-dim)"><div style="width:28px;text-align:center">Δ</div><div class="rk" style="width:28px">#</div><div class="inf">Song</div><div class="rk" style="width:28px">#</div></div>
     ${diffs.map(d=>{const dc=d.abs===0?'d0':d.pA<d.pB?'dp':'dn';return '<div class="item" onclick="closeCmpDetail();showSong(\''+d.song.id+'\')"><div class="delta '+dc+'">'+(d.pA-d.pB>0?'+':'')+(d.pA-d.pB)+'</div><div class="rk" style="width:28px;font-size:.9rem">#'+d.pA+'</div>'+songHTML(d.song)+'<div class="rk" style="width:28px;font-size:.9rem">#'+d.pB+'</div></div>';}).join('')}</div>
     <h3 style="color:#fb8a9b;margin:16px 0 8px;font-size:.95rem">Full Rankings (shared songs only)</h3>
-    <div class="cc"><div class="cl"><h3>${pa.name} (${pa.ids.length} total)</h3>${sharedIds.map(id=>gs(id)).filter(Boolean).map((s,i)=>'<div class="item" onclick="closeCmpDetail();showSong(\''+s.id+'\')"><div class="rk" style="font-size:.9rem">#'+(i+1)+'</div>'+songHTML(s)+'</div>').join('')}</div><div class="cl"><h3>${pb.name} (${pb.ids.length} total)</h3>${sharedIds.map(id=>gs(id)).filter(Boolean).map((s,i)=>'<div class="item" onclick="closeCmpDetail();showSong(\''+s.id+'\')"><div class="rk" style="font-size:.9rem">#'+(i+1)+'</div>'+songHTML(s)+'</div>').join('')}</div></div>`;
+    <div class="cc"><div class="cl"><h3>${pa.name} (${pa.ids.length} total)</h3>${sharedIds.map((id,i)=>gs(id)).filter(Boolean).map((s,i)=>'<div class="item" onclick="closeCmpDetail();showSong(\''+s.id+'\')"><div class="rk" style="font-size:.9rem">#'+(i+1)+'</div>'+songHTML(s)+'</div>').join('')}</div><div class="cl"><h3>${pb.name} (${pb.ids.length} total)</h3>${sharedIds.map((id,i)=>gs(id)).filter(Boolean).map((s,i)=>'<div class="item" onclick="closeCmpDetail();showSong(\''+s.id+'\')"><div class="rk" style="font-size:.9rem">#'+(i+1)+'</div>'+songHTML(s)+'</div>').join('')}</div></div>`;
   document.getElementById('cmpCover').classList.add('show');
   document.getElementById('cmpCover').scrollTop=0;
 }

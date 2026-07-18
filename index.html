@@ -332,7 +332,11 @@ function renderAgg(){
   // Pre-compute reRanked arrays once per profile (not once per song)
   const reranked={};active.forEach(p=>{reranked[p._uid]=reRank(p,pool||null);});
   const totalSongs=allSongIds.length;
-  let data=allSongIds.map(id=>gs(id)).filter(Boolean).map(song=>{
+  let data=allSongIds.map(id=>gs(id)).filter(Boolean).filter(s=>{
+    if(fS&&s.series!==fS)return false;
+    if(fA&&!s.allArtists.includes(fA))return false;
+    return true;
+  }).map(song=>{
     const allRanks=active.map(p=>{
       const i=reranked[p._uid].indexOf(song.id);
       return i===-1?totalSongs:i+1;
@@ -348,9 +352,14 @@ function renderAgg(){
   }).filter(d=>!hideZero||d.count>0);
   const cmp={rank:(a,b)=>a.avg-b.avg,'rank-desc':(a,b)=>b.avg-a.avg,median:(a,b)=>a.med-b.med,stddev:(a,b)=>a.sd-b.sd,name:(a,b)=>a.song.name.localeCompare(b.song.name),date:(a,b)=>(a.song.date||'9999').localeCompare(b.song.date||'9999'),artist:(a,b)=>a.song.artist.localeCompare(b.song.artist),series:(a,b)=>a.song.series.localeCompare(b.song.series)||a.song.name.localeCompare(b.song.name)};
   if(cmp[mode])data.sort(cmp[mode]);
-  // Assign avg-rank positions (pre-compute before sort)
-  const avgSorted=[...data].sort((a,b)=>a.avg-b.avg);
-  avgSorted.forEach((item,i)=>item.rankPos=i+1);
+  // Assign rank positions
+  const isRankSort=mode==='rank'||mode==='rank-desc'||mode==='median'||mode==='stddev';
+  if(isRankSort){
+    const sorted=[...data].sort((a,b)=>a.avg-b.avg);
+    sorted.forEach((item,i)=>item.rankPos=i+1);
+  } else {
+    data.forEach((item,i)=>item.rankPos=i+1);
+  }
   if(!data.length){el.innerHTML='<p style="color:var(--text-dim)">No songs match filters.</p>';return;}
   el.innerHTML='<div class="list">'+data.map(item=>{const s=item.song;return '<div class="item" onclick="showSong(\''+s.id+'\')"><div class="rk">#'+item.rankPos+'</div>'+songHTML(s,'<div class="votes"><span>avg '+item.avg.toFixed(1)+' · med '+item.med.toFixed(1)+' · σ '+item.sd.toFixed(1)+' ('+item.count+'/'+t+' ranked)</span>'+(item.hi.name?'<span class="hi">▲ '+item.hi.name+' (#'+item.hi.pos+')</span>':'')+(item.lo.name?'<span class="lo">▼ '+item.lo.name+' (#'+item.lo.pos+')</span>':'')+'</div>')+'</div>';}).join('')+'</div>';
 }

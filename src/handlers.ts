@@ -47,7 +47,7 @@ export async function handleEvents(db: DB, q = '') {
     `SELECT e.id, e.tour_name, e.name, e.venue, e.series_ids, e.date_start, e.date_end, e.day_count,
             (SELECT COUNT(*) FROM event_song es WHERE es.event_id = e.id) AS song_count
      FROM event e WHERE ${where}
-     ORDER BY e.date_start DESC LIMIT 40`,
+     ORDER BY e.date_start DESC LIMIT 1000`,
     ...params,
   );
   return { events: rows };

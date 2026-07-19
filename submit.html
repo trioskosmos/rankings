@@ -37,6 +37,25 @@ textarea{min-height:180px;resize:vertical;line-height:1.5}
 .search-res div{padding:6px 10px;cursor:pointer;font-size:.85rem}
 .search-res div:hover{background:var(--pink);color:#fff}
 .hidden{display:none}
+/* event picker modal */
+.cover{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;padding:20px;overflow:hidden}
+.cover.show{display:flex}
+.modal{max-width:760px;width:100%;margin:auto;background:var(--bg);border:1px solid var(--border);border-radius:12px;display:flex;flex-direction:column;max-height:85vh}
+.modal-head{padding:14px 16px;border-bottom:1px solid var(--border)}
+.modal-head h2{color:var(--pink);font-size:1.1rem;margin-bottom:10px}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-top:8px}
+.chip{flex-shrink:0;padding:4px 10px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-size:.75rem;font-weight:700;cursor:pointer;white-space:nowrap}
+.chip.active{color:#fff}
+.modal-body{overflow-y:auto;padding:8px 16px 16px}
+.tour-group{margin-top:12px}
+.tour-name{font-size:.8rem;color:var(--text-dim);font-weight:700;margin:8px 0 4px;position:sticky;top:0;background:var(--bg);padding:2px 0}
+.leg{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:5px;cursor:pointer}
+.leg:hover{border-color:var(--pink)}
+.leg .bar{width:4px;align-self:stretch;border-radius:2px;flex-shrink:0}
+.leg .meta{flex:1;min-width:0}
+.leg .ln{font-size:.9rem;font-weight:500}
+.leg .sub{font-size:.75rem;color:var(--text-dim);margin-top:1px}
+.leg .cnt{font-size:.75rem;color:var(--pink);font-weight:700;flex-shrink:0}
 .msg{padding:10px;border-radius:6px;margin:10px 0;font-size:.9rem}
 .msg.ok{background:#1b3a1b;color:#8f8}.msg.err{background:#3a1b1b;color:#f88}
 .muted{color:var(--text-dim);font-size:.82rem}
@@ -68,11 +87,8 @@ textarea{min-height:180px;resize:vertical;line-height:1.5}
       <div id="seriesWrap" class="hidden"><label>Series</label><select id="scopeRef"></select></div>
     </div>
     <div id="eventWrap" class="hidden">
-      <label>Concert / live event (search by tour, venue, or leg)</label>
-      <div class="search-box">
-        <input id="eventSearch" placeholder="e.g. 6th Live Saitama / Belluna / 蓮ノ空" autocomplete="off">
-        <div id="eventResults" class="search-res"></div>
-      </div>
+      <label>Concert / live event</label>
+      <button type="button" class="btn sec" id="eventPickBtn" style="width:100%;text-align:left">🎤 Choose a concert / event…</button>
       <div id="eventPicked" class="muted" style="margin-top:6px"></div>
     </div>
     <label>Paste your ranking (or upload a .txt) — one song per line, e.g. <span class="muted">1. 曲名 - アーティスト</span></label>
@@ -105,16 +121,33 @@ textarea{min-height:180px;resize:vertical;line-height:1.5}
   </div>
 </div>
 
+<!-- Event picker modal (mirrors llernote /events + ll-predictions PerformancePicker) -->
+<div class="cover" id="eventModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h2>Choose a concert / event</h2>
+        <button class="btn sec" id="eventModalClose" style="padding:4px 10px">✕</button>
+      </div>
+      <input id="eventSearch" placeholder="Search by tour, leg, or venue…" autocomplete="off">
+      <div class="chips" id="eventChips"></div>
+    </div>
+    <div class="modal-body" id="eventList"></div>
+  </div>
+</div>
+
 <script type="module">
 const $ = (id) => document.getElementById(id);
-let CATALOG = [];   // {id,name,en,artist,series}
-let rows = [];      // confirm state
+let CATALOG = [];        // {id,name,en,artist,series}
+let CATALOG_SERIES = []; // {id,name,color}
+let rows = [];           // confirm state
 
 // load catalog for the manual picker + series list
 (async () => {
   try {
     const d = await (await fetch('/api/catalog')).json();
     CATALOG = d.songs;
+    CATALOG_SERIES = d.series;
     $('scopeRef').innerHTML = d.series.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
   } catch (e) { $('parseMsg').innerHTML = `<div class="msg err">Failed to load catalog: ${esc(e.message)}</div>`; }
 })();
@@ -128,30 +161,74 @@ $('scopeType').addEventListener('change', () => {
   $('eventWrap').classList.toggle('hidden', v !== 'event');
 });
 
-// Event (concert leg) search picker
-let evtTimer;
-$('eventSearch').addEventListener('input', () => {
-  clearTimeout(evtTimer);
-  evtTimer = setTimeout(async () => {
-    const q = $('eventSearch').value.trim();
-    const res = $('eventResults');
+// Event picker modal (selectable, mirrors llernote /events + ll-predictions PerformancePicker)
+let ALL_EVENTS = null;
+const activeSeries = new Set();
+const seriesColor = (id) => (CATALOG_SERIES.find(s => String(s.id) === String(id)) || {}).color || '#888';
+
+$('eventPickBtn').addEventListener('click', openEventModal);
+$('eventModalClose').addEventListener('click', () => $('eventModal').classList.remove('show'));
+$('eventModal').addEventListener('click', (e) => { if (e.target === $('eventModal')) $('eventModal').classList.remove('show'); });
+$('eventSearch').addEventListener('input', () => renderEventList());
+
+async function openEventModal() {
+  $('eventModal').classList.add('show');
+  if (!ALL_EVENTS) {
+    $('eventList').innerHTML = '<div class="muted" style="padding:12px">Loading…</div>';
     try {
-      const d = await (await fetch('/api/events?q=' + encodeURIComponent(q))).json();
-      if (!d.events.length) { res.innerHTML = '<div class="muted" style="padding:6px 10px">no events</div>'; res.classList.add('show'); return; }
-      res.innerHTML = d.events.map(e => {
-        const label = `${e.tour_name || ''} — ${e.name || ''}`.replace(/^ — | — $/,'');
-        return `<div data-id="${e.id}" data-label="${esc(label)}" data-count="${e.song_count}">${esc(label)} <span class="muted">· ${esc(e.venue||'')} · ${esc((e.date_start||'').slice(0,10))} · ${e.day_count}d · ${e.song_count} songs</span></div>`;
-      }).join('');
-      res.classList.add('show');
-      res.querySelectorAll('[data-id]').forEach(row => row.addEventListener('click', () => {
-        selectedEvent = { id: row.dataset.id, label: row.dataset.label, song_count: row.dataset.count };
-        $('eventSearch').value = row.dataset.label;
-        $('eventPicked').innerHTML = `✓ selected — universe = <strong>${row.dataset.count} songs</strong> (union of the leg's setlists)`;
-        res.classList.remove('show');
-      }));
-    } catch (e) { res.innerHTML = `<div class="muted" style="padding:6px 10px">${esc(e.message)}</div>`; res.classList.add('show'); }
-  }, 150);
-});
+      const d = await (await fetch('/api/events')).json();
+      ALL_EVENTS = d.events.map(e => ({ ...e, seriesIds: JSON.parse(e.series_ids || '[]').map(String) }));
+      renderChips();
+    } catch (e) { $('eventList').innerHTML = `<div class="msg err">${esc(e.message)}</div>`; return; }
+  }
+  $('eventSearch').focus();
+  renderEventList();
+}
+
+function renderChips() {
+  const present = new Set(ALL_EVENTS.flatMap(e => e.seriesIds));
+  const series = CATALOG_SERIES.filter(s => present.has(String(s.id)));
+  $('eventChips').innerHTML = series.map(s => `<button type="button" class="chip" data-sid="${s.id}" style="border-color:${s.color};color:${s.color}">${esc(s.name)}</button>`).join('');
+  $('eventChips').querySelectorAll('[data-sid]').forEach(c => c.addEventListener('click', () => {
+    const id = c.dataset.sid, on = activeSeries.has(id);
+    if (on) { activeSeries.delete(id); c.classList.remove('active'); c.style.background = 'transparent'; c.style.color = c.style.borderColor; }
+    else { activeSeries.add(id); c.classList.add('active'); c.style.background = c.style.borderColor; c.style.color = '#fff'; }
+    renderEventList();
+  }));
+}
+
+function renderEventList() {
+  if (!ALL_EVENTS) return;
+  const q = $('eventSearch').value.toLowerCase().trim();
+  const evs = ALL_EVENTS.filter(e => {
+    if (activeSeries.size && !e.seriesIds.some(id => activeSeries.has(id))) return false;
+    if (q && !`${e.tour_name} ${e.name} ${e.venue} ${e.date_start}`.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  if (!evs.length) { $('eventList').innerHTML = '<div class="muted" style="padding:12px">No events match.</div>'; return; }
+  const groups = new Map();
+  for (const e of evs) { const k = e.tour_name || '—'; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(e); }
+  let html = '';
+  for (const [tour, legs] of groups) {
+    html += `<div class="tour-group"><div class="tour-name">${esc(tour)}</div>`;
+    for (const e of legs) {
+      const endD = e.date_end && e.date_end !== e.date_start ? '–' + esc(e.date_end.slice(5, 10)) : '';
+      html += `<div class="leg" data-id="${e.id}" data-label="${esc(e.name || tour)}" data-count="${e.song_count}">
+        <div class="bar" style="background:${seriesColor(e.seriesIds[0])}"></div>
+        <div class="meta"><div class="ln">${esc(e.name || tour)}</div>
+        <div class="sub">${esc(e.venue || '')} · ${esc((e.date_start || '').slice(0, 10))}${endD} · ${e.day_count} day${e.day_count == 1 ? '' : 's'}</div></div>
+        <div class="cnt">${e.song_count} songs</div></div>`;
+    }
+    html += '</div>';
+  }
+  $('eventList').innerHTML = html;
+  $('eventList').querySelectorAll('.leg').forEach(row => row.addEventListener('click', () => {
+    selectedEvent = { id: row.dataset.id, label: row.dataset.label, song_count: row.dataset.count };
+    $('eventPickBtn').textContent = '🎤 ' + row.dataset.label + ' — change';
+    $('eventPicked').innerHTML = `✓ universe = <strong>${row.dataset.count} songs</strong> (union of the leg's setlists)`;
+    $('eventModal').classList.remove('show');
+  }));
+}
 $('file').addEventListener('change', async (e) => {
   const f = e.target.files[0]; if (!f) return;
   $('text').value = await f.text();

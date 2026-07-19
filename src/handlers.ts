@@ -196,6 +196,8 @@ export async function handleListRankings(db: DB) {
   const items = await db.all<{ ranking_id: number; song_id: string }>(
     'SELECT ranking_id, song_id FROM ranking_item WHERE song_id IS NOT NULL ORDER BY ranking_id, position',
   );
+  const eventSlugRows = await db.all<{ id: string; slug: string | null }>('SELECT id, slug FROM event');
+  const eventSlug = new Map(eventSlugRows.map((e) => [String(e.id), e.slug]));
   const byRanking = new Map<number, string[]>();
   for (const it of items) {
     if (!byRanking.has(it.ranking_id)) byRanking.set(it.ranking_id, []);
@@ -209,6 +211,12 @@ export async function handleListRankings(db: DB) {
       source: r.source,
       scopeType: r.scope_type,
       scopeRef: r.scope_ref,
+      // Display grouping ("File:" filter): event slug for event rankings (e.g.
+      // "hasu6th"), else the list title (legacy filename), else the source.
+      group:
+        r.scope_type === 'event'
+          ? eventSlug.get(String(r.scope_ref)) ?? r.title ?? r.source
+          : r.title ?? r.source,
       songIds: byRanking.get(r.id) ?? [],
     })),
   };

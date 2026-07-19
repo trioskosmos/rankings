@@ -237,9 +237,9 @@ async function loadRankings(){
       name:r.rankerName,
       ids:r.songIds.map(String),
       unr:0,
-      // group by list title when present (legacy imports keep their filename),
-      // else fall back to source — preserves the per-"file" filter UX.
-      source:r.title||r.source||''
+      // group ("File:" filter): event slug for event rankings (e.g. hasu6th),
+      // else the list title / source — computed server-side in handleListRankings.
+      source:r.group||r.title||r.source||''
     }));
     const nameCount={}; raw.forEach(p=>{nameCount[p.name]=(nameCount[p.name]||0)+1;});
     profiles = raw.map((p,i)=>{

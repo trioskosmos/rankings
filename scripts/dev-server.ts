@@ -51,6 +51,8 @@ Bun.serve({
       const token = req.headers.get('x-admin-token');
       if (p === '/api/catalog' && req.method === 'GET') return guard(() => H.handleCatalog(db));
       if (p === '/api/events' && req.method === 'GET') return guard(() => H.handleEvents(db, url.searchParams.get('q') ?? ''));
+      let em = p.match(/^\/api\/events\/([^/]+)$/);
+      if (em && req.method === 'GET') return guard(() => H.handleEventSongs(db, decodeURIComponent(em![1])));
       if (p === '/api/aggregate' && req.method === 'GET')
         return guard(() => H.handleAggregate(db, { event: url.searchParams.get('event') ?? undefined }));
       if (p === '/api/import/parse' && req.method === 'POST')

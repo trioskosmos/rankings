@@ -138,6 +138,7 @@ textarea{min-height:180px;resize:vertical;line-height:1.5}
 
 <script type="module">
 const $ = (id) => document.getElementById(id);
+const SORTER_BASE = 'https://hamproductions.github.io/the-sorter'; // deep-link target
 let CATALOG = [];        // {id,name,en,artist,series}
 let CATALOG_SERIES = []; // {id,name,color}
 let rows = [];           // confirm state
@@ -222,11 +223,22 @@ function renderEventList() {
     html += '</div>';
   }
   $('eventList').innerHTML = html;
-  $('eventList').querySelectorAll('.leg').forEach(row => row.addEventListener('click', () => {
+  $('eventList').querySelectorAll('.leg').forEach(row => row.addEventListener('click', async () => {
     selectedEvent = { id: row.dataset.id, label: row.dataset.label, song_count: row.dataset.count };
     $('eventPickBtn').textContent = '🎤 ' + row.dataset.label + ' — change';
     $('eventPicked').innerHTML = `✓ universe = <strong>${row.dataset.count} songs</strong> (union of the leg's setlists)`;
     $('eventModal').classList.remove('show');
+    // Deep-link into the-sorter, pre-filtered to exactly this leg's songs.
+    try {
+      const d = await (await fetch('/api/events/' + encodeURIComponent(selectedEvent.id))).json();
+      if (d.songIds && d.songIds.length) {
+        const url = `${SORTER_BASE}/songs?songs=${d.songIds.join(',')}`;
+        $('eventPicked').innerHTML =
+          `✓ universe = <strong>${d.songIds.length} songs</strong> (union of the leg's setlists)` +
+          `<div style="margin-top:8px"><a class="btn" href="${url}" target="_blank" rel="noopener" style="display:inline-block;text-decoration:none">🔀 Rank these ${d.songIds.length} songs in the-sorter ↗</a></div>` +
+          `<div style="margin-top:6px">Sort them there, then copy the ranked list back here and paste it above.</div>`;
+      }
+    } catch (e) { /* keep the basic summary if the lookup fails */ }
   }));
 }
 $('file').addEventListener('change', async (e) => {

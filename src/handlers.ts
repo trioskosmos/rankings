@@ -33,6 +33,7 @@ export async function handleCatalog(db: DB) {
       series: s.seriesIds.map((id) => seriesName.get(String(id))).filter(Boolean).join(', ') || 'Unknown',
       color: seriesColor.get(String(s.seriesIds[0])) || '#888',
       date: released.get(s.id) ?? '',
+      art: s.art ?? '',
     })),
   };
 }

@@ -29,6 +29,10 @@ textarea{min-height:180px;resize:vertical;line-height:1.5}
 .item .pos{width:32px;text-align:right;color:var(--text-dim);font-size:.85rem;flex-shrink:0}
 .item .badge{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 .item .raw{flex:1;min-width:0;font-size:.85rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.thumb{width:30px;height:30px;border-radius:4px;object-fit:cover;flex-shrink:0;background:var(--bg-card2)}
+.misslist{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px 14px;margin-top:10px}
+.missrow{display:flex;align-items:center;gap:8px;font-size:.85rem;min-width:0}
+.missrow span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .item .pick{flex:2;min-width:200px}
 .b-g{background:#4caf50}.b-y{background:#ffb300}.b-r{background:#ff7043}
 .search-box{position:relative}
@@ -294,9 +298,12 @@ function renderConfirm(){
     opts.push(`<option value="__search__">🔍 search all songs…</option>`);
     opts.push(`<option value="__custom__" ${r.chosen==='__custom__'?'selected':''}>keep as custom text</option>`);
     opts.push(`<option value="__drop__" ${r.chosen==='__drop__'?'selected':''}>drop this line</option>`);
+    const art = (SONG_BY_ID.get(r.chosen) || {}).art;
+    const thumb = art ? `<img class="thumb" src="${art}" loading="lazy" onerror="this.style.visibility='hidden'">` : '<span class="thumb"></span>';
     return `<div class="item" data-i="${i}">
       <span class="pos">#${r.position}</span>
       <span class="badge ${badge(r)}"></span>
+      ${thumb}
       <span class="raw" title="${esc(r.rawLine)}">${esc(r.songText)}${r.artistText?` <span class="muted">- ${esc(r.artistText)}</span>`:''}</span>
       <span class="pick search-box">
         <select data-role="pick">${opts.join('')}</select>
@@ -333,7 +340,7 @@ function wireSearch(i, el){
       const q = input.value.toLowerCase().trim();
       if (!q){ res.classList.remove('show'); return; }
       const m = CATALOG.filter(s => s.name.toLowerCase().includes(q) || (s.en&&s.en.toLowerCase().includes(q)) || s.artist.toLowerCase().includes(q)).slice(0,20);
-      res.innerHTML = m.map(s => `<div data-id="${s.id}">${esc(s.name)} — ${esc(s.artist)} <span class="muted">· ${esc(s.series)}</span></div>`).join('') || '<div class="muted">no matches</div>';
+      res.innerHTML = m.map(s => `<div data-id="${s.id}" style="display:flex;align-items:center;gap:8px">${s.art?`<img class="thumb" src="${s.art}" loading="lazy" onerror="this.style.visibility='hidden'">`:'<span class="thumb"></span>'}<span>${esc(s.name)} — ${esc(s.artist)} <span class="muted">· ${esc(s.series)}</span></span></div>`).join('') || '<div class="muted">no matches</div>';
       res.classList.add('show');
       res.querySelectorAll('[data-id]').forEach(d => d.addEventListener('click', () => {
         rows[i].chosen = d.dataset.id; rows[i].wasAuto = false;
@@ -361,8 +368,12 @@ function updateSummary(){
     const missing = selectedEvent.songIds.filter(id => !chosen.has(id));
     const have = selectedEvent.songIds.length - missing.length;
     if (missing.length) {
-      const names = missing.map(id => esc((SONG_BY_ID.get(id) || {}).name || id)).join(' · ');
-      mb.innerHTML = `<div class="msg" style="background:#3a2f1b;color:#ffcf8f">⚠️ Missing ${missing.length} of ${selectedEvent.songIds.length} songs from this show (${have} ranked): ${names}</div>`;
+      const list = missing.map(id => {
+        const s = SONG_BY_ID.get(id) || {};
+        const img = s.art ? `<img class="thumb" src="${s.art}" loading="lazy" onerror="this.style.visibility='hidden'">` : '<span class="thumb"></span>';
+        return `<div class="missrow">${img}<span>${esc(s.name || id)}</span></div>`;
+      }).join('');
+      mb.innerHTML = `<div class="msg" style="background:#3a2f1b;color:#ffcf8f;padding:10px">⚠️ Missing <strong>${missing.length}</strong> of ${selectedEvent.songIds.length} songs from this show (${have} ranked):<div class="misslist">${list}</div></div>`;
     } else {
       mb.innerHTML = `<div class="msg ok">✓ All ${selectedEvent.songIds.length} songs from this show are ranked.</div>`;
     }

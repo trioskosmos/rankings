@@ -12,6 +12,7 @@ interface RawSong {
   phoneticName?: string;
   seriesIds?: number[];
   artists?: { id: string; variant: string | null }[];
+  discographyIds?: number[];
   releasedOn?: string;
 }
 interface RawArtist {
@@ -25,15 +26,29 @@ interface RawSeries {
   color?: string;
 }
 
+interface RawDiscography {
+  id: string;
+  versions?: { imageUrl?: string }[];
+}
+
 export function loadCatalogFromFs(dataDir: string): Catalog & { released: Map<string, string> } {
   const read = <T>(f: string): T => JSON.parse(readFileSync(join(dataDir, f), 'utf8')) as T;
   const rawSongs = read<RawSong[]>('song-info.json');
   const rawArtists = read<RawArtist[]>('artists-info.json');
   const rawSeries = read<RawSeries[]>('series-info.json');
+  const rawDisco = read<RawDiscography[]>('discography-info.json');
+
+  // discographyId → first version image (album art)
+  const discoArt = new Map<number, string>();
+  for (const d of rawDisco) {
+    const v = (d.versions ?? []).find((x) => x.imageUrl);
+    if (v?.imageUrl) discoArt.set(Number(d.id), v.imageUrl);
+  }
 
   const released = new Map<string, string>();
   const songs = rawSongs.map((s) => {
     if (s.releasedOn) released.set(s.id, s.releasedOn);
+    const artDisco = (s.discographyIds ?? []).find((d) => discoArt.has(Number(d)));
     return {
       id: String(s.id),
       name: s.name,
@@ -41,6 +56,7 @@ export function loadCatalogFromFs(dataDir: string): Catalog & { released: Map<st
       phoneticName: s.phoneticName,
       seriesIds: s.seriesIds ?? [],
       artistIds: [...new Set((s.artists ?? []).map((a) => String(a.id)))],
+      art: artDisco !== undefined ? discoArt.get(Number(artDisco)) : undefined,
     };
   });
   const artists = rawArtists.map((a) => ({ id: String(a.id), name: a.name, englishName: a.englishName }));

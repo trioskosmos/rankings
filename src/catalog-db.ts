@@ -26,8 +26,8 @@ export async function loadEventSongs(db: DB): Promise<Map<string, Set<string>>> 
 
 export async function loadCatalogFromDb(db: DB): Promise<LoadedCatalog> {
   const [songs, artists, series, aliasRows] = await Promise.all([
-    db.all<{ id: string; name_jp: string; name_en: string | null; phonetic: string | null; series_ids: string; released_on: string | null; artist_ids: string | null }>(
-      'SELECT id, name_jp, name_en, phonetic, series_ids, released_on, artist_ids FROM song',
+    db.all<{ id: string; name_jp: string; name_en: string | null; phonetic: string | null; series_ids: string; released_on: string | null; artist_ids: string | null; art_url: string | null }>(
+      'SELECT id, name_jp, name_en, phonetic, series_ids, released_on, artist_ids, art_url FROM song',
     ),
     db.all<{ id: string; name_jp: string; name_en: string | null }>('SELECT id, name_jp, name_en FROM artist'),
     db.all<{ id: string; name_jp: string; color: string | null }>('SELECT id, name_jp, color FROM series'),
@@ -47,6 +47,7 @@ export async function loadCatalogFromDb(db: DB): Promise<LoadedCatalog> {
       phoneticName: s.phonetic ?? undefined,
       seriesIds,
       artistIds: JSON.parse(s.artist_ids || '[]') as string[],
+      art: s.art_url ?? undefined,
     };
   });
 

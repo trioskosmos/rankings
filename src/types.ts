@@ -7,6 +7,7 @@ export interface CatalogSong {
   phoneticName?: string;
   seriesIds: number[];
   artistIds: string[]; // resolved artist ids (from artists[].id)
+  art?: string; // album-art URL (from discography)
 }
 
 export interface CatalogArtist {

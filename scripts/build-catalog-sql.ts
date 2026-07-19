@@ -38,6 +38,7 @@ const songRows = cat.songs.map((s) => [
   q(JSON.stringify(s.seriesIds)),
   q(cat.released.get(s.id)),
   q(JSON.stringify(s.artistIds)),
+  q(s.art),
 ]);
 
 // match keys with null-on-collision
@@ -63,7 +64,7 @@ const sql = [
   'DELETE FROM song_match_key;',
   batchInsert('series', ['id', 'name_jp', 'name_en', 'color'], seriesRows),
   batchInsert('artist', ['id', 'name_jp', 'name_en', 'series_ids'], artistRows),
-  batchInsert('song', ['id', 'name_jp', 'name_en', 'phonetic', 'series_ids', 'released_on', 'artist_ids'], songRows),
+  batchInsert('song', ['id', 'name_jp', 'name_en', 'phonetic', 'series_ids', 'released_on', 'artist_ids', 'art_url'], songRows),
   batchInsert('song_match_key', ['key', 'source', 'song_id'], keyRows),
   '',
 ].join('\n\n');

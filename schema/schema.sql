@@ -23,7 +23,8 @@ CREATE TABLE IF NOT EXISTS song (
   phonetic    TEXT,
   series_ids  TEXT NOT NULL, -- JSON array
   released_on TEXT,
-  artist_ids  TEXT           -- JSON array of artist id strings
+  artist_ids  TEXT,          -- JSON array of artist id strings
+  art_url     TEXT           -- album-art URL (from discography)
 );
 
 -- Precomputed normalized match keys; song_id NULL means the key collides across

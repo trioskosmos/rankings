@@ -45,7 +45,8 @@ CREATE TABLE IF NOT EXISTS event (
   series_ids  TEXT,                        -- JSON array
   date_start  TEXT,
   date_end    TEXT,
-  day_count   INTEGER
+  day_count   INTEGER,
+  perf_ids    TEXT                         -- JSON array of day performanceIds (for the-sorter deep link)
 );
 
 -- The song universe of a leg = union of its days' setlists (eligibility for event scope).

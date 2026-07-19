@@ -55,13 +55,20 @@ export async function handleEvents(db: DB, q = '') {
 
 // song ids of one leg (for the "sort in the-sorter" deep link)
 export async function handleEventSongs(db: DB, id: string) {
-  const ev = await db.first('SELECT id, tour_name, name FROM event WHERE id = ?', id);
+  const ev = await db.first<{ id: string; tour_name: string; name: string; perf_ids: string | null }>(
+    'SELECT id, tour_name, name, perf_ids FROM event WHERE id = ?',
+    id,
+  );
   if (!ev) throw new HttpError(404, 'unknown event');
   const rows = await db.all<{ song_id: string }>(
     'SELECT song_id FROM event_song WHERE event_id = ? ORDER BY CAST(song_id AS INTEGER)',
     id,
   );
-  return { event: ev, songIds: rows.map((r) => r.song_id) };
+  return {
+    event: { id: ev.id, tour_name: ev.tour_name, name: ev.name },
+    songIds: rows.map((r) => r.song_id),
+    perfIds: JSON.parse(ev.perf_ids || '[]') as string[],
+  };
 }
 
 // ---------- parse + match (no write) ----------

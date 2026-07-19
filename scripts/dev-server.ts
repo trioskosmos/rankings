@@ -15,7 +15,6 @@ import * as H from '../src/handlers.ts';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const sqlite = new Database(join(root, 'local.db'));
 const db = bunAdapter(sqlite);
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN ?? 'dev-admin-token';
 const PORT = Number(process.env.PORT ?? 8788);
 const HOST = process.env.HOST ?? '127.0.0.1'; // IPv4 loopback — avoids IPv6-only bind issues
 
@@ -48,36 +47,21 @@ Bun.serve({
 
     // ---- API ----
     if (p.startsWith('/api/')) {
-      const token = req.headers.get('x-admin-token');
       if (p === '/api/catalog' && req.method === 'GET') return guard(() => H.handleCatalog(db));
       if (p === '/api/events' && req.method === 'GET') return guard(() => H.handleEvents(db, url.searchParams.get('q') ?? ''));
-      let em = p.match(/^\/api\/events\/([^/]+)$/);
-      if (em && req.method === 'GET') return guard(() => H.handleEventSongs(db, decodeURIComponent(em![1])));
+      const em = p.match(/^\/api\/events\/([^/]+)$/);
+      if (em && req.method === 'GET') return guard(() => H.handleEventSongs(db, decodeURIComponent(em[1])));
       if (p === '/api/aggregate' && req.method === 'GET')
         return guard(() => H.handleAggregate(db, { event: url.searchParams.get('event') ?? undefined }));
       if (p === '/api/import/parse' && req.method === 'POST')
         return guard(async () => H.handleParse(db, (await req.json()) as { text?: string }));
-      if (p === '/api/rankings' && req.method === 'GET')
-        return guard(() => H.handleListRankings(db, url.searchParams.get('status') ?? 'approved'));
+      if (p === '/api/rankings' && req.method === 'GET') return guard(() => H.handleListRankings(db));
       if (p === '/api/rankings' && req.method === 'POST')
         return guard(async () =>
-          H.handleCreateRanking(
-            db,
-            (await req.json()) as Parameters<typeof H.handleCreateRanking>[1],
-            fp(req),
-            process.env.REQUIRE_APPROVAL === 'true',
-          ),
+          H.handleCreateRanking(db, (await req.json()) as Parameters<typeof H.handleCreateRanking>[1], fp(req)),
         );
-      let m = p.match(/^\/api\/rankings\/(\d+)$/);
-      if (m && req.method === 'GET') return guard(() => H.handleGetRanking(db, Number(m![1])));
-      if (p === '/api/admin/pending' && req.method === 'GET')
-        return guard(() => H.handleAdminPending(db, token, ADMIN_TOKEN));
-      m = p.match(/^\/api\/admin\/rankings\/(\d+)$/);
-      if (m && req.method === 'POST')
-        return guard(async () => {
-          const body = (await req.json()) as { action?: 'approve' | 'reject' };
-          return H.handleModerate(db, Number(m![1]), body.action === 'reject' ? 'reject' : 'approve', token, ADMIN_TOKEN);
-        });
+      const m = p.match(/^\/api\/rankings\/(\d+)$/);
+      if (m && req.method === 'GET') return guard(() => H.handleGetRanking(db, Number(m[1])));
       return json({ error: 'not found' }, 404);
     }
 
@@ -98,4 +82,4 @@ Bun.serve({
   },
 });
 
-console.log(`rankings dev server → http://${HOST}:${PORT}  (admin token: ${ADMIN_TOKEN})`);
+console.log(`rankings dev server → http://${HOST}:${PORT}`);

@@ -27,11 +27,11 @@ for (const file of readdirSync(dir).filter((f) => f.endsWith('.txt'))) {
   for (const parsed of parseRankings(text)) {
     const id = ++rankingIdSeq;
     // Heuristic: a big list ranks "everything" (scope=all); a short one is a
-    // subset we can't infer a universe for (scope=custom). Admin can adjust.
+    // subset we can't infer a universe for (scope=custom).
     const scope = parsed.items.length >= 150 ? 'all' : 'custom';
     stmts.push(
-      `INSERT INTO ranking (id, title, ranker_name, source, scope_type, scope_ref, status, note, created_at) VALUES ` +
-        `(${id}, ${q(file.replace('.txt', ''))}, ${q(parsed.rankerName)}, 'legacy', ${q(scope)}, NULL, 'approved', ${q('imported from ' + file)}, ${q(now)});`,
+      `INSERT INTO ranking (id, title, ranker_name, source, scope_type, scope_ref, note, created_at) VALUES ` +
+        `(${id}, ${q(file.replace('.txt', ''))}, ${q(parsed.rankerName)}, 'legacy', ${q(scope)}, NULL, ${q('imported from ' + file)}, ${q(now)});`,
     );
     rankings++;
     const rows: string[] = [];

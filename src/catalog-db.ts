@@ -31,7 +31,7 @@ export async function loadCatalogFromDb(db: DB): Promise<LoadedCatalog> {
     ),
     db.all<{ id: string; name_jp: string; name_en: string | null }>('SELECT id, name_jp, name_en FROM artist'),
     db.all<{ id: string; name_jp: string; color: string | null }>('SELECT id, name_jp, color FROM series'),
-    db.all<{ song_id: string; norm_key: string }>("SELECT song_id, norm_key FROM song_alias WHERE approved = 1"),
+    db.all<{ song_id: string; norm_key: string }>('SELECT song_id, norm_key FROM song_alias'),
   ]);
 
   const songSeries = new Map<string, number[]>();

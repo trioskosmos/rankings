@@ -64,7 +64,6 @@ CREATE TABLE IF NOT EXISTS song_alias (
   song_id    TEXT NOT NULL,
   alias_text TEXT NOT NULL,
   norm_key   TEXT NOT NULL,
-  approved   INTEGER NOT NULL DEFAULT 0,
   hits       INTEGER NOT NULL DEFAULT 1,
   created_at TEXT NOT NULL
 );
@@ -75,17 +74,13 @@ CREATE TABLE IF NOT EXISTS ranking (
   id           INTEGER PRIMARY KEY AUTOINCREMENT,
   title        TEXT,
   ranker_name  TEXT NOT NULL,
-  source       TEXT NOT NULL,             -- 'web'|'txt-import'|'legacy'
-  scope_type   TEXT NOT NULL DEFAULT 'custom', -- 'all'|'series'|'performance'|'custom'
+  source       TEXT NOT NULL,             -- 'web' | 'legacy'
+  scope_type   TEXT NOT NULL DEFAULT 'custom', -- 'all'|'series'|'event'|'custom'
   scope_ref    TEXT,
-  status       TEXT NOT NULL DEFAULT 'pending', -- 'pending'|'approved'|'rejected'
   note         TEXT,
   submitter_fp TEXT,
-  created_at   TEXT NOT NULL,
-  reviewed_at  TEXT,
-  reviewed_by  TEXT
+  created_at   TEXT NOT NULL
 );
-CREATE INDEX IF NOT EXISTS idx_ranking_status ON ranking(status);
 
 CREATE TABLE IF NOT EXISTS ranking_item (
   ranking_id  INTEGER NOT NULL,
@@ -99,16 +94,7 @@ CREATE TABLE IF NOT EXISTS ranking_item (
 );
 CREATE INDEX IF NOT EXISTS idx_ranking_item_song ON ranking_item(song_id);
 
-CREATE TABLE IF NOT EXISTS moderation_event (
-  id         INTEGER PRIMARY KEY AUTOINCREMENT,
-  ranking_id INTEGER,
-  action     TEXT NOT NULL,               -- 'approve'|'reject'|'edit'
-  actor      TEXT,
-  detail     TEXT,
-  created_at TEXT NOT NULL
-);
-
--- Coarse per-IP submit rate log (guest-only abuse control).
+-- Coarse per-IP submit rate log (abuse control).
 CREATE TABLE IF NOT EXISTS submit_rate (
   fp TEXT NOT NULL,
   at TEXT NOT NULL

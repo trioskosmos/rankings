@@ -95,7 +95,7 @@ export async function handleParse(db: DB, body: { text?: string }) {
   };
 }
 
-// ---------- create pending ranking (the submit) ----------
+// ---------- create ranking (the submit — goes live immediately) ----------
 interface CreateItem {
   position: number;
   songId: string | null;
@@ -115,7 +115,6 @@ export async function handleCreateRanking(
     items?: CreateItem[];
   },
   fp: string,
-  requireApproval = false, // when false, submissions go live immediately (no admin approval)
 ) {
   const rankerName = (body.rankerName ?? '').trim();
   if (!rankerName) throw new HttpError(400, 'ranker name required');
@@ -141,19 +140,15 @@ export async function handleCreateRanking(
     const ev = await db.first('SELECT id FROM event WHERE id = ?', scopeRef);
     if (!ev) throw new HttpError(400, 'unknown event');
   }
-  const status = requireApproval ? 'pending' : 'approved';
   const ins = await db.run(
-    "INSERT INTO ranking (title, ranker_name, source, scope_type, scope_ref, status, created_at, submitter_fp, reviewed_at, reviewed_by) VALUES (?,?,?,?,?,?,?,?,?,?)",
+    'INSERT INTO ranking (title, ranker_name, source, scope_type, scope_ref, created_at, submitter_fp) VALUES (?,?,?,?,?,?,?)',
     body.title ?? null,
     rankerName,
     'web',
     scopeType,
     scopeRef,
-    status,
     nowIso,
     fp,
-    requireApproval ? null : nowIso,
-    requireApproval ? null : 'auto',
   );
   const rankingId = ins.lastRowId;
   if (!rankingId) throw new HttpError(500, 'insert failed');
@@ -171,34 +166,25 @@ export async function handleCreateRanking(
       it.via ?? (it.songId ? 'manual' : 'none'),
       it.score ?? null,
     );
-    // learned alias from a manual correction
+    // learned alias from a manual correction — improves future matching
     if (it.songId && it.aliasText) {
       const norm = normalizeKey(it.aliasText);
       if (norm)
         await db.run(
-          'INSERT INTO song_alias (song_id, alias_text, norm_key, approved, created_at) VALUES (?,?,?,?,?)',
+          'INSERT INTO song_alias (song_id, alias_text, norm_key, created_at) VALUES (?,?,?,?)',
           it.songId,
           it.aliasText,
           norm,
-          requireApproval ? 0 : 1, // auto-approved submissions also commit their aliases
           nowIso,
         );
     }
   }
   await db.run('INSERT INTO submit_rate (fp, at) VALUES (?,?)', fp, nowIso);
-  if (!requireApproval)
-    await db.run(
-      'INSERT INTO moderation_event (ranking_id, action, actor, created_at) VALUES (?,?,?,?)',
-      rankingId,
-      'auto_approve',
-      'auto',
-      nowIso,
-    );
-  return { id: rankingId, status };
+  return { id: rankingId };
 }
 
 // ---------- read: rankings list with resolved song ids ----------
-export async function handleListRankings(db: DB, status = 'approved') {
+export async function handleListRankings(db: DB) {
   const rankings = await db.all<{
     id: number;
     title: string | null;
@@ -206,15 +192,9 @@ export async function handleListRankings(db: DB, status = 'approved') {
     source: string;
     scope_type: string;
     scope_ref: string | null;
-  }>(
-    'SELECT id, title, ranker_name, source, scope_type, scope_ref FROM ranking WHERE status = ? ORDER BY id',
-    status,
-  );
+  }>('SELECT id, title, ranker_name, source, scope_type, scope_ref FROM ranking ORDER BY id');
   const items = await db.all<{ ranking_id: number; song_id: string }>(
-    `SELECT ri.ranking_id, ri.song_id FROM ranking_item ri
-     JOIN ranking r ON r.id = ri.ranking_id
-     WHERE r.status = ? AND ri.song_id IS NOT NULL ORDER BY ri.ranking_id, ri.position`,
-    status,
+    'SELECT ranking_id, song_id FROM ranking_item WHERE song_id IS NOT NULL ORDER BY ranking_id, position',
   );
   const byRanking = new Map<number, string[]>();
   for (const it of items) {
@@ -253,7 +233,7 @@ export async function handleGetRanking(db: DB, id: number) {
 export async function handleAggregate(db: DB, opts: { event?: string } = {}) {
   const { songSeries, allSongIds } = await loadCatalogFromDb(db);
   const eventSongs = await loadEventSongs(db);
-  const { rankings } = await handleListRankings(db, 'approved');
+  const { rankings } = await handleListRankings(db);
   let selected = rankings;
   if (opts.event) selected = rankings.filter((r) => r.scopeType === 'event' && String(r.scopeRef) === String(opts.event));
   const agg: AggRanking[] = selected.map((r) => ({
@@ -263,50 +243,4 @@ export async function handleAggregate(db: DB, opts: { event?: string } = {}) {
   }));
   const stats = computeAggregate(agg, songSeries, allSongIds, eventSongs);
   return { totalRankings: selected.length, event: opts.event ?? null, stats };
-}
-
-// ---------- admin ----------
-function requireAdmin(token: string | null, expected: string) {
-  if (!token || token !== expected) throw new HttpError(403, 'forbidden');
-}
-
-export async function handleAdminPending(db: DB, token: string | null, expected: string) {
-  requireAdmin(token, expected);
-  const rankings = await db.all(
-    `SELECT r.id, r.title, r.ranker_name, r.scope_type, r.scope_ref, r.created_at, r.note,
-            (SELECT COUNT(*) FROM ranking_item ri WHERE ri.ranking_id = r.id) AS item_count,
-            (SELECT COUNT(*) FROM ranking_item ri WHERE ri.ranking_id = r.id AND ri.song_id IS NOT NULL) AS matched_count
-     FROM ranking r WHERE r.status = 'pending' ORDER BY r.created_at`,
-  );
-  return { rankings };
-}
-
-export async function handleModerate(
-  db: DB,
-  id: number,
-  action: 'approve' | 'reject',
-  token: string | null,
-  expected: string,
-) {
-  requireAdmin(token, expected);
-  const r = await db.first('SELECT id, status FROM ranking WHERE id = ?', id);
-  if (!r) throw new HttpError(404, 'not found');
-  const nowIso = new Date().toISOString();
-  const status = action === 'approve' ? 'approved' : 'rejected';
-  await db.run('UPDATE ranking SET status = ?, reviewed_at = ?, reviewed_by = ? WHERE id = ?', status, nowIso, 'admin', id);
-  await db.run(
-    'INSERT INTO moderation_event (ranking_id, action, actor, created_at) VALUES (?,?,?,?)',
-    id,
-    action,
-    'admin',
-    nowIso,
-  );
-  if (action === 'approve') {
-    // approve the aliases this ranking taught (any pending aliases for its songs)
-    await db.run(
-      `UPDATE song_alias SET approved = 1 WHERE approved = 0 AND song_id IN (SELECT song_id FROM ranking_item WHERE ranking_id = ? AND song_id IS NOT NULL)`,
-      id,
-    );
-  }
-  return { id, status };
 }

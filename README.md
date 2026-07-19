@@ -9,7 +9,7 @@ See [`docs/import-redesign-spec.md`](docs/import-redesign-spec.md) for the full 
 
 | Piece | Path |
 |---|---|
-| Front end (vanilla) | `index.html` (browse/aggregate), `submit.html` (submit flow), `admin.html` (moderation) |
+| Front end (vanilla) | `index.html` (browse/aggregate), `submit.html` (submit flow) |
 | API (Cloudflare Pages Functions) | `functions/api/**` — thin wrappers over shared handlers |
 | Shared logic | `src/` — matcher, parser, aggregation, handlers, DB interface |
 | DB schema + seeds | `schema/` (`schema.sql` + generated `seed-*.sql`) |
@@ -24,14 +24,13 @@ disambiguation, graded fuzzy candidates, and eligibility-aware rank aggregation.
 
 ```bash
 bun install
-bun run local:setup     # generate seed SQL + build local.db (schema + catalog + backfilled txt)
-bun run dev             # http://localhost:8788  (admin token: dev-admin-token)
+bun run local:setup     # generate seed SQL + build local.db (schema + catalog + events + backfilled txt)
+bun run dev             # http://localhost:8788
 ```
 
 Pages:
 - `/` — browse & aggregate (reads `/api/rankings`, `/api/aggregate`)
-- `/submit.html` — paste/upload → review matches → submit (pending)
-- `/admin.html` — enter the admin token → approve/reject the queue
+- `/submit.html` — paste/upload → review matches → submit (goes live immediately)
 
 Handy checks:
 ```bash
@@ -49,13 +48,13 @@ bun run typecheck       # tsc for deploy code + scripts
 wrangler d1 create rankings                  # put the returned database_id in wrangler.toml
 wrangler d1 execute rankings --remote --file=schema/schema.sql
 bun run catalog:build && wrangler d1 execute rankings --remote --file=schema/seed-catalog.sql
+bun run events:build  && wrangler d1 execute rankings --remote --file=schema/seed-events.sql
 bun run rankings:build && wrangler d1 execute rankings --remote --file=schema/seed-rankings.sql
-wrangler pages secret put ADMIN_TOKEN        # set the real admin token
 wrangler pages deploy .
 ```
 
 ## Data model
 
 `song` / `artist` / `series` (catalog) · `song_match_key` (normalized keys, null-on-collision) ·
-`song_alias` (learned from confirmed imports) · `ranking` / `ranking_item` (raw line kept for audit)
-· `moderation_event` · `submit_rate`. Full DDL in `schema/schema.sql`.
+`song_alias` (learned from confirmed imports) · `event` / `event_song` (concert legs + setlist unions) ·
+`ranking` / `ranking_item` (raw line kept for audit) · `submit_rate`. Full DDL in `schema/schema.sql`.

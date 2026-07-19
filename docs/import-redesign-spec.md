@@ -4,11 +4,16 @@
 **Scope:** Replace the "add a `.txt` via PR" ingestion with a direct web submit flow, redesign storage away from static text files, and fix cross-list aggregation of inconsistent song sets.
 
 > **Implemented 2026-07-19.** Built to this spec: D1 schema (`schema/`), TS matcher +
-> aggregation (`src/`), Cloudflare Pages Functions API (`functions/api/`), submit + admin pages,
-> and a txt→DB backfill. Run locally with `bun run local:setup && bun run dev`. See `README.md`.
-> Deferred from v1 (still design-only): the `aggregate_snapshot` cache (aggregation computes live
-> instead), Copeland/pairwise metric (Borda shipped), Turnstile captcha (rate-limit shipped), and
-> the scheduled catalog sync (§10, catalog is seeded from the committed JSON for now).
+> aggregation (`src/`), Cloudflare Pages Functions API (`functions/api/`), the submit page, and a
+> txt→DB backfill. Run locally with `bun run local:setup && bun run dev`. See `README.md`.
+>
+> **Changed from the original design:** submissions **go live immediately — there is no admin /
+> moderation flow** (no pending/approve/reject, no admin page). Rate-limiting is the only abuse
+> control. Any remaining mentions of moderation / pending / approve below describe the original
+> design and were **not** built. Added beyond the spec: **event/concert-leg scope**
+> (§6) and a the-sorter deep-link. Still design-only: the `aggregate_snapshot` cache (aggregation
+> computes live), Copeland/pairwise metric (Borda shipped), Turnstile captcha, and scheduled
+> catalog sync (§10, catalog seeded from committed JSON).
 
 ---
 
@@ -348,35 +353,22 @@ is valid, in addition to the global cross-scope consensus.
    thank-you screen ("your ranking is queued for review"). Manual corrections spawn pending
    `song_alias` rows.
 
-Abuse controls on submit: Cloudflare Turnstile, per-IP rate limit, min list length (e.g. ≥5
-resolved items), near-duplicate detection via `submitter_fp` + item-set hash.
+Abuse controls on submit: per-IP rate limit and min list length (≥5 resolved items). (Submissions
+go live immediately — there is no moderation step.)
 
 ---
 
-## 8. Moderation
-
-`/admin` (protected by Cloudflare Access or a shared secret header):
-- Queue of `status='pending'` rankings with parsed preview and match-quality summary.
-- Actions: **approve** (→ live in aggregate, triggers snapshot rebuild), **reject**, **edit**
-  (fix a mis-match before approving), **approve/reject pending aliases**.
-- Every action logged to `moderation_event`.
-- Only `approved` rankings enter `aggregate_snapshot`.
-
----
-
-## 9. API surface (Worker)
+## 8. API surface (Worker)
 
 | Method | Path | Purpose |
 |---|---|---|
 | POST | `/api/import/parse` | Parse+match text; return candidates. No write. |
-| POST | `/api/rankings` | Create a pending ranking from confirmed items. |
-| GET | `/api/rankings?status=approved[&scope=]` | List rankings (public = approved only). |
+| POST | `/api/rankings` | Create a ranking from confirmed items (goes live immediately). |
+| GET | `/api/rankings` | List all rankings with their resolved song ids. |
 | GET | `/api/rankings/:id` | One ranking with items. |
-| GET | `/api/aggregate?scope=all&metric=avg_norm` | Aggregate view (served from snapshot). |
-| GET | `/api/catalog` | Songs/artists/series for the front end (or keep static JSON). |
-| GET | `/api/admin/pending` | Moderation queue (auth). |
-| POST | `/api/admin/rankings/:id/{approve,reject}` | Moderate (auth). |
-| POST | `/api/admin/aliases/:id/{approve,reject}` | Moderate learned aliases (auth). |
+| GET | `/api/aggregate[?event=<concertId>]` | Aggregate view (computed live). |
+| GET | `/api/catalog` | Songs/series for the front-end picker. |
+| GET | `/api/events[?q=]` · `/api/events/:id` | Concert legs; one leg's songs + performanceIds. |
 
 ---
 

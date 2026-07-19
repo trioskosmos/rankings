@@ -231,7 +231,7 @@ function parseProfiles(text, sourceFile){
 async function loadRankings(){
   try{
     // Approved rankings come from the API (D1), not static .txt files.
-    const d=await(await fetch('/api/rankings?status=approved')).json();
+    const d=await(await fetch('/api/rankings')).json();
     if(d.error)throw new Error(d.error);
     const raw=(d.rankings||[]).map(r=>({
       name:r.rankerName,

@@ -411,9 +411,6 @@ $('submitBtn').addEventListener('click', async () => {
   try {
     const d = await (await fetch('/api/rankings', {method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)})).json();
     if (d.error) throw new Error(d.error);
-    $('doneMsg').textContent = d.status === 'approved'
-      ? '✓ Thanks! Your ranking is live now.'
-      : '✓ Thanks! Your ranking is queued for review and will appear once approved.';
     $('confirmCard').classList.add('hidden');
     $('doneCard').classList.remove('hidden');
   } catch (e) {

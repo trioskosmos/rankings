@@ -8,10 +8,3 @@ pages_build_output_dir = "."
 binding = "DB"
 database_name = "rankings"
 database_id = "local-placeholder-id"
-
-# Admin token for the moderation endpoints is provided as a secret/var. For local
-# dev this default is used; in prod set with `wrangler pages secret put ADMIN_TOKEN`.
-[vars]
-ADMIN_TOKEN = "dev-admin-token"
-# "true" → submissions require admin approval before going live. Default: auto-approve.
-REQUIRE_APPROVAL = "false"

@@ -6,6 +6,7 @@ import type { DB } from '../../src/db.ts';
 export interface Env {
   DB: D1Database;
   ADMIN_TOKEN: string;
+  REQUIRE_APPROVAL?: string; // "true" → submissions wait for admin approval; default auto-approve
 }
 
 export function db(env: Env): DB {

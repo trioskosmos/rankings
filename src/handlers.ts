@@ -115,6 +115,7 @@ export async function handleCreateRanking(
     items?: CreateItem[];
   },
   fp: string,
+  requireApproval = false, // when false, submissions go live immediately (no admin approval)
 ) {
   const rankerName = (body.rankerName ?? '').trim();
   if (!rankerName) throw new HttpError(400, 'ranker name required');
@@ -140,16 +141,19 @@ export async function handleCreateRanking(
     const ev = await db.first('SELECT id FROM event WHERE id = ?', scopeRef);
     if (!ev) throw new HttpError(400, 'unknown event');
   }
+  const status = requireApproval ? 'pending' : 'approved';
   const ins = await db.run(
-    "INSERT INTO ranking (title, ranker_name, source, scope_type, scope_ref, status, created_at, submitter_fp) VALUES (?,?,?,?,?,?,?,?)",
+    "INSERT INTO ranking (title, ranker_name, source, scope_type, scope_ref, status, created_at, submitter_fp, reviewed_at, reviewed_by) VALUES (?,?,?,?,?,?,?,?,?,?)",
     body.title ?? null,
     rankerName,
     'web',
     scopeType,
     scopeRef,
-    'pending',
+    status,
     nowIso,
     fp,
+    requireApproval ? null : nowIso,
+    requireApproval ? null : 'auto',
   );
   const rankingId = ins.lastRowId;
   if (!rankingId) throw new HttpError(500, 'insert failed');
@@ -172,16 +176,25 @@ export async function handleCreateRanking(
       const norm = normalizeKey(it.aliasText);
       if (norm)
         await db.run(
-          'INSERT INTO song_alias (song_id, alias_text, norm_key, approved, created_at) VALUES (?,?,?,0,?)',
+          'INSERT INTO song_alias (song_id, alias_text, norm_key, approved, created_at) VALUES (?,?,?,?,?)',
           it.songId,
           it.aliasText,
           norm,
+          requireApproval ? 0 : 1, // auto-approved submissions also commit their aliases
           nowIso,
         );
     }
   }
   await db.run('INSERT INTO submit_rate (fp, at) VALUES (?,?)', fp, nowIso);
-  return { id: rankingId, status: 'pending' };
+  if (!requireApproval)
+    await db.run(
+      'INSERT INTO moderation_event (ranking_id, action, actor, created_at) VALUES (?,?,?,?)',
+      rankingId,
+      'auto_approve',
+      'auto',
+      nowIso,
+    );
+  return { id: rankingId, status };
 }
 
 // ---------- read: rankings list with resolved song ids ----------

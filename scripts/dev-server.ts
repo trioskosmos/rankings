@@ -60,7 +60,14 @@ Bun.serve({
       if (p === '/api/rankings' && req.method === 'GET')
         return guard(() => H.handleListRankings(db, url.searchParams.get('status') ?? 'approved'));
       if (p === '/api/rankings' && req.method === 'POST')
-        return guard(async () => H.handleCreateRanking(db, (await req.json()) as Parameters<typeof H.handleCreateRanking>[1], fp(req)));
+        return guard(async () =>
+          H.handleCreateRanking(
+            db,
+            (await req.json()) as Parameters<typeof H.handleCreateRanking>[1],
+            fp(req),
+            process.env.REQUIRE_APPROVAL === 'true',
+          ),
+        );
       let m = p.match(/^\/api\/rankings\/(\d+)$/);
       if (m && req.method === 'GET') return guard(() => H.handleGetRanking(db, Number(m![1])));
       if (p === '/api/admin/pending' && req.method === 'GET')

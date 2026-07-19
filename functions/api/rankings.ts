@@ -7,4 +7,6 @@ export const onRequestGet: PagesFunction<Env> = ({ env, request }) => {
 };
 
 export const onRequestPost: PagesFunction<Env> = ({ env, request }) =>
-  guard(async () => handleCreateRanking(db(env), await request.json(), fingerprint(request)));
+  guard(async () =>
+    handleCreateRanking(db(env), await request.json(), fingerprint(request), env.REQUIRE_APPROVAL === 'true'),
+  );

@@ -120,7 +120,7 @@ textarea{min-height:180px;resize:vertical;line-height:1.5}
 
   <!-- Step 3: done -->
   <div class="card hidden" id="doneCard">
-    <div class="msg ok">✓ Thanks! Your ranking is queued for review and will appear once approved.</div>
+    <div class="msg ok" id="doneMsg">✓ Thanks! Your ranking is live now.</div>
     <a href="index.html" class="btn sec">← back to rankings</a>
     <button class="btn" id="anotherBtn">Submit another</button>
   </div>
@@ -411,6 +411,9 @@ $('submitBtn').addEventListener('click', async () => {
   try {
     const d = await (await fetch('/api/rankings', {method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)})).json();
     if (d.error) throw new Error(d.error);
+    $('doneMsg').textContent = d.status === 'approved'
+      ? '✓ Thanks! Your ranking is live now.'
+      : '✓ Thanks! Your ranking is queued for review and will appear once approved.';
     $('confirmCard').classList.add('hidden');
     $('doneCard').classList.remove('hidden');
   } catch (e) {

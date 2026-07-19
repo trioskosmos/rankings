@@ -13,3 +13,5 @@ database_id = "local-placeholder-id"
 # dev this default is used; in prod set with `wrangler pages secret put ADMIN_TOKEN`.
 [vars]
 ADMIN_TOKEN = "dev-admin-token"
+# "true" → submissions require admin approval before going live. Default: auto-approve.
+REQUIRE_APPROVAL = "false"

@@ -13,6 +13,17 @@ export interface LoadedCatalog {
   released: Map<string, string>;
 }
 
+/** event_id → set of song ids (the leg's setlist union) for event-scope eligibility. */
+export async function loadEventSongs(db: DB): Promise<Map<string, Set<string>>> {
+  const rows = await db.all<{ event_id: string; song_id: string }>('SELECT event_id, song_id FROM event_song');
+  const m = new Map<string, Set<string>>();
+  for (const r of rows) {
+    if (!m.has(r.event_id)) m.set(r.event_id, new Set());
+    m.get(r.event_id)!.add(r.song_id);
+  }
+  return m;
+}
+
 export async function loadCatalogFromDb(db: DB): Promise<LoadedCatalog> {
   const [songs, artists, series, aliasRows] = await Promise.all([
     db.all<{ id: string; name_jp: string; name_en: string | null; phonetic: string | null; series_ids: string; released_on: string | null; artist_ids: string | null }>(

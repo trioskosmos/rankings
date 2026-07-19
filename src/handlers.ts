@@ -2,7 +2,7 @@
 // Pages Functions and the local Bun dev server call the exact same logic.
 
 import type { DB } from './db.ts';
-import { loadCatalogFromDb } from './catalog-db.ts';
+import { loadCatalogFromDb, loadEventSongs } from './catalog-db.ts';
 import { Matcher } from './matcher.ts';
 import { parseRankings } from './parse.ts';
 import { normalizeKey } from './normalize.ts';
@@ -35,6 +35,22 @@ export async function handleCatalog(db: DB) {
       date: released.get(s.id) ?? '',
     })),
   };
+}
+
+// ---------- events (concert legs, for the submit-page picker) ----------
+export async function handleEvents(db: DB, q = '') {
+  const tokens = q.trim().split(/\s+/).filter(Boolean).slice(0, 6);
+  // each token must appear in tour_name|name|venue (token-AND across fields)
+  const where = tokens.map(() => '(e.tour_name LIKE ? OR e.name LIKE ? OR e.venue LIKE ?)').join(' AND ') || '1=1';
+  const params = tokens.flatMap((t) => [`%${t}%`, `%${t}%`, `%${t}%`]);
+  const rows = await db.all(
+    `SELECT e.id, e.tour_name, e.name, e.venue, e.series_ids, e.date_start, e.date_end, e.day_count,
+            (SELECT COUNT(*) FROM event_song es WHERE es.event_id = e.id) AS song_count
+     FROM event e WHERE ${where}
+     ORDER BY e.date_start DESC LIMIT 40`,
+    ...params,
+  );
+  return { events: rows };
 }
 
 // ---------- parse + match (no write) ----------
@@ -98,13 +114,20 @@ export async function handleCreateRanking(
   if ((recent?.n ?? 0) >= RATE_LIMIT) throw new HttpError(429, 'rate limit exceeded, try later');
 
   const scopeType = (body.scopeType ?? 'custom') as ScopeType;
+  // series + event carry a scope_ref (series id / concert-leg id); validate events.
+  const scopeRef = scopeType === 'series' || scopeType === 'event' ? body.scopeRef ?? null : null;
+  if (scopeType === 'event') {
+    if (!scopeRef) throw new HttpError(400, 'event scope requires an event');
+    const ev = await db.first('SELECT id FROM event WHERE id = ?', scopeRef);
+    if (!ev) throw new HttpError(400, 'unknown event');
+  }
   const ins = await db.run(
     "INSERT INTO ranking (title, ranker_name, source, scope_type, scope_ref, status, created_at, submitter_fp) VALUES (?,?,?,?,?,?,?,?)",
     body.title ?? null,
     rankerName,
     'web',
     scopeType,
-    body.scopeType === 'series' ? body.scopeRef ?? null : null,
+    scopeRef,
     'pending',
     nowIso,
     fp,
@@ -193,16 +216,21 @@ export async function handleGetRanking(db: DB, id: number) {
 }
 
 // ---------- aggregate ----------
-export async function handleAggregate(db: DB) {
+// opts.event = <concertId> restricts to that leg's rankings (apples-to-apples
+// across attendees of the same show).
+export async function handleAggregate(db: DB, opts: { event?: string } = {}) {
   const { songSeries, allSongIds } = await loadCatalogFromDb(db);
+  const eventSongs = await loadEventSongs(db);
   const { rankings } = await handleListRankings(db, 'approved');
-  const agg: AggRanking[] = rankings.map((r) => ({
+  let selected = rankings;
+  if (opts.event) selected = rankings.filter((r) => r.scopeType === 'event' && String(r.scopeRef) === String(opts.event));
+  const agg: AggRanking[] = selected.map((r) => ({
     scopeType: r.scopeType as AggRanking['scopeType'],
     scopeRef: r.scopeRef,
     songIds: r.songIds,
   }));
-  const stats = computeAggregate(agg, songSeries, allSongIds);
-  return { totalRankings: rankings.length, stats };
+  const stats = computeAggregate(agg, songSeries, allSongIds, eventSongs);
+  return { totalRankings: selected.length, event: opts.event ?? null, stats };
 }
 
 // ---------- admin ----------

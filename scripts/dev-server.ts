@@ -17,6 +17,7 @@ const sqlite = new Database(join(root, 'local.db'));
 const db = bunAdapter(sqlite);
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN ?? 'dev-admin-token';
 const PORT = Number(process.env.PORT ?? 8788);
+const HOST = process.env.HOST ?? '127.0.0.1'; // IPv4 loopback — avoids IPv6-only bind issues
 
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json; charset=utf-8' } });
@@ -40,6 +41,7 @@ function fp(req: Request): string {
 
 Bun.serve({
   port: PORT,
+  hostname: HOST,
   async fetch(req) {
     const url = new URL(req.url);
     const p = url.pathname;
@@ -48,7 +50,9 @@ Bun.serve({
     if (p.startsWith('/api/')) {
       const token = req.headers.get('x-admin-token');
       if (p === '/api/catalog' && req.method === 'GET') return guard(() => H.handleCatalog(db));
-      if (p === '/api/aggregate' && req.method === 'GET') return guard(() => H.handleAggregate(db));
+      if (p === '/api/events' && req.method === 'GET') return guard(() => H.handleEvents(db, url.searchParams.get('q') ?? ''));
+      if (p === '/api/aggregate' && req.method === 'GET')
+        return guard(() => H.handleAggregate(db, { event: url.searchParams.get('event') ?? undefined }));
       if (p === '/api/import/parse' && req.method === 'POST')
         return guard(async () => H.handleParse(db, (await req.json()) as { text?: string }));
       if (p === '/api/rankings' && req.method === 'GET')
@@ -77,4 +81,4 @@ Bun.serve({
   },
 });
 
-console.log(`rankings dev server → http://localhost:${PORT}  (admin token: ${ADMIN_TOKEN})`);
+console.log(`rankings dev server → http://${HOST}:${PORT}  (admin token: ${ADMIN_TOKEN})`);

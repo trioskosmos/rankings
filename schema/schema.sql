@@ -36,6 +36,26 @@ CREATE TABLE IF NOT EXISTS song_match_key (
 );
 CREATE INDEX IF NOT EXISTS idx_song_match_key ON song_match_key(key);
 
+-- Concert "legs" (an event = all performances sharing a concertId, e.g. Day.1+Day.2).
+CREATE TABLE IF NOT EXISTS event (
+  id          TEXT PRIMARY KEY,          -- concertId
+  tour_name   TEXT,
+  name        TEXT,                        -- leg name (Day.x stripped)
+  venue       TEXT,
+  series_ids  TEXT,                        -- JSON array
+  date_start  TEXT,
+  date_end    TEXT,
+  day_count   INTEGER
+);
+
+-- The song universe of a leg = union of its days' setlists (eligibility for event scope).
+CREATE TABLE IF NOT EXISTS event_song (
+  event_id TEXT NOT NULL,
+  song_id  TEXT NOT NULL,
+  PRIMARY KEY (event_id, song_id)
+);
+CREATE INDEX IF NOT EXISTS idx_event_song_event ON event_song(event_id);
+
 -- Learned aliases from confirmed imports (fills the missing-aliases gap).
 CREATE TABLE IF NOT EXISTS song_alias (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,

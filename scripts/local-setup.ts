@@ -12,7 +12,7 @@ for (const suffix of ['', '-wal', '-shm']) {
 }
 const db = new Database(join(root, 'local.db'), { create: true });
 db.exec('PRAGMA journal_mode = WAL;');
-for (const f of ['schema/schema.sql', 'schema/seed-catalog.sql', 'schema/seed-rankings.sql']) {
+for (const f of ['schema/schema.sql', 'schema/seed-catalog.sql', 'schema/seed-events.sql', 'schema/seed-rankings.sql']) {
   db.exec(readFileSync(join(root, f), 'utf8'));
   console.log('applied', f);
 }

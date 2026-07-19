@@ -10,7 +10,7 @@
 //    (0 points) while skipping "out of scope" entirely.
 
 export interface AggRanking {
-  scopeType: 'all' | 'series' | 'performance' | 'custom';
+  scopeType: 'all' | 'series' | 'event' | 'performance' | 'custom';
   scopeRef: string | null;
   songIds: string[]; // resolved, in rank order (index 0 = rank 1)
 }
@@ -50,6 +50,7 @@ export function computeAggregate(
   rankings: AggRanking[],
   songSeries: Map<string, number[]>,
   allSongIds: string[],
+  eventSongs: Map<string, Set<string>> = new Map(),
 ): AggStat[] {
   const norms = new Map<string, number[]>(); // songId → normalized ranks (where ranked)
   const bordaSum = new Map<string, number>(); // songId → summed borda points over eligible lists
@@ -63,6 +64,10 @@ export function computeAggregate(
         return true;
       case 'series':
         return (songSeries.get(songId) ?? []).map(String).includes(String(r.scopeRef));
+      case 'event':
+        // universe = the leg's setlist union (both days), so "didn't rank" is a
+        // real signal but a song outside the setlist is not penalized.
+        return eventSongs.get(String(r.scopeRef))?.has(songId) ?? rankedSet.has(songId);
       // performance/custom: can't infer a universe → only the ranked songs count.
       default:
         return rankedSet.has(songId);
@@ -76,7 +81,12 @@ export function computeAggregate(
     const rankOf = new Map(r.songIds.map((id, i) => [id, i + 1]));
 
     // Universe of songs this list had an opinion about.
-    const universe = r.scopeType === 'all' ? allSongIds : r.scopeType === 'series' ? allSongIds : r.songIds;
+    const universe =
+      r.scopeType === 'all' || r.scopeType === 'series'
+        ? allSongIds
+        : r.scopeType === 'event'
+          ? [...(eventSongs.get(String(r.scopeRef)) ?? new Set(r.songIds))]
+          : r.songIds;
 
     for (const songId of universe) {
       if (!isEligible(songId, r, rankedSet)) continue;

@@ -66,4 +66,4 @@ export interface MatchResult {
   candidates: Candidate[];
 }
 
-export type ScopeType = 'all' | 'series' | 'performance' | 'custom';
+export type ScopeType = 'all' | 'series' | 'event' | 'performance' | 'custom';

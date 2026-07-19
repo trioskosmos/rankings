@@ -1,0 +1,15 @@
+name = "rankings"
+compatibility_date = "2024-09-23"
+pages_build_output_dir = "."
+
+# Local dev uses a local SQLite (miniflare); database_id is a placeholder until a
+# real D1 database is created with `wrangler d1 create rankings`.
+[[d1_databases]]
+binding = "DB"
+database_name = "rankings"
+database_id = "local-placeholder-id"
+
+# Admin token for the moderation endpoints is provided as a secret/var. For local
+# dev this default is used; in prod set with `wrangler pages secret put ADMIN_TOKEN`.
+[vars]
+ADMIN_TOKEN = "dev-admin-token"

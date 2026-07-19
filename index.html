@@ -83,7 +83,7 @@ nav button.active{background:#fb8a9b;color:#fff;border-color:#fb8a9b}
 <div class="container">
   <header>
     <h1>♡ Love Live! Song Rankings ♡</h1>
-    <p>Rank any songs — <a href="https://github.com/trioskosmos/rankings/tree/main/data/rankings" target="_blank" style="color:#fb8a9b">add your <code>.txt</code> here</a> via PR (or just yell at trioskosmos to add them)</p>
+    <p>Rank any songs — <a href="submit.html" style="color:#fb8a9b">➜ Submit a ranking</a> right here (no PR needed)</p>
   </header>
   <div class="bar" style="justify-content:center;margin-bottom:10px">
     <label>File:</label><select id="globalFileFilter"><option value="">All files</option></select>
@@ -228,34 +228,26 @@ function parseProfiles(text, sourceFile){
 }
 async function loadRankings(){
   try{
-    // Cache GitHub API file list (rate limited, rarely changes)
-    const FILE_CACHE='ll_files_v1';let files;
-    const cached=localStorage.getItem(FILE_CACHE);
-    if(cached){const d=JSON.parse(cached);if(Date.now()-d.time<3600000)files=d.data;}
-    if(!files){
-      const dir=await fetch('https://api.github.com/repos/trioskosmos/rankings/contents/data/rankings');
-      files=await dir.json();
-      localStorage.setItem(FILE_CACHE,JSON.stringify({data:files,time:Date.now()}));
-    }
-    const raw=[];
-    for(const f of files){
-      if(!f.name.endsWith('.txt')) continue;
-      try{
-        const r=await fetch(f.download_url);
-        raw.push(...parseProfiles(await r.text(), f.name));
-      }catch(e){console.warn('Failed:',f.name,e)}
-    }
-    // Keep all profiles, label duplicates with source file
+    // Approved rankings come from the API (D1), not static .txt files.
+    const d=await(await fetch('/api/rankings?status=approved')).json();
+    if(d.error)throw new Error(d.error);
+    const raw=(d.rankings||[]).map(r=>({
+      name:r.rankerName,
+      ids:r.songIds.map(String),
+      unr:0,
+      // group by list title when present (legacy imports keep their filename),
+      // else fall back to source — preserves the per-"file" filter UX.
+      source:r.title||r.source||''
+    }));
     const nameCount={}; raw.forEach(p=>{nameCount[p.name]=(nameCount[p.name]||0)+1;});
     profiles = raw.map((p,i)=>{
       p._uid='p'+i;
-      p._label = nameCount[p.name]>1 ? p.name+' ('+(p.source||'').replace('.txt','')+')' : p.name;
+      p._label = nameCount[p.name]>1 ? p.name+' ('+(p.source||'')+')' : p.name;
       return p;
     });
-  }catch{
-    try{const r=await fetch('data/rankings/hasu6thbelluna.txt');profiles=parseProfiles(await r.text());}
-    catch{profiles=[]}
-    profiles.forEach((p,i)=>{p._uid='p'+i;p._label=p.label||p.name;});
+  }catch(e){
+    console.error('Failed to load rankings:',e);
+    profiles=[];
   }
   if(!current||!profiles.find(p=>p._uid===current))
     current=profiles[0]?._uid||'p0';

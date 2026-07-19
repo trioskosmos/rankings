@@ -1,0 +1,18 @@
+{
+  "comment": "Bun/Node build + dev scripts — Bun & Node globals (bun:sqlite, node:fs, Bun, process).",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022"],
+    "types": ["bun", "node"],
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true
+  },
+  "include": ["scripts", "src"],
+  "exclude": ["src/db-d1.ts"]
+}

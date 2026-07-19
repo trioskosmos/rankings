@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Submit a Ranking · Love Live! Song Rankings</title>
+<style>
+:root{--bg:#1a1a2e;--bg-card:#222244;--bg-card2:#2a2a4a;--text:#eee;--text-dim:#999;--border:#333366;--pink:#fb8a9b}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.container{max-width:1000px;margin:0 auto;padding:20px}
+header{text-align:center;padding:20px 0;border-bottom:2px solid var(--pink);margin-bottom:20px}
+header h1{font-size:1.6rem;color:var(--pink)}
+header a{color:var(--pink)}
+a{color:var(--pink)}
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px}
+label{display:block;color:var(--text-dim);font-size:.85rem;margin:8px 0 4px}
+input,select,textarea{width:100%;background:var(--bg-card2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:.9rem;font-family:inherit}
+textarea{min-height:180px;resize:vertical;line-height:1.5}
+.row{display:flex;gap:12px;flex-wrap:wrap}
+.row>div{flex:1;min-width:180px}
+.btn{background:var(--pink);color:#fff;border:none;border-radius:6px;padding:10px 20px;font-size:.95rem;cursor:pointer;font-weight:600}
+.btn:hover{opacity:.9}
+.btn.sec{background:var(--bg-card2);color:var(--text);border:1px solid var(--border)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.summary{display:flex;gap:16px;flex-wrap:wrap;font-size:.85rem;margin:10px 0}
+.summary .g{color:#4caf50}.summary .y{color:#ffb300}.summary .r{color:#ff7043}
+.item{display:flex;align-items:center;gap:10px;padding:6px 8px;border-bottom:1px solid var(--border)}
+.item .pos{width:32px;text-align:right;color:var(--text-dim);font-size:.85rem;flex-shrink:0}
+.item .badge{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.item .raw{flex:1;min-width:0;font-size:.85rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .pick{flex:2;min-width:200px}
+.b-g{background:#4caf50}.b-y{background:#ffb300}.b-r{background:#ff7043}
+.search-box{position:relative}
+.search-res{position:absolute;z-index:20;left:0;right:0;top:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;max-height:220px;overflow-y:auto;display:none}
+.search-res.show{display:block}
+.search-res div{padding:6px 10px;cursor:pointer;font-size:.85rem}
+.search-res div:hover{background:var(--pink);color:#fff}
+.hidden{display:none}
+.msg{padding:10px;border-radius:6px;margin:10px 0;font-size:.9rem}
+.msg.ok{background:#1b3a1b;color:#8f8}.msg.err{background:#3a1b1b;color:#f88}
+.muted{color:var(--text-dim);font-size:.82rem}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>♡ Submit a Ranking ♡</h1>
+    <p class="muted"><a href="index.html">← back to rankings</a> · paste or upload your list, review the matches, submit for review</p>
+  </header>
+
+  <!-- Step 1: input -->
+  <div class="card" id="inputCard">
+    <div class="row">
+      <div><label>Your name / handle *</label><input id="rankerName" placeholder="e.g. Wumbo"></div>
+      <div><label>List title (optional)</label><input id="title" placeholder="e.g. My all-time top songs"></div>
+    </div>
+    <div class="row">
+      <div>
+        <label>Scope — what universe did you rank?</label>
+        <select id="scopeType">
+          <option value="all">All songs</option>
+          <option value="series">A single series</option>
+          <option value="custom" selected>Custom subset (only the songs I listed)</option>
+        </select>
+      </div>
+      <div id="seriesWrap" class="hidden"><label>Series</label><select id="scopeRef"></select></div>
+    </div>
+    <label>Paste your ranking (or upload a .txt) — one song per line, e.g. <span class="muted">1. 曲名 - アーティスト</span></label>
+    <textarea id="text" placeholder="1. Snow halation - μ's&#10;2. 眩耀夜行 - スリーズブーケ&#10;3. ..."></textarea>
+    <div class="row" style="margin-top:10px;align-items:center">
+      <div style="flex:0"><input type="file" id="file" accept=".txt" class="sec"></div>
+      <div style="flex:0;margin-left:auto"><button class="btn" id="parseBtn">Parse &amp; Preview →</button></div>
+    </div>
+    <div id="parseMsg"></div>
+  </div>
+
+  <!-- Step 2: confirm -->
+  <div class="card hidden" id="confirmCard">
+    <h2 style="color:var(--pink);font-size:1.1rem;margin-bottom:4px">Review matches</h2>
+    <p class="muted">🟢 matched · 🟡 pick one · 🔴 no match — fix any yellow/red rows, then submit.</p>
+    <div class="summary" id="summary"></div>
+    <div id="itemList"></div>
+    <div style="display:flex;gap:10px;margin-top:14px">
+      <button class="btn sec" id="backBtn">← Edit input</button>
+      <button class="btn" id="submitBtn" style="margin-left:auto">Submit for review</button>
+    </div>
+    <div id="submitMsg"></div>
+  </div>
+
+  <!-- Step 3: done -->
+  <div class="card hidden" id="doneCard">
+    <div class="msg ok">✓ Thanks! Your ranking is queued for review and will appear once approved.</div>
+    <a href="index.html" class="btn sec">← back to rankings</a>
+    <button class="btn" id="anotherBtn">Submit another</button>
+  </div>
+</div>
+
+<script type="module">
+const $ = (id) => document.getElementById(id);
+let CATALOG = [];   // {id,name,en,artist,series}
+let rows = [];      // confirm state
+
+// load catalog for the manual picker + series list
+(async () => {
+  try {
+    const d = await (await fetch('/api/catalog')).json();
+    CATALOG = d.songs;
+    $('scopeRef').innerHTML = d.series.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
+  } catch (e) { $('parseMsg').innerHTML = `<div class="msg err">Failed to load catalog: ${esc(e.message)}</div>`; }
+})();
+
+function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+$('scopeType').addEventListener('change', () => {
+  $('seriesWrap').classList.toggle('hidden', $('scopeType').value !== 'series');
+});
+$('file').addEventListener('change', async (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  $('text').value = await f.text();
+});
+
+$('parseBtn').addEventListener('click', async () => {
+  const text = $('text').value.trim();
+  $('parseMsg').innerHTML = '';
+  if (!text) { $('parseMsg').innerHTML = '<div class="msg err">Paste or upload a ranking first.</div>'; return; }
+  $('parseBtn').disabled = true;
+  try {
+    const d = await (await fetch('/api/import/parse', {method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({text})})).json();
+    if (d.error) throw new Error(d.error);
+    if (!$('rankerName').value && d.rankerName) $('rankerName').value = d.rankerName;
+    rows = d.items.map(it => ({
+      position: it.position, songText: it.songText, artistText: it.artistText, rawLine: it.rawLine,
+      state: it.state, candidates: it.candidates, via: it.via, score: it.score,
+      chosen: it.state === 'matched' ? it.songId : '',   // songId | '' | '__custom__' | '__drop__'
+      wasAuto: it.state === 'matched',
+    }));
+    if (d.extraRankings > 0) $('parseMsg').innerHTML = `<div class="msg err">Note: ${d.extraRankings} extra ranking(s) after the first were ignored. Submit one list at a time.</div>`;
+    renderConfirm();
+    $('inputCard').classList.add('hidden');
+    $('confirmCard').classList.remove('hidden');
+  } catch (e) {
+    $('parseMsg').innerHTML = `<div class="msg err">${esc(e.message)}</div>`;
+  } finally { $('parseBtn').disabled = false; }
+});
+
+$('backBtn').addEventListener('click', () => { $('confirmCard').classList.add('hidden'); $('inputCard').classList.remove('hidden'); });
+$('anotherBtn').addEventListener('click', () => location.reload());
+
+function songLabel(id){ const s = CATALOG.find(x=>x.id===id); return s ? `${s.name} — ${s.artist}` : id; }
+
+function renderConfirm(){
+  const badge = (r) => r.chosen==='__drop__' ? 'b-r' : r.chosen==='__custom__' ? 'b-y' : r.chosen ? 'b-g' : 'b-r';
+  $('itemList').innerHTML = rows.map((r,i) => {
+    const cand = r.candidates || [];
+    const opts = [];
+    // matched/candidate songs
+    const seen = new Set();
+    if (r.chosen && r.chosen!=='__custom__' && r.chosen!=='__drop__') { opts.push(`<option value="${r.chosen}">${esc(songLabel(r.chosen))}</option>`); seen.add(r.chosen); }
+    cand.forEach(c => { if(!seen.has(c.songId)){ opts.push(`<option value="${c.songId}">${esc(c.name)} — ${esc(c.artist)} (${c.score})</option>`); seen.add(c.songId);} });
+    opts.push(`<option value="">— pick a song —</option>`);
+    opts.push(`<option value="__search__">🔍 search all songs…</option>`);
+    opts.push(`<option value="__custom__" ${r.chosen==='__custom__'?'selected':''}>keep as custom text</option>`);
+    opts.push(`<option value="__drop__" ${r.chosen==='__drop__'?'selected':''}>drop this line</option>`);
+    return `<div class="item" data-i="${i}">
+      <span class="pos">#${r.position}</span>
+      <span class="badge ${badge(r)}"></span>
+      <span class="raw" title="${esc(r.rawLine)}">${esc(r.songText)}${r.artistText?` <span class="muted">- ${esc(r.artistText)}</span>`:''}</span>
+      <span class="pick search-box">
+        <select data-role="pick">${opts.join('')}</select>
+        <input data-role="search" class="hidden" placeholder="type to search…" autocomplete="off">
+        <div data-role="results" class="search-res"></div>
+      </span>
+    </div>`;
+  }).join('');
+  rows.forEach((r,i) => {
+    const el = $('itemList').querySelector(`[data-i="${i}"]`);
+    const sel = el.querySelector('[data-role=pick]');
+    sel.value = r.chosen;
+    sel.addEventListener('change', () => onPick(i, el, sel));
+    wireSearch(i, el);
+  });
+  updateSummary();
+}
+
+function onPick(i, el, sel){
+  if (sel.value === '__search__'){ el.querySelector('[data-role=search]').classList.remove('hidden'); el.querySelector('[data-role=search]').focus(); return; }
+  rows[i].chosen = sel.value;
+  rows[i].wasAuto = false;
+  el.querySelector('.badge').className = 'badge ' + (rows[i].chosen==='__drop__'?'b-r':rows[i].chosen==='__custom__'?'b-y':rows[i].chosen?'b-g':'b-r');
+  updateSummary();
+}
+
+function wireSearch(i, el){
+  const input = el.querySelector('[data-role=search]');
+  const res = el.querySelector('[data-role=results]');
+  let t;
+  input.addEventListener('input', () => {
+    clearTimeout(t);
+    t = setTimeout(() => {
+      const q = input.value.toLowerCase().trim();
+      if (!q){ res.classList.remove('show'); return; }
+      const m = CATALOG.filter(s => s.name.toLowerCase().includes(q) || (s.en&&s.en.toLowerCase().includes(q)) || s.artist.toLowerCase().includes(q)).slice(0,20);
+      res.innerHTML = m.map(s => `<div data-id="${s.id}">${esc(s.name)} — ${esc(s.artist)} <span class="muted">· ${esc(s.series)}</span></div>`).join('') || '<div class="muted">no matches</div>';
+      res.classList.add('show');
+      res.querySelectorAll('[data-id]').forEach(d => d.addEventListener('click', () => {
+        rows[i].chosen = d.dataset.id; rows[i].wasAuto = false;
+        const sel = el.querySelector('[data-role=pick]');
+        if (![...sel.options].some(o=>o.value===d.dataset.id)) sel.add(new Option(songLabel(d.dataset.id), d.dataset.id), 0);
+        sel.value = d.dataset.id;
+        input.classList.add('hidden'); res.classList.remove('show'); input.value='';
+        el.querySelector('.badge').className='badge b-g'; updateSummary();
+      }));
+    }, 120);
+  });
+}
+
+function updateSummary(){
+  const g = rows.filter(r=>r.chosen && r.chosen!=='__custom__' && r.chosen!=='__drop__').length;
+  const y = rows.filter(r=>r.chosen==='__custom__').length;
+  const r = rows.filter(r=>r.chosen==='__drop__' || r.chosen==='').length;
+  $('summary').innerHTML = `<span class="g">🟢 ${g} matched</span><span class="y">🟡 ${y} custom</span><span class="r">🔴 ${r} unresolved / dropped</span>`;
+  $('submitBtn').disabled = g < 5;
+}
+
+$('submitBtn').addEventListener('click', async () => {
+  $('submitMsg').innerHTML = '';
+  const items = [];
+  rows.filter(r => r.chosen !== '__drop__' && r.chosen !== '').forEach((r, idx) => {
+    const isSong = r.chosen !== '__custom__';
+    items.push({
+      position: idx + 1,
+      songId: isSong ? r.chosen : null,
+      customName: isSong ? null : r.songText,
+      rawLine: r.rawLine,
+      via: r.wasAuto ? r.via : (isSong ? 'manual' : 'none'),
+      score: r.score,
+      aliasText: (isSong && !r.wasAuto) ? r.songText : null,
+    });
+  });
+  const body = {
+    rankerName: $('rankerName').value.trim(),
+    title: $('title').value.trim() || null,
+    scopeType: $('scopeType').value,
+    scopeRef: $('scopeType').value === 'series' ? $('scopeRef').value : null,
+    items,
+  };
+  if (!body.rankerName){ $('submitMsg').innerHTML='<div class="msg err">Enter your name first.</div>'; return; }
+  $('submitBtn').disabled = true;
+  try {
+    const d = await (await fetch('/api/rankings', {method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)})).json();
+    if (d.error) throw new Error(d.error);
+    $('confirmCard').classList.add('hidden');
+    $('doneCard').classList.remove('hidden');
+  } catch (e) {
+    $('submitMsg').innerHTML = `<div class="msg err">${esc(e.message)}</div>`;
+    $('submitBtn').disabled = false;
+  }
+});
+</script>
+</body>
+</html>

@@ -105,6 +105,7 @@ textarea{min-height:180px;resize:vertical;line-height:1.5}
     <h2 style="color:var(--pink);font-size:1.1rem;margin-bottom:4px">Review matches</h2>
     <p class="muted">🟢 matched · 🟡 pick one · 🔴 no match — fix any yellow/red rows, then submit.</p>
     <div class="summary" id="summary"></div>
+    <div id="missingBox" style="margin:6px 0"></div>
     <div id="itemList"></div>
     <div style="display:flex;gap:10px;margin-top:14px">
       <button class="btn sec" id="backBtn">← Edit input</button>
@@ -141,6 +142,7 @@ const $ = (id) => document.getElementById(id);
 const SORTER_BASE = 'https://hamproductions.github.io/the-sorter'; // deep-link target
 let CATALOG = [];        // {id,name,en,artist,series}
 let CATALOG_SERIES = []; // {id,name,color}
+let SONG_BY_ID = new Map();
 let rows = [];           // confirm state
 
 // load catalog for the manual picker + series list
@@ -149,6 +151,7 @@ let rows = [];           // confirm state
     const d = await (await fetch('/api/catalog')).json();
     CATALOG = d.songs;
     CATALOG_SERIES = d.series;
+    SONG_BY_ID = new Map(CATALOG.map(s => [s.id, s]));
     $('scopeRef').innerHTML = d.series.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
   } catch (e) { $('parseMsg').innerHTML = `<div class="msg err">Failed to load catalog: ${esc(e.message)}</div>`; }
 })();
@@ -232,6 +235,7 @@ function renderEventList() {
     // ordering/labels resolved by the-sorter from the day performanceIds).
     try {
       const d = await (await fetch('/api/events/' + encodeURIComponent(selectedEvent.id))).json();
+      selectedEvent.songIds = d.songIds || [];
       const n = d.songIds?.length ?? selectedEvent.song_count;
       if (d.perfIds && d.perfIds.length) {
         const url = `${SORTER_BASE}/songs/?performanceIds=${d.perfIds.join('%2C')}`;
@@ -349,6 +353,22 @@ function updateSummary(){
   const r = rows.filter(r=>r.chosen==='__drop__' || r.chosen==='').length;
   $('summary').innerHTML = `<span class="g">🟢 ${g} matched</span><span class="y">🟡 ${y} custom</span><span class="r">🔴 ${r} unresolved / dropped</span>`;
   $('submitBtn').disabled = g < 5;
+
+  // Event scope: highlight which of the show's setlist songs are missing here.
+  const mb = $('missingBox');
+  if ($('scopeType').value === 'event' && selectedEvent?.songIds?.length) {
+    const chosen = new Set(rows.filter(x => x.chosen && x.chosen !== '__custom__' && x.chosen !== '__drop__').map(x => x.chosen));
+    const missing = selectedEvent.songIds.filter(id => !chosen.has(id));
+    const have = selectedEvent.songIds.length - missing.length;
+    if (missing.length) {
+      const names = missing.map(id => esc((SONG_BY_ID.get(id) || {}).name || id)).join(' · ');
+      mb.innerHTML = `<div class="msg" style="background:#3a2f1b;color:#ffcf8f">⚠️ Missing ${missing.length} of ${selectedEvent.songIds.length} songs from this show (${have} ranked): ${names}</div>`;
+    } else {
+      mb.innerHTML = `<div class="msg ok">✓ All ${selectedEvent.songIds.length} songs from this show are ranked.</div>`;
+    }
+  } else {
+    mb.innerHTML = '';
+  }
 }
 
 $('submitBtn').addEventListener('click', async () => {

@@ -33,27 +33,29 @@ const SERIES_SHORT: Record<string, string> = {
   '7': 'yohane',
   '8': 'bluebird',
 };
-// City tokens (from each leg's "〇〇公演" name) → romaji, for per-leg slugs. No
-// venue names. Order matters: longer/more-specific keys first.
-const CITY: Record<string, string> = {
-  北海道: 'hokkaido', 名古屋: 'nagoya', 神奈川: 'kanagawa', 東京: 'tokyo', 大阪: 'osaka', 福岡: 'fukuoka',
-  愛知: 'aichi', 千葉: 'chiba', 宮城: 'miyagi', 埼玉: 'saitama', 広島: 'hiroshima', 横浜: 'yokohama',
-  兵庫: 'hyogo', 札幌: 'sapporo', 沼津: 'numazu', 神戸: 'kobe', 松山: 'matsuyama', 仙台: 'sendai',
-  金沢: 'kanazawa', 旭川: 'asahikawa', 長野: 'nagano', 群馬: 'gunma', 岡山: 'okayama', 福井: 'fukui',
-  石川: 'ishikawa', 新潟: 'niigata', 広州: 'guangzhou', 上海: 'shanghai', 台北: 'taipei', ソウル: 'seoul',
-};
-const detectCity = (names: string[]): string => {
-  const hay = names.join(' ');
-  for (const [jp, romaji] of Object.entries(CITY)) if (hay.includes(jp)) return romaji;
+// City token is pulled DIRECTLY from each leg's "〇〇公演" name in Japanese — no
+// romaji map/transliteration. Grab the contiguous kanji/kana run right before
+// 公演 (excluding the long-vowel mark, which separates prefixes like 第2章ー…).
+const CITY_RE = /([一-龯ぁ-ゖァ-ヺ]+)公演/;
+// Generic non-city words that can precede 公演 (matinee / evening / Nth-showing).
+const NOT_A_CITY = new Set(['昼', '夜', '回目']);
+function extractCityJP(names: string[]): string {
+  for (const n of names) {
+    const m = n.match(CITY_RE);
+    if (!m) continue;
+    const city = m[1].replace(/追加$/, ''); // drop trailing "追加" (= additional show)
+    if (city && !NOT_A_CITY.has(city)) return city;
+  }
   return '';
-};
-// Slug base = {series}{ordinal}{city}, e.g. "hasu6thsaitama". {series}{year} when
-// no ordinal. Uniqueness (city missing / collisions) is resolved after the loop.
+}
+// Slug base = {series}{ordinal}{cityJP}, e.g. "hasu6th埼玉". {series}{year} when no
+// ordinal. Uniqueness (no city / collisions) is resolved after the loop.
 function slugBase(tourName: string, seriesIds: string[], dateStart: string | undefined, names: string[]) {
   const short = SERIES_SHORT[seriesIds[0]] ?? 's' + (seriesIds[0] ?? '');
   const ord = (tourName.match(/(\d+)(st|nd|rd|th)/i)?.[0] ?? '').toLowerCase();
-  const city = detectCity(names);
-  const base = (short + (ord || (dateStart ?? '').slice(0, 4)) + city).replace(/[^a-z0-9]/g, '') || short;
+  const city = extractCityJP(names);
+  // keep unicode letters/digits (so kanji city survives), drop spaces/punctuation
+  const base = (short + (ord || (dateStart ?? '').slice(0, 4)) + city).replace(/[^\p{L}\p{N}]/gu, '') || short;
   return { base, hasCity: !!city };
 }
 

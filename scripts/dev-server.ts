@@ -76,7 +76,13 @@ Bun.serve({
     let file = p === '/' ? '/index.html' : p;
     if (file.includes('..')) return new Response('bad path', { status: 400 });
     const f = Bun.file(join(root, file));
-    if (await f.exists()) return new Response(f);
+    if (await f.exists()) {
+      // Read into memory and return bytes rather than streaming Bun.file — the
+      // streaming/sendfile path is denied (EPERM) under the macOS sandbox, which
+      // makes static responses hang. A plain read is allowed.
+      const buf = await f.arrayBuffer();
+      return new Response(buf, { headers: { 'content-type': f.type || 'application/octet-stream' } });
+    }
     return new Response('not found', { status: 404 });
   },
 });

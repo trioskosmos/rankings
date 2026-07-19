@@ -82,15 +82,15 @@ textarea{min-height:180px;resize:vertical;line-height:1.5}
       <div>
         <label>Scope — what universe did you rank?</label>
         <select id="scopeType">
+          <option value="event" selected>A concert / live event (e.g. both days of a leg)</option>
           <option value="all">All songs</option>
           <option value="series">A single series</option>
-          <option value="event">A concert / live event (e.g. both days of a leg)</option>
-          <option value="custom" selected>Custom subset (only the songs I listed)</option>
+          <option value="custom">Custom subset (only the songs I listed)</option>
         </select>
       </div>
       <div id="seriesWrap" class="hidden"><label>Series</label><select id="scopeRef"></select></div>
     </div>
-    <div id="eventWrap" class="hidden">
+    <div id="eventWrap">
       <label>Concert / live event</label>
       <button type="button" class="btn sec" id="eventPickBtn" style="width:100%;text-align:left">🎤 Choose a concert / event…</button>
       <div id="eventPicked" class="muted" style="margin-top:6px"></div>

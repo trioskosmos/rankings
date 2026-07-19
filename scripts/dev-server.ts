@@ -83,7 +83,9 @@ Bun.serve({
       // streaming/sendfile path is denied (EPERM) under the macOS sandbox, which
       // makes static responses hang. A plain read is allowed.
       const buf = await f.arrayBuffer();
-      return new Response(buf, { headers: { 'content-type': f.type || 'application/octet-stream' } });
+      return new Response(buf, {
+        headers: { 'content-type': f.type || 'application/octet-stream', 'cache-control': 'no-store' },
+      });
     }
     return new Response('not found', { status: 404 });
   },

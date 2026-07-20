@@ -14,5 +14,9 @@ export function d1Adapter(binding: D1Database): DB {
       const r = await binding.prepare(sql).bind(...params).run();
       return { lastRowId: (r.meta?.last_row_id as number) ?? null };
     },
+    async batch(statements) {
+      // D1 runs a batch as a single atomic transaction.
+      await binding.batch(statements.map((s) => binding.prepare(s.sql).bind(...s.params)));
+    },
   };
 }

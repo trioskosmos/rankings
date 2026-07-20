@@ -5,4 +5,6 @@ export interface DB {
   all<T = Record<string, unknown>>(sql: string, ...params: unknown[]): Promise<T[]>;
   first<T = Record<string, unknown>>(sql: string, ...params: unknown[]): Promise<T | null>;
   run(sql: string, ...params: unknown[]): Promise<{ lastRowId: number | null }>;
+  /** Run a set of statements atomically (all-or-nothing). */
+  batch(statements: { sql: string; params: unknown[] }[]): Promise<void>;
 }

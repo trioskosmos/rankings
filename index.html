@@ -229,8 +229,9 @@ function parseProfiles(text, sourceFile){
   return res.length?res:[{name:'unknown',ids:[],unr:0,source:sourceFile||''}];
 }
 async function loadRankings(){
+  AGG_CACHE={}; // fresh data → invalidate cached aggregates
   try{
-    // Approved rankings come from the API (D1), not static .txt files.
+    // Rankings come from the API (D1), not static .txt files.
     const d=await(await fetch('/api/rankings')).json();
     if(d.error)throw new Error(d.error);
     const raw=(d.rankings||[]).map(r=>({
@@ -311,51 +312,37 @@ function renderRank(){
 }
 
 // ---- AGGREGATE ----
-function renderAgg(){
+// The aggregate is computed SERVER-SIDE (eligibility-aware normalized rank +
+// shrinkage) via /api/aggregate, so different-subset lists are combined fairly.
+// The "File:" filter maps to ?group=<slug>; empty = all rankings. Series/artist
+// filters and sort are applied client-side over the returned stats.
+let AGG_CACHE={};
+async function loadAgg(group){
+  if(AGG_CACHE[group]!==undefined)return AGG_CACHE[group];
+  try{
+    const url='/api/aggregate'+(group?'?group='+encodeURIComponent(group):'');
+    const d=await(await fetch(url)).json();
+    AGG_CACHE[group]=d.error?[]:(d.stats||[]);
+  }catch{AGG_CACHE[group]=[];}
+  return AGG_CACHE[group];
+}
+async function renderAgg(){
   const el=document.getElementById('aggContent'),mode=document.getElementById('sortAgg').value;
   const fS=document.getElementById('filterAgg').value,fA=document.getElementById('filterAggArtist').value;
-  const fileFilter=getFileFilter();
-  const pool=getFilePool(fileFilter);
-  // When a file filter is active, only use profiles from that file
-  const active=profiles.filter(p=>p.source===fileFilter||!fileFilter).filter(p=>p.ids.length>0);
-  if(!active.length){el.innerHTML='<p style="color:var(--text-dim)">No profiles.</p>';return;}
-  // Use the file pool as the song universe, or all ranked songs if no filter
-  const allSongIds=pool?[...pool]:[...new Set(active.flatMap(p=>p.ids))];
-  const hideZero=document.getElementById('hideUnranked').checked;
-  const t=active.length;
-  // Pre-compute reRanked arrays once per profile (not once per song)
-  const reranked={};active.forEach(p=>{reranked[p._uid]=reRank(p,pool||null);});
-  const totalSongs=allSongIds.length;
-  let data=allSongIds.map(id=>gs(id)).filter(Boolean).filter(s=>{
-    if(fS&&s.series!==fS)return false;
-    if(fA&&!s.allArtists.includes(fA))return false;
+  const stats=await loadAgg(getFileFilter());
+  if(!stats.length){el.innerHTML='<p style="color:var(--text-dim)">No rankings yet.</p>';return;}
+  let data=stats.map(st=>({st,song:gs(st.songId)})).filter(x=>x.song).filter(x=>{
+    if(fS&&x.song.series!==fS)return false;
+    if(fA&&!x.song.allArtists.includes(fA))return false;
     return true;
-  }).map(song=>{
-    const allRanks=active.map(p=>{
-      const i=reranked[p._uid].indexOf(song.id);
-      return i===-1?totalSongs:i+1;
-    });
-    const avg=allRanks.reduce((a,b)=>a+b,0)/t;
-    const rankedRanks=allRanks.filter(r=>r<totalSongs),med=median(rankedRanks.length?rankedRanks:[totalSongs]),sd=stddev(allRanks,avg);
-    let hi={name:'',pos:999},lo={name:'',pos:0};
-    active.forEach(p=>{
-      const r=reranked[p._uid].indexOf(song.id)+1;
-      if(r<=totalSongs){if(r<hi.pos){hi={name:p._label,pos:r}}if(r>lo.pos){lo={name:p._label,pos:r}}}
-    });
-    return{song,avg,med,sd,hi,lo,count:rankedRanks.length};
-  }).filter(d=>!hideZero||d.count>0);
-  const cmp={rank:(a,b)=>a.avg-b.avg,'rank-desc':(a,b)=>b.avg-a.avg,median:(a,b)=>a.med-b.med,stddev:(a,b)=>a.sd-b.sd,name:(a,b)=>a.song.name.localeCompare(b.song.name),date:(a,b)=>(a.song.date||'9999').localeCompare(b.song.date||'9999'),artist:(a,b)=>a.song.artist.localeCompare(b.song.artist),series:(a,b)=>a.song.series.localeCompare(b.song.series)||a.song.name.localeCompare(b.song.name)};
-  if(cmp[mode])data.sort(cmp[mode]);
-  // Assign rank positions
-  const isRankSort=mode==='rank'||mode==='rank-desc'||mode==='median'||mode==='stddev';
-  if(isRankSort){
-    const sorted=[...data].sort((a,b)=>a.avg-b.avg);
-    sorted.forEach((item,i)=>item.rankPos=i+1);
-  } else {
-    data.forEach((item,i)=>item.rankPos=i+1);
-  }
+  });
+  const cmp={rank:(a,b)=>b.st.score-a.st.score,'rank-desc':(a,b)=>a.st.score-b.st.score,median:(a,b)=>a.st.median-b.st.median,stddev:(a,b)=>a.st.stddev-b.st.stddev,name:(a,b)=>a.song.name.localeCompare(b.song.name),date:(a,b)=>(a.song.date||'9999').localeCompare(b.song.date||'9999'),artist:(a,b)=>a.song.artist.localeCompare(b.song.artist),series:(a,b)=>a.song.series.localeCompare(b.song.series)||a.song.name.localeCompare(b.song.name)};
+  data.sort(cmp[mode]||cmp.rank);
   if(!data.length){el.innerHTML='<p style="color:var(--text-dim)">No songs match filters.</p>';return;}
-  el.innerHTML='<div class="list">'+data.map(item=>{const s=item.song;return '<div class="item" onclick="showSong(\''+s.id+'\')"><div class="rk">#'+item.rankPos+'</div>'+songHTML(s,'<div class="votes"><span>avg '+item.avg.toFixed(1)+' · med '+item.med.toFixed(1)+' · σ '+item.sd.toFixed(1)+' ('+item.count+'/'+t+' ranked)</span>'+(item.hi.name?'<span class="hi">▲ '+item.hi.name+' (#'+item.hi.pos+')</span>':'')+(item.lo.name?'<span class="lo">▼ '+item.lo.name+' (#'+item.lo.pos+')</span>':'')+'</div>')+'</div>';}).join('')+'</div>';
+  el.innerHTML='<div class="list">'+data.map((x,i)=>{const s=x.song,st=x.st;
+    const votes='<div class="votes"><span>score '+(st.score*100).toFixed(0)+' · avg '+(st.avgNorm*100).toFixed(0)+'% · σ '+st.stddev.toFixed(2)+' ('+st.nLists+(st.nEligible>st.nLists?'/'+st.nEligible:'')+' lists)</span></div>';
+    return '<div class="item" onclick="showSong(\''+s.id+'\')"><div class="rk">#'+(i+1)+'</div>'+songHTML(s,votes)+'</div>';
+  }).join('')+'</div>';
 }
 
 // ---- PER SONG ----

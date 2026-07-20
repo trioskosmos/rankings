@@ -14,5 +14,11 @@ export function bunAdapter(sqlite: Database): DB {
       const r = sqlite.query(sql).run(...(params as never[]));
       return { lastRowId: Number(r.lastInsertRowid) || null };
     },
+    async batch(statements) {
+      const run = sqlite.transaction((stmts: { sql: string; params: unknown[] }[]) => {
+        for (const s of stmts) sqlite.query(s.sql).run(...(s.params as never[]));
+      });
+      run(statements);
+    },
   };
 }

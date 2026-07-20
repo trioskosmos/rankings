@@ -154,23 +154,29 @@ export class Matcher {
     };
   }
 
-  /** Rank all songs for a query; returns top-N scored candidates. */
-  candidates(songText: string, artistText: string | null, limit = 6): Candidate[] {
+  /** Score every song for a query; returns them sorted by RAW (uncapped) score.
+   *  Raw scores keep the artist boost distinct even when the base score is 100,
+   *  which is what lets the artist half break a same-title collision. */
+  private scoreAll(songText: string, artistText: string | null): Array<{ is: IndexedSong; raw: number }> {
     const q = {
       nameKey: normalizeKey(songText),
       strictKey: normalizeStrict(songText),
       romajiKey: phoneticToRomajiKey(songText),
     };
-    const scored: Array<{ is: IndexedSong; score: number }> = [];
+    const scored: Array<{ is: IndexedSong; raw: number }> = [];
     for (const is of this.songs) {
-      let score = this.scoreSong(q, is);
-      if (score > 0) {
-        score += this.artistBoost(artistText, is);
-        scored.push({ is, score });
-      }
+      const base = this.scoreSong(q, is);
+      if (base > 0) scored.push({ is, raw: base + this.artistBoost(artistText, is) });
     }
-    scored.sort((a, b) => b.score - a.score);
-    return scored.slice(0, limit).map(({ is, score }) => this.toCandidate(is, Math.min(100, score)));
+    scored.sort((a, b) => b.raw - a.raw);
+    return scored;
+  }
+
+  /** Rank all songs for a query; returns top-N scored candidates (score capped at 100 for display). */
+  candidates(songText: string, artistText: string | null, limit = 6): Candidate[] {
+    return this.scoreAll(songText, artistText)
+      .slice(0, limit)
+      .map(({ is, raw }) => this.toCandidate(is, Math.min(100, raw)));
   }
 
   /** Full match for one parsed line. */
@@ -187,24 +193,26 @@ export class Matcher {
       return { ...base, state: 'matched', songId: exact.songId, via: exact.via, score: 100, candidates: [] };
     }
 
-    // Collision or no exact key → fuzzy + artist disambiguation.
-    const cands = this.candidates(item.songText, item.artistText);
-    if (cands.length === 0) {
+    // Collision or no exact key → fuzzy + artist disambiguation. Decide confidence
+    // on RAW scores so an artist match can break a same-title (100/100) collision.
+    const scored = this.scoreAll(item.songText, item.artistText);
+    if (scored.length === 0) {
       return { ...base, state: 'unmatched', songId: null, via: 'none', score: 0, candidates: [] };
     }
-    const top = cands[0];
-    const second = cands[1];
-    const confident = top.score >= 90 && (!second || top.score - second.score >= 8);
+    const cands = scored.slice(0, 6).map(({ is, raw }) => this.toCandidate(is, Math.min(100, raw)));
+    const top = scored[0];
+    const second = scored[1];
+    const confident = top.raw >= 90 && (!second || top.raw - second.raw >= 8);
     if (confident) {
       return {
         ...base,
         state: 'matched',
-        songId: top.songId,
-        via: top.score === 100 ? 'name' : 'fuzzy',
-        score: top.score,
+        songId: top.is.song.id,
+        via: top.raw >= 100 ? 'name' : 'fuzzy',
+        score: Math.min(100, top.raw),
         candidates: cands.slice(1),
       };
     }
-    return { ...base, state: 'ambiguous', songId: null, via: 'none', score: top.score, candidates: cands };
+    return { ...base, state: 'ambiguous', songId: null, via: 'none', score: Math.min(100, top.raw), candidates: cands };
   }
 }

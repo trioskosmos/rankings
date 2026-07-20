@@ -52,7 +52,12 @@ Bun.serve({
       const em = p.match(/^\/api\/events\/([^/]+)$/);
       if (em && req.method === 'GET') return guard(() => H.handleEventSongs(db, decodeURIComponent(em[1])));
       if (p === '/api/aggregate' && req.method === 'GET')
-        return guard(() => H.handleAggregate(db, { event: url.searchParams.get('event') ?? undefined }));
+        return guard(() =>
+          H.handleAggregate(db, {
+            event: url.searchParams.get('event') ?? undefined,
+            group: url.searchParams.get('group') ?? undefined,
+          }),
+        );
       if (p === '/api/import/parse' && req.method === 'POST')
         return guard(async () => H.handleParse(db, (await req.json()) as { text?: string }));
       if (p === '/api/rankings' && req.method === 'GET') return guard(() => H.handleListRankings(db));

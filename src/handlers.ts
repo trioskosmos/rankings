@@ -41,9 +41,15 @@ export async function handleCatalog(db: DB) {
 // ---------- events (concert legs, for the submit-page picker) ----------
 export async function handleEvents(db: DB, q = '') {
   const tokens = q.trim().split(/\s+/).filter(Boolean).slice(0, 6);
-  // each token must appear in tour_name|name|venue (token-AND across fields)
-  const where = tokens.map(() => '(e.tour_name LIKE ? OR e.name LIKE ? OR e.venue LIKE ?)').join(' AND ') || '1=1';
-  const params = tokens.flatMap((t) => [`%${t}%`, `%${t}%`, `%${t}%`]);
+  // each token must appear in tour_name|name|venue (token-AND across fields).
+  // Escape LIKE metacharacters (% _ \) so they match literally.
+  const escLike = (t: string) => t.replace(/[\\%_]/g, (c) => '\\' + c);
+  const clause = "(e.tour_name LIKE ? ESCAPE '\\' OR e.name LIKE ? ESCAPE '\\' OR e.venue LIKE ? ESCAPE '\\')";
+  const where = tokens.map(() => clause).join(' AND ') || '1=1';
+  const params = tokens.flatMap((t) => {
+    const p = `%${escLike(t)}%`;
+    return [p, p, p];
+  });
   const rows = await db.all(
     `SELECT e.id, e.tour_name, e.name, e.venue, e.series_ids, e.date_start, e.date_end, e.day_count,
             (SELECT COUNT(*) FROM event_song es WHERE es.event_id = e.id) AS song_count
@@ -153,33 +159,39 @@ export async function handleCreateRanking(
   const rankingId = ins.lastRowId;
   if (!rankingId) throw new HttpError(500, 'insert failed');
 
+  // Write items (+ learned aliases) + the rate-limit row atomically, so a failure
+  // can't leave a half-populated ranking. (The ranking row is inserted first
+  // because the items need its autoincrement id.)
+  const stmts: { sql: string; params: unknown[] }[] = [];
   let pos = 0;
   for (const it of items) {
     pos++;
-    await db.run(
-      'INSERT INTO ranking_item (ranking_id, position, song_id, custom_name, raw_line, match_via, match_score) VALUES (?,?,?,?,?,?,?)',
-      rankingId,
-      pos,
-      it.songId ?? null,
-      it.songId ? null : it.customName,
-      it.rawLine ?? it.customName ?? '',
-      it.via ?? (it.songId ? 'manual' : 'none'),
-      it.score ?? null,
-    );
+    stmts.push({
+      sql: 'INSERT INTO ranking_item (ranking_id, position, song_id, custom_name, raw_line, match_via, match_score) VALUES (?,?,?,?,?,?,?)',
+      params: [
+        rankingId,
+        pos,
+        it.songId ?? null,
+        it.songId ? null : it.customName,
+        it.rawLine ?? it.customName ?? '',
+        it.via ?? (it.songId ? 'manual' : 'none'),
+        it.score ?? null,
+      ],
+    });
     // learned alias from a manual correction — improves future matching
     if (it.songId && it.aliasText) {
       const norm = normalizeKey(it.aliasText);
       if (norm)
-        await db.run(
-          'INSERT INTO song_alias (song_id, alias_text, norm_key, created_at) VALUES (?,?,?,?)',
-          it.songId,
-          it.aliasText,
-          norm,
-          nowIso,
-        );
+        stmts.push({
+          sql: 'INSERT INTO song_alias (song_id, alias_text, norm_key, created_at) VALUES (?,?,?,?)',
+          params: [it.songId, it.aliasText, norm, nowIso],
+        });
     }
   }
-  await db.run('INSERT INTO submit_rate (fp, at) VALUES (?,?)', fp, nowIso);
+  stmts.push({ sql: 'INSERT INTO submit_rate (fp, at) VALUES (?,?)', params: [fp, nowIso] });
+  // keep submit_rate bounded to the rate window (older rows are dead weight)
+  stmts.push({ sql: 'DELETE FROM submit_rate WHERE at < ?', params: [hourAgo] });
+  await db.batch(stmts);
   return { id: rankingId };
 }
 
@@ -224,7 +236,11 @@ export async function handleListRankings(db: DB) {
 
 // ---------- read: single ranking ----------
 export async function handleGetRanking(db: DB, id: number) {
-  const r = await db.first('SELECT * FROM ranking WHERE id = ?', id);
+  // Explicit columns — never expose submitter_fp on this public endpoint.
+  const r = await db.first(
+    'SELECT id, title, ranker_name, source, scope_type, scope_ref, note, created_at FROM ranking WHERE id = ?',
+    id,
+  );
   if (!r) throw new HttpError(404, 'not found');
   const items = await db.all(
     `SELECT ri.position, ri.song_id, ri.custom_name, ri.raw_line, s.name_jp AS name, s.name_en AS en
@@ -236,19 +252,22 @@ export async function handleGetRanking(db: DB, id: number) {
 }
 
 // ---------- aggregate ----------
-// opts.event = <concertId> restricts to that leg's rankings (apples-to-apples
-// across attendees of the same show).
-export async function handleAggregate(db: DB, opts: { event?: string } = {}) {
+// opts.event = <concertId> restricts to that leg's rankings; opts.group = a
+// display group/slug (the UI "File:" filter) restricts to that group's rankings.
+// Either way, per-ranking eligibility (scope) is applied so the result is fair.
+export async function handleAggregate(db: DB, opts: { event?: string; group?: string } = {}) {
   const { songSeries, allSongIds } = await loadCatalogFromDb(db);
   const eventSongs = await loadEventSongs(db);
   const { rankings } = await handleListRankings(db);
   let selected = rankings;
-  if (opts.event) selected = rankings.filter((r) => r.scopeType === 'event' && String(r.scopeRef) === String(opts.event));
+  if (opts.event)
+    selected = selected.filter((r) => r.scopeType === 'event' && String(r.scopeRef) === String(opts.event));
+  if (opts.group) selected = selected.filter((r) => r.group === opts.group);
   const agg: AggRanking[] = selected.map((r) => ({
     scopeType: r.scopeType as AggRanking['scopeType'],
     scopeRef: r.scopeRef,
     songIds: r.songIds,
   }));
   const stats = computeAggregate(agg, songSeries, allSongIds, eventSongs);
-  return { totalRankings: selected.length, event: opts.event ?? null, stats };
+  return { totalRankings: selected.length, event: opts.event ?? null, group: opts.group ?? null, stats };
 }

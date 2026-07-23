@@ -225,7 +225,7 @@ $('submitBtn').addEventListener('click',async()=>{
   const items=rows.filter(r=>r.chosen);
   if(items.length<5){$('submitMsg').innerHTML='<div class="msg err">Rank at least 5 songs.</div>';return;}
   // Build issue body from the matched ranking
-  const rankingLines=items.map((r,i)=>(i+1)+'. '+r.rawLine).join('\n');
+  const rankingLines=items.map((r,i)=>(i+1)+'. '+r.rawLine.replace(/^\d+[\.\)、]\s*/,'')).join('\n');
   const title='New ranking: '+name;
   const body='### Your name\n'+name+'\n\n### Your ranking\n'+rankingLines+'\n\n---\n_Submitted via the ranking tool_';
   // Open GitHub issue creation page

@@ -27,6 +27,7 @@ nav button.active{background:#fb8a9b;color:#fff;border-color:#fb8a9b}
 .item:hover{border-color:#fb8a9b}
 .rk{font-size:1.1rem;font-weight:bold;width:32px;text-align:center;color:#fb8a9b;flex-shrink:0}
 .sc{width:4px;height:36px;border-radius:2px;flex-shrink:0}
+.thumb{width:52px;height:52px;border-radius:6px;object-fit:cover;flex-shrink:0;background:var(--bg-card2)}
 .inf{flex:1;min-width:0}
 .nm{font-size:.95rem;font-weight:500}
 .ar{font-size:.78rem;color:var(--text-dim);margin-top:1px}
@@ -83,7 +84,7 @@ nav button.active{background:#fb8a9b;color:#fff;border-color:#fb8a9b}
 <div class="container">
   <header>
     <h1>♡ Love Live! Song Rankings ♡</h1>
-    <p>Rank any songs — <a href="https://github.com/trioskosmos/rankings/tree/main/data/rankings" target="_blank" style="color:#fb8a9b">add your <code>.txt</code> here</a> via PR (or just yell at trioskosmos to add them)</p>
+    <p>Rank any songs — <a href="submit.html" style="color:#fb8a9b">➜ Submit a ranking</a> or <a href="https://github.com/trioskosmos/rankings/tree/main/data/rankings" target="_blank" style="color:#fb8a9b">add a .txt via PR</a></p>
   </header>
   <div class="bar" style="justify-content:center;margin-bottom:10px">
     <label>File:</label><select id="globalFileFilter"><option value="">All files</option></select>
@@ -159,14 +160,14 @@ let SONGS=[],SM={},SERIES={},SERIES_COLORS={},ARTIST_NAMES={},ARTISTS_LIST=[],SE
 
 async function loadData(){
   try{
-    const[sr,ar]=await Promise.all([fetch('data/series-info.json').then(r=>r.json()),fetch('data/artists-info.json').then(r=>r.json())]);
+    const[sr,ar,disco]=await Promise.all([fetch('data/series-info.json').then(r=>r.json()),fetch('data/artists-info.json').then(r=>r.json()),fetch('data/discography-info.json').then(r=>r.json()).catch(()=>[])]);
     sr.forEach(s=>{SERIES[s.id]=s.name;SERIES_COLORS[s.id]=s.color;});
     ar.forEach(a=>{ARTIST_NAMES[a.id]=a.name;});
-    // Cache song data in localStorage (370KB, well under 5MB limit)
+    const DISCO_ART={};disco.forEach(d=>{const v=(d.versions||[]).find(v=>v.imageUrl);if(v)DISCO_ART[d.id]=v.imageUrl;});
     const SONG_CACHE='ll_songs_v1';
     let raw=localStorage.getItem(SONG_CACHE);
     if(raw){raw=JSON.parse(raw);}else{raw=await(await fetch('data/song-info.json')).json();localStorage.setItem(SONG_CACHE,JSON.stringify(raw));}
-    SONGS=raw.map(s=>({id:String(s.id),name:s.name,en:s.englishName||'',artist:(s.artists&&s.artists.length?ARTIST_NAMES[s.artists[0].id]||'Unknown':'Unknown'),allArtists:[...new Set(s.artists.map(a=>ARTIST_NAMES[a.id]||'Unknown').filter(Boolean))],series:(s.seriesIds&&s.seriesIds.length?SERIES[String(s.seriesIds[0])]||'Unknown':'Unknown'),color:(s.seriesIds&&s.seriesIds.length?SERIES_COLORS[String(s.seriesIds[0])]||'#888':'#888'),date:s.releasedOn||''}));
+    SONGS=raw.map(s=>({id:String(s.id),name:s.name,en:s.englishName||'',artist:(s.artists&&s.artists.length?ARTIST_NAMES[s.artists[0].id]||'Unknown':'Unknown'),allArtists:[...new Set(s.artists.map(a=>ARTIST_NAMES[a.id]||'Unknown').filter(Boolean))],series:(s.seriesIds&&s.seriesIds.length?SERIES[String(s.seriesIds[0])]||'Unknown':'Unknown'),color:(s.seriesIds&&s.seriesIds.length?SERIES_COLORS[String(s.seriesIds[0])]||'#888':'#888'),date:s.releasedOn||'',art:((s.discographyIds||[]).map(d=>DISCO_ART[d]).find(Boolean)||'')}));
     SONGS.forEach(s=>SM[s.id]=s);
     const aS=new Set(),sS=new Set();SONGS.forEach(s=>{s.allArtists.forEach(a=>aS.add(a));sS.add(s.series);});
     ARTISTS_LIST=[...aS].sort();SERIES_LIST=[...sS].sort();
@@ -280,7 +281,7 @@ function sortSongs(songs,mode){
   const c=[...songs];const cmp={name:(a,b)=>a.name.localeCompare(b.name),'name-desc':(a,b)=>b.name.localeCompare(a.name),date:(a,b)=>(a.date||'9999').localeCompare(b.date||'9999'),'date-desc':(a,b)=>(b.date||'').localeCompare(a.date||''),artist:(a,b)=>a.artist.localeCompare(b.artist),'artist-desc':(a,b)=>b.artist.localeCompare(a.artist),series:(a,b)=>a.series.localeCompare(b.series)||a.name.localeCompare(b.name)};
   if(cmp[mode])c.sort(cmp[mode]);return c;
 }
-function songHTML(song,extra){return '<div class="sc" style="background:'+(song.color||'#888')+'"></div><div class="inf"><div class="nm">'+song.name+'</div><div class="ar">'+song.artist+(song.series?' · '+song.series:'')+(song.date?' · '+song.date:'')+'</div>'+(extra||'')+'</div>';}
+function songHTML(song,extra){return '<div class="sc" style="background:'+(song.color||'#888')+'"></div>'+(song.art?'<img class="thumb" src="'+song.art+'" alt="" loading="lazy">':'')+'<div class="inf"><div class="nm">'+song.name+'</div><div class="ar">'+song.artist+(song.series?' · '+song.series:'')+(song.date?' · '+song.date:'')+'</div>'+(extra||'')+'</div>';}
 function makeItem(song,rank,extra){if(!song){const d=document.createElement('div');d.className='item unr';d.innerHTML='<div class="inf"><div class="nm" style="color:var(--text-dim)">(unknown)</div></div>';return d;}const d=document.createElement('div');d.className='item';d.addEventListener('click',()=>showSong(song.id));d.innerHTML='<div class="rk">#'+rank+'</div>'+songHTML(song,extra);return d;}
 function getFileFilter(){return document.getElementById('globalFileFilter')?.value||'';}
 function getFilePool(fileFilter){

@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Submit a Ranking · Love Live! Song Rankings</title>
+<style>
+:root{--bg:#1a1a2e;--bg-card:#222244;--bg-card2:#2a2a4a;--text:#eee;--text-dim:#999;--border:#333366;--pink:#fb8a9b}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.container{max-width:1000px;margin:0 auto;padding:20px}
+header{text-align:center;padding:20px 0;border-bottom:2px solid var(--pink);margin-bottom:20px}
+header h1{font-size:1.6rem;color:var(--pink)}
+header a{color:var(--pink)}
+a{color:var(--pink)}
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px}
+label{display:block;color:var(--text-dim);font-size:.85rem;margin:8px 0 4px}
+input,select,textarea{width:100%;background:var(--bg-card2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:.9rem;font-family:inherit}
+textarea{min-height:180px;resize:vertical;line-height:1.5}
+.row{display:flex;gap:12px;flex-wrap:wrap}
+.row>div{flex:1;min-width:180px}
+.btn{background:var(--pink);color:#fff;border:none;border-radius:6px;padding:10px 20px;font-size:.95rem;cursor:pointer;font-weight:600}
+.btn:hover{opacity:.9}
+.btn.sec{background:var(--bg-card2);color:var(--text);border:1px solid var(--border)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.summary{display:flex;gap:16px;flex-wrap:wrap;font-size:.85rem;margin:10px 0}
+.summary .g{color:#4caf50}.summary .y{color:#ffb300}.summary .r{color:#ff7043}
+.item{display:flex;align-items:center;gap:10px;padding:6px 8px;border-bottom:1px solid var(--border)}
+.item .pos{width:32px;text-align:right;color:var(--text-dim);font-size:.85rem;flex-shrink:0}
+.item .badge{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.item .raw{flex:1;min-width:0;font-size:.85rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.thumb{width:52px;height:52px;border-radius:6px;object-fit:cover;flex-shrink:0;background:var(--bg-card2)}
+.misslist{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px 14px;margin-top:10px}
+.missrow{display:flex;align-items:center;gap:8px;font-size:.85rem;min-width:0}
+.missrow span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .pick{flex:2;min-width:200px}
+.b-g{background:#4caf50}.b-y{background:#ffb300}.b-r{background:#ff7043}
+.search-box{position:relative}
+.search-res{position:absolute;z-index:20;left:0;right:0;top:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;max-height:220px;overflow-y:auto;display:none}
+.search-res.show{display:block}
+.search-res div{padding:6px 10px;cursor:pointer;font-size:.85rem}
+.search-res div:hover{background:var(--pink);color:#fff}
+.hidden{display:none}
+/* event picker modal */
+.cover{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;padding:20px;overflow:hidden}
+.cover.show{display:flex}
+.modal{max-width:760px;width:100%;margin:auto;background:var(--bg);border:1px solid var(--border);border-radius:12px;display:flex;flex-direction:column;max-height:85vh}
+.modal-head{padding:14px 16px;border-bottom:1px solid var(--border)}
+.modal-head h2{color:var(--pink);font-size:1.1rem;margin-bottom:10px}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-top:8px}
+.chip{flex-shrink:0;padding:4px 10px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-size:.75rem;font-weight:700;cursor:pointer;white-space:nowrap}
+.chip.active{color:#fff}
+.modal-body{overflow-y:auto;padding:8px 16px 16px}
+.tour-group{margin-top:12px}
+.tour-name{font-size:.8rem;color:var(--text-dim);font-weight:700;margin:8px 0 4px;position:sticky;top:0;background:var(--bg);padding:2px 0}
+.leg{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:5px;cursor:pointer}
+.leg:hover{border-color:var(--pink)}
+.leg .bar{width:4px;align-self:stretch;border-radius:2px;flex-shrink:0}
+.leg .meta{flex:1;min-width:0}
+.leg .ln{font-size:.9rem;font-weight:500}
+.leg .sub{font-size:.75rem;color:var(--text-dim);margin-top:1px}
+.leg .cnt{font-size:.75rem;color:var(--pink);font-weight:700;flex-shrink:0}
+.msg{padding:10px;border-radius:6px;margin:10px 0;font-size:.9rem}
+.msg.ok{background:#1b3a1b;color:#8f8}.msg.err{background:#3a1b1b;color:#f88}
+.muted{color:var(--text-dim);font-size:.82rem}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>♡ Submit a Ranking ♡</h1>
+    <p class="muted"><a href="index.html">← back to rankings</a> · paste or upload your list, review the matches, submit for review</p>
+  </header>
+
+  <!-- Step 1: input -->
+  <div class="card" id="inputCard">
+    <div class="row">
+      <div><label>Your name / handle *</label><input id="rankerName" placeholder="e.g. Wumbo"></div>
+      <div><label>List title (optional)</label><input id="title" placeholder="e.g. My all-time top songs"></div>
+    </div>
+    <div class="row">
+      <div>
+        <label>Scope — what universe did you rank?</label>
+        <select id="scopeType">
+          <option value="event" selected>A concert / live event (e.g. both days of a leg)</option>
+          <option value="all">All songs</option>
+          <option value="series">A single series</option>
+          <option value="custom">Custom subset (only the songs I listed)</option>
+        </select>
+      </div>
+      <div id="seriesWrap" class="hidden"><label>Series</label><select id="scopeRef"></select></div>
+    </div>
+    <div id="eventWrap">
+      <label>Concert / live event</label>
+      <button type="button" class="btn sec" id="eventPickBtn" style="width:100%;text-align:left">🎤 Choose a concert / event…</button>
+      <div id="eventPicked" class="muted" style="margin-top:6px"></div>
+    </div>
+    <label>Paste your ranking (or upload a .txt) — one song per line, e.g. <span class="muted">1. 曲名 - アーティスト</span></label>
+    <textarea id="text" placeholder="1. Snow halation - μ's&#10;2. 眩耀夜行 - スリーズブーケ&#10;3. ..."></textarea>
+    <div class="row" style="margin-top:10px;align-items:center">
+      <div style="flex:0"><input type="file" id="file" accept=".txt" class="sec"></div>
+      <div style="flex:0;margin-left:auto"><button class="btn" id="parseBtn">Parse &amp; Preview →</button></div>
+    </div>
+    <div id="parseMsg"></div>
+  </div>
+
+  <!-- Step 2: confirm -->
+  <div class="card hidden" id="confirmCard">
+    <h2 style="color:var(--pink);font-size:1.1rem;margin-bottom:4px">Review matches</h2>
+    <p class="muted">🟢 matched · 🟡 pick one · 🔴 no match — fix any yellow/red rows, then submit.</p>
+    <div class="summary" id="summary"></div>
+    <div id="missingBox" style="margin:6px 0"></div>
+    <div id="itemList"></div>
+    <div style="display:flex;gap:10px;margin-top:14px">
+      <button class="btn sec" id="backBtn">← Edit input</button>
+      <button class="btn" id="submitBtn" style="margin-left:auto">Submit for review</button>
+    </div>
+    <div id="submitMsg"></div>
+  </div>
+
+  <!-- Step 3: done -->
+  <div class="card hidden" id="doneCard">
+    <div class="msg ok" id="doneMsg">✓ Thanks! Your ranking is live now.</div>
+    <a href="index.html" class="btn sec">← back to rankings</a>
+    <button class="btn" id="anotherBtn">Submit another</button>
+  </div>
+</div>
+
+<!-- Event picker modal (mirrors llernote /events + ll-predictions PerformancePicker) -->
+<div class="cover" id="eventModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h2>Choose a concert / event</h2>
+        <button class="btn sec" id="eventModalClose" style="padding:4px 10px">✕</button>
+      </div>
+      <input id="eventSearch" placeholder="Search by tour, leg, or venue…" autocomplete="off">
+      <div class="chips" id="eventChips"></div>
+    </div>
+    <div class="modal-body" id="eventList"></div>
+  </div>
+</div>
+
+<script type="module">
+const $=(id)=>document.getElementById(id);
+const SORTER_BASE='https://hamproductions.github.io/the-sorter';
+let CATALOG=[],CATALOG_SERIES=[],SONG_BY_ID=new Map(),ALL_EVENTS=null,ARTIST_NAMES={},DISCO_ART={};
+const activeSeries=new Set();
+let rows=[],selectedEvent=null;
+
+function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function cleanName(n){return n.replace(/[「」"'（）\(\)]/g,'').trim();}
+
+(async()=>{
+  try{
+    const[songs,series,artists,disco,perf,setlists]=await Promise.all([
+      fetch('../data/song-info.json').then(r=>r.json()),
+      fetch('../data/series-info.json').then(r=>r.json()),
+      fetch('../data/artists-info.json').then(r=>r.json()),
+      fetch('../data/discography-info.json').then(r=>r.json()).catch(()=>[]),
+      fetch('../data/performance-info.json').then(r=>r.json()).catch(()=>[]),
+      fetch('../data/performance-setlists.json').then(r=>r.json()).catch(()=>[])
+    ]);
+    artists.forEach(a=>ARTIST_NAMES[a.id]=a.name);
+    CATALOG_SERIES=series;
+    const sById={};songs.forEach(s=>sById[s.id]=s);
+    disco.forEach(d=>{const v=(d.versions||[]).find(v=>v.imageUrl);if(v)DISCO_ART[d.id]=v.imageUrl;});
+    CATALOG=songs.map(s=>({
+      id:String(s.id),name:s.name,en:s.englishName||'',
+      artist:s.artists&&s.artists.length?ARTIST_NAMES[s.artists[0].id]||'Unknown':'Unknown',
+      artistIds:(s.artists||[]).map(a=>a.id),
+      series:s.seriesIds&&s.seriesIds.length?series.find(se=>String(se.id)===String(s.seriesIds[0]))?.name||'Unknown':'Unknown',
+      seriesIds:s.seriesIds||[],
+      art:((s.discographyIds||[]).map(d=>DISCO_ART[d]).find(Boolean)||''),
+      phonetic:s.phoneticName||''
+    }));
+    SONG_BY_ID=new Map(CATALOG.map(s=>[s.id,s]));
+    $('scopeRef').innerHTML=series.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('');
+
+    // Build events from performance data
+    if(perf&&perf.data&&setlists&&setlists.data){
+      const perfMap={};perf.data.forEach(p=>perfMap[p.id]=p);
+      const eventMap={};
+      setlists.data.forEach(sl=>{
+        const p=perfMap[sl.performance_id];
+        if(!p)return;
+        const cid=p.concertId||'0';
+        if(!eventMap[cid])eventMap[cid]={id:cid,tour_name:p.tourName||'',name:p.name||p.title||'',venue:p.venue||'',date_start:p.date||p.dateStart||'',date_end:p.dateEnd||'',day_count:0,song_count:0,seriesIds:[p.seriesId||''],songIds:new Set(),perfIds:[]};
+        const e=eventMap[cid];
+        e.day_count++;e.seriesIds=[p.seriesId||''];e.perfIds.push(sl.performance_id);
+        (sl.songs||[]).forEach(songId=>{e.songIds.add(String(songId));});
+      });
+      ALL_EVENTS=Object.values(eventMap).map(e=>{e.songIds=[...e.songIds];e.song_count=e.songIds.length;return e;});
+      renderChips();
+    }
+  }catch(e){$('parseMsg').innerHTML='<div class="msg err">Failed to load songs: '+esc(e.message)+'</div>';}
+})();
+
+$('scopeType').addEventListener('change',()=>{
+  const v=$('scopeType').value;
+  $('seriesWrap').classList.toggle('hidden',v!=='series');
+  $('eventWrap').classList.toggle('hidden',v!=='event');
+});
+
+function seriesColor(id){return(CATALOG_SERIES.find(s=>String(s.id)===String(id))||{}).color||'#888';}
+$('eventPickBtn').addEventListener('click',openEventModal);
+$('eventModalClose').addEventListener('click',()=>$('eventModal').classList.remove('show'));
+$('eventModal').addEventListener('click',(e)=>{if(e.target===$('eventModal'))$('eventModal').classList.remove('show');});
+$('eventSearch').addEventListener('input',()=>renderEventList());
+
+function openEventModal(){
+  $('eventModal').classList.add('show');
+  if(!ALL_EVENTS){$('eventList').innerHTML='<div class="muted" style="padding:12px">No event data available.</div>';return;}
+  $('eventSearch').focus();renderEventList();
+}
+function renderChips(){
+  const present=new Set(ALL_EVENTS.flatMap(e=>e.seriesIds));
+  const series=CATALOG_SERIES.filter(s=>present.has(String(s.id)));
+  $('eventChips').innerHTML=series.map(s=>`<button type="button" class="chip" data-sid="${s.id}" style="border-color:${s.color};color:${s.color}">${esc(s.name)}</button>`).join('');
+  $('eventChips').querySelectorAll('[data-sid]').forEach(c=>c.addEventListener('click',()=>{
+    const id=c.dataset.sid,on=activeSeries.has(id);
+    if(on){activeSeries.delete(id);c.classList.remove('active');c.style.background='transparent';c.style.color=c.style.borderColor;}
+    else{activeSeries.add(id);c.classList.add('active');c.style.background=c.style.borderColor;c.style.color='#fff';}
+    renderEventList();
+  }));
+}
+function renderEventList(){
+  if(!ALL_EVENTS)return;
+  const q=$('eventSearch').value.toLowerCase().trim();
+  const evs=ALL_EVENTS.filter(e=>{
+    if(activeSeries.size&&!e.seriesIds.some(id=>activeSeries.has(id)))return false;
+    if(q&&!`${e.tour_name} ${e.name} ${e.venue} ${e.date_start}`.toLowerCase().includes(q))return false;
+    return true;
+  });
+  if(!evs.length){$('eventList').innerHTML='<div class="muted" style="padding:12px">No events match.</div>';return;}
+  const groups=new Map();
+  for(const e of evs){const k=e.tour_name||'—';if(!groups.has(k))groups.set(k,[]);groups.get(k).push(e);}
+  let html='';
+  for(const[tour,legs]of groups){
+    html+=`<div class="tour-group"><div class="tour-name">${esc(tour)}</div>`;
+    for(const e of legs){
+      const endD=e.date_end&&e.date_end!==e.date_start?'–'+esc(e.date_end.slice(5,10)):'';
+      html+=`<div class="leg" data-id="${e.id}" data-label="${esc(e.name||tour)}" data-count="${e.song_count}">
+        <div class="bar" style="background:${seriesColor(e.seriesIds[0])}"></div>
+        <div class="meta"><div class="ln">${esc(e.name||tour)}</div>
+        <div class="sub">${esc(e.venue||'')} · ${esc((e.date_start||'').slice(0,10))}${endD} · ${e.day_count} day${e.day_count==1?'':'s'}</div></div>
+        <div class="cnt">${e.song_count} songs</div></div>`;
+    }
+    html+='</div>';
+  }
+  $('eventList').innerHTML=html;
+  $('eventList').querySelectorAll('.leg').forEach(row=>row.addEventListener('click',async()=>{
+    selectedEvent={id:row.dataset.id,label:row.dataset.label,song_count:row.dataset.count};
+    $('eventPickBtn').textContent='🎤 '+row.dataset.label+' — change';
+    $('eventPicked').innerHTML=`✓ universe = <strong>${row.dataset.count} songs</strong>`;
+    $('eventModal').classList.remove('show');
+  }));
+}
+$('file').addEventListener('change',async(e)=>{const f=e.target.files[0];if(!f)return;$('text').value=await f.text();});
+
+function parseLine(l){
+  l=l.trim();if(!l)return null;
+  let n=l.replace(/^\d+[\.\)、]\s*/,'').replace(/\s*-\s*[^-]+$/,'').trim();
+  n=cleanName(n);if(!n)return null;
+  let m=CATALOG.find(s=>s.name===n||cleanName(s.name)===n);if(m)return{id:m.id,name:m.name,artist:m.artist};
+  m=CATALOG.find(s=>s.name.includes(n)||n.includes(s.name)||(s.en&&s.en.includes(n)));return m?{id:m.id,name:m.name,artist:m.artist}:null;
+}
+
+$('parseBtn').addEventListener('click',async()=>{
+  const text=$('text').value.trim();
+  $('parseMsg').innerHTML='';
+  if(!text){$('parseMsg').innerHTML='<div class="msg err">Paste or upload a ranking first.</div>';return;}
+  $('parseBtn').disabled=true;
+  try{
+    const lines=text.split('\n').filter(l=>l.trim());
+    const items=lines.map((l,i)=>{
+      const m=parseLine(l);
+      return{rawLine:l,songText:l.replace(/^\d+[\.\)、]\s*/,'').replace(/\s*-\s*[^-]+$/,'').trim(),position:i+1,chosen:m?m.id:'',state:m?'matched':'unmatched',name:m?m.name:'',artist:m?m.artist:''};
+    });
+    const nameMatch=CATALOG.find(s=>s.name===lines[0].trim()||s.en===lines[0].trim());
+    if(nameMatch&&!$('rankerName').value){}
+    rows=items.map((r,i)=>({...r,chosen:r.chosen||'',wasAuto:!!r.chosen,candidates:[],score:100}));
+    renderConfirm();
+    $('inputCard').classList.add('hidden');
+    $('confirmCard').classList.remove('hidden');
+  }catch(e){$('parseMsg').innerHTML='<div class="msg err">'+esc(e.message)+'</div>';}
+  finally{$('parseBtn').disabled=false;}
+});
+
+$('backBtn').addEventListener('click',()=>{$('confirmCard').classList.add('hidden');$('inputCard').classList.remove('hidden');});
+$('anotherBtn').addEventListener('click',()=>location.reload());
+
+function songLabel(id){const s=CATALOG.find(x=>x.id===id);return s?`${s.name} — ${s.artist}`:id;}
+function badge(r){return r.chosen==='__drop__'?'b-r':r.chosen==='__custom__'?'b-y':r.chosen?'b-g':'b-r';}
+
+function renderConfirm(){
+  $('itemList').innerHTML=rows.map((r,i)=>{
+    const art=r.chosen?SONG_BY_ID.get(r.chosen)?.art||'':'';
+    const thumb=art?`<img class="thumb" src="${art}" loading="lazy" onerror="this.style.visibility='hidden'">`:'<span class="thumb"></span>';
+    return`<div class="item" data-i="${i}">
+      <span class="pos">#${r.position}</span>
+      <span class="badge ${badge(r)}"></span>
+      ${thumb}
+      <span class="raw" title="${esc(r.rawLine)}">${esc(r.songText||r.name)}${r.artist?` <span class="muted">— ${esc(r.artist)}</span>`:''}</span>
+      <span class="pick">${r.chosen?esc(songLabel(r.chosen)):'<span class="muted">🔴 No match</span>'}</span>
+    </div>`;
+  }).join('');
+  updateSummary();
+}
+
+function updateSummary(){
+  const g=rows.filter(r=>r.chosen&&r.chosen!=='__custom__'&&r.chosen!=='__drop__').length;
+  const y=rows.filter(r=>r.chosen==='__custom__').length;
+  const r=rows.filter(r=>r.chosen==='__drop__'||r.chosen==='').length;
+  $('summary').innerHTML=`<span class="g">🟢 ${g} matched</span><span class="y">🟡 ${y} custom</span><span class="r">🔴 ${r} unresolved</span>`;
+  $('submitBtn').disabled=g<5;
+  if($('scopeType').value==='event'&&selectedEvent?.songIds?.length){
+    const chosen=new Set(rows.filter(x=>x.chosen&&x.chosen!=='__custom__'&&x.chosen!=='__drop__').map(x=>x.chosen));
+    const missing=selectedEvent.songIds.filter(id=>!chosen.has(id));
+    const have=selectedEvent.songIds.length-missing.length;
+    if(missing.length){
+      $('missingBox').innerHTML=`<div class="msg" style="background:#3a2f1b;color:#ffcf8f;padding:10px">⚠️ Missing ${missing.length} of ${selectedEvent.songIds.length} songs (${have} ranked)</div>`;
+    }else{
+      $('missingBox').innerHTML=`<div class="msg ok">✓ All ${selectedEvent.songIds.length} songs are ranked.</div>`;
+    }
+  }else{$('missingBox').innerHTML='';}
+}
+
+$('submitBtn').addEventListener('click',async()=>{
+  $('submitMsg').innerHTML='';
+  const items=rows.filter(r=>r.chosen!=='__drop__'&&r.chosen!==''&&r.chosen).map((r,i)=>({position:i+1,songId:r.chosen,rawLine:r.rawLine}));
+  const name=$('rankerName').value.trim();
+  if(!name){$('submitMsg').innerHTML='<div class="msg err">Enter your name first.</div>';return;}
+  if(items.length<5){$('submitMsg').innerHTML='<div class="msg err">Rank at least 5 songs.</div>';return;}
+  $('submitBtn').disabled=true;
+  try{
+    // Create a PR via GitHub API with a .txt file
+    const fileContent=name+'\n'+items.map((r,i)=>`${i+1}. ${r.rawLine}`).join('\n');
+    const b64=btoa(unescape(encodeURIComponent(fileContent))); // base64
+    const branch='user/'+name.toLowerCase().replace(/[^a-z0-9]/g,'');
+    const TOKEN=sessionStorage.getItem('gh_token')||prompt('GitHub token for submitting:');
+    if(!TOKEN){$('submitMsg').innerHTML='<div class="msg err">Token required to submit.</div>';$('submitBtn').disabled=false;return;}
+    // Create blob
+    const blob=await(await fetch('https://api.github.com/repos/trioskosmos/rankings/git/blobs',{method:'POST',headers:{'Authorization':'Bearer '+TOKEN,'Accept':'application/vnd.github+json'},body:JSON.stringify({content:b64,encoding:'base64'})})).json();
+    // Get base tree
+    const ref=await(await fetch('https://api.github.com/repos/trioskosmos/rankings/git/ref/heads/main',{headers:{'Authorization':'Bearer '+TOKEN,'Accept':'application/vnd.github+json'}})).json();
+    const baseCommit=await(await fetch(ref.object.url,{headers:{'Authorization':'Bearer '+TOKEN,'Accept':'application/vnd.github+json'}})).json();
+    // Create tree with new file
+    const tree=await(await fetch('https://api.github.com/repos/trioskosmos/rankings/git/trees',{method:'POST',headers:{'Authorization':'Bearer '+TOKEN,'Accept':'application/vnd.github+json'},body:JSON.stringify({base_tree:baseCommit.tree.sha,tree:[{path:'data/rankings/'+name.toLowerCase().replace(/[^a-z0-9]/g,'')+'.txt',mode:'100644',type:'blob',sha:blob.sha}]})})).json();
+    // Create commit
+    const commit=await(await fetch('https://api.github.com/repos/trioskosmos/rankings/git/commits',{method:'POST',headers:{'Authorization':'Bearer '+TOKEN,'Accept':'application/vnd.github+json'},body:JSON.stringify({message:'Add ranking: '+name,tree:tree.sha,parents:[baseCommit.sha]})})).json();
+    // Create branch
+    await fetch('https://api.github.com/repos/trioskosmos/rankings/git/refs',{method:'POST',headers:{'Authorization':'Bearer '+TOKEN,'Accept':'application/vnd.github+json'},body:JSON.stringify({ref:'refs/heads/'+branch,sha:commit.sha})});
+    // Create PR
+    const pr=await(await fetch('https://api.github.com/repos/trioskosmos/rankings/pulls',{method:'POST',headers:{'Authorization':'Bearer '+TOKEN,'Accept':'application/vnd.github+json'},body:JSON.stringify({title:'Add ranking: '+name,head:branch,base:'main',body:'New ranking submitted via web form'})})).json();
+    $('confirmCard').classList.add('hidden');
+    $('doneCard').classList.remove('hidden');
+    $('doneMsg').innerHTML='✓ PR created! <a href="'+pr.html_url+'" target="_blank" style="color:#8f8">View PR ↗</a> · once merged it will appear on the rankings page.';
+  }catch(e){$('submitMsg').innerHTML='<div class="msg err">'+esc(e.message)+'</div>';$('submitBtn').disabled=false;}
+});
+</script>
+
+function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+let selectedEvent = null; // {id, label, song_count}
+$('scopeType').addEventListener('change', () => {
+  const v = $('scopeType').value;
+  $('seriesWrap').classList.toggle('hidden', v !== 'series');
+  $('eventWrap').classList.toggle('hidden', v !== 'event');
+});
+
+// Event picker modal (selectable, mirrors llernote /events + ll-predictions PerformancePicker)
+let ALL_EVENTS = null;
+const activeSeries = new Set();
+const seriesColor = (id) => (CATALOG_SERIES.find(s => String(s.id) === String(id)) || {}).color || '#888';
+
+$('eventPickBtn').addEventListener('click', openEventModal);
+$('eventModalClose').addEventListener('click', () => $('eventModal').classList.remove('show'));
+$('eventModal').addEventListener('click', (e) => { if (e.target === $('eventModal')) $('eventModal').classList.remove('show'); });
+$('eventSearch').addEventListener('input', () => renderEventList());
+
+async function openEventModal() {
+  $('eventModal').classList.add('show');
+  if (!ALL_EVENTS) {
+    $('eventList').innerHTML = '<div class="muted" style="padding:12px">Loading…</div>';
+    try {
+      const d = await (await fetch('/api/events')).json();
+      ALL_EVENTS = d.events.map(e => ({ ...e, seriesIds: JSON.parse(e.series_ids || '[]').map(String) }));
+      renderChips();
+    } catch (e) { $('eventList').innerHTML = `<div class="msg err">${esc(e.message)}</div>`; return; }
+  }
+  $('eventSearch').focus();
+  renderEventList();
+}
+
+function renderChips() {
+  const present = new Set(ALL_EVENTS.flatMap(e => e.seriesIds));
+  const series = CATALOG_SERIES.filter(s => present.has(String(s.id)));
+  $('eventChips').innerHTML = series.map(s => `<button type="button" class="chip" data-sid="${s.id}" style="border-color:${s.color};color:${s.color}">${esc(s.name)}</button>`).join('');
+  $('eventChips').querySelectorAll('[data-sid]').forEach(c => c.addEventListener('click', () => {
+    const id = c.dataset.sid, on = activeSeries.has(id);
+    if (on) { activeSeries.delete(id); c.classList.remove('active'); c.style.background = 'transparent'; c.style.color = c.style.borderColor; }
+    else { activeSeries.add(id); c.classList.add('active'); c.style.background = c.style.borderColor; c.style.color = '#fff'; }
+    renderEventList();
+  }));
+}
+
+function renderEventList() {
+  if (!ALL_EVENTS) return;
+  const q = $('eventSearch').value.toLowerCase().trim();
+  const evs = ALL_EVENTS.filter(e => {
+    if (activeSeries.size && !e.seriesIds.some(id => activeSeries.has(id))) return false;
+    if (q && !`${e.tour_name} ${e.name} ${e.venue} ${e.date_start}`.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  if (!evs.length) { $('eventList').innerHTML = '<div class="muted" style="padding:12px">No events match.</div>'; return; }
+  const groups = new Map();
+  for (const e of evs) { const k = e.tour_name || '—'; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(e); }
+  let html = '';
+  for (const [tour, legs] of groups) {
+    html += `<div class="tour-group"><div class="tour-name">${esc(tour)}</div>`;
+    for (const e of legs) {
+      const endD = e.date_end && e.date_end !== e.date_start ? '–' + esc(e.date_end.slice(5, 10)) : '';
+      html += `<div class="leg" data-id="${e.id}" data-label="${esc(e.name || tour)}" data-count="${e.song_count}">
+        <div class="bar" style="background:${seriesColor(e.seriesIds[0])}"></div>
+        <div class="meta"><div class="ln">${esc(e.name || tour)}</div>
+        <div class="sub">${esc(e.venue || '')} · ${esc((e.date_start || '').slice(0, 10))}${endD} · ${e.day_count} day${e.day_count == 1 ? '' : 's'}</div></div>
+        <div class="cnt">${e.song_count} songs</div></div>`;
+    }
+    html += '</div>';
+  }
+  $('eventList').innerHTML = html;
+  $('eventList').querySelectorAll('.leg').forEach(row => row.addEventListener('click', async () => {
+    selectedEvent = { id: row.dataset.id, label: row.dataset.label, song_count: row.dataset.count };
+    $('eventPickBtn').textContent = '🎤 ' + row.dataset.label + ' — change';
+    $('eventPicked').innerHTML = `✓ universe = <strong>${row.dataset.count} songs</strong> (union of the leg's setlists)`;
+    $('eventModal').classList.remove('show');
+    // Deep-link into the-sorter, seeded with this leg's performances (setlist
+    // ordering/labels resolved by the-sorter from the day performanceIds).
+    try {
+      const d = await (await fetch('/api/events/' + encodeURIComponent(selectedEvent.id))).json();
+      selectedEvent.songIds = d.songIds || [];
+      const n = d.songIds?.length ?? selectedEvent.song_count;
+      if (d.perfIds && d.perfIds.length) {
+        const url = `${SORTER_BASE}/songs/?performanceIds=${d.perfIds.join('%2C')}`;
+        $('eventPicked').innerHTML =
+          `✓ universe = <strong>${n} songs</strong> (union of the leg's setlists)` +
+          `<div style="margin-top:8px"><a class="btn" href="${url}" target="_blank" rel="noopener" style="display:inline-block;text-decoration:none">🔀 Rank this show in the-sorter ↗</a></div>` +
+          `<div style="margin-top:6px">Sort it there, then copy the ranked list back here and paste it above.</div>`;
+      }
+    } catch (e) { /* keep the basic summary if the lookup fails */ }
+  }));
+}
+$('file').addEventListener('change', async (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  $('text').value = await f.text();
+});
+
+$('parseBtn').addEventListener('click', async () => {
+  const text = $('text').value.trim();
+  $('parseMsg').innerHTML = '';
+  if (!text) { $('parseMsg').innerHTML = '<div class="msg err">Paste or upload a ranking first.</div>'; return; }
+  $('parseBtn').disabled = true;
+  try {
+    const d = await (await fetch('/api/import/parse', {method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({text})})).json();
+    if (d.error) throw new Error(d.error);
+    if (!$('rankerName').value && d.rankerName) $('rankerName').value = d.rankerName;
+    rows = d.items.map(it => ({
+      position: it.position, songText: it.songText, artistText: it.artistText, rawLine: it.rawLine,
+      state: it.state, candidates: it.candidates, via: it.via, score: it.score,
+      chosen: it.state === 'matched' ? it.songId : '',   // songId | '' | '__custom__' | '__drop__'
+      wasAuto: it.state === 'matched',
+    }));
+    if (d.extraRankings > 0) $('parseMsg').innerHTML = `<div class="msg err">Note: ${d.extraRankings} extra ranking(s) after the first were ignored. Submit one list at a time.</div>`;
+    renderConfirm();
+    $('inputCard').classList.add('hidden');
+    $('confirmCard').classList.remove('hidden');
+  } catch (e) {
+    $('parseMsg').innerHTML = `<div class="msg err">${esc(e.message)}</div>`;
+  } finally { $('parseBtn').disabled = false; }
+});
+
+$('backBtn').addEventListener('click', () => { $('confirmCard').classList.add('hidden'); $('inputCard').classList.remove('hidden'); });
+$('anotherBtn').addEventListener('click', () => location.reload());
+
+function songLabel(id){ const s = CATALOG.find(x=>x.id===id); return s ? `${s.name} — ${s.artist}` : id; }
+
+function renderConfirm(){
+  const badge = (r) => r.chosen==='__drop__' ? 'b-r' : r.chosen==='__custom__' ? 'b-y' : r.chosen ? 'b-g' : 'b-r';
+  $('itemList').innerHTML = rows.map((r,i) => {
+    const cand = r.candidates || [];
+    const opts = [];
+    // matched/candidate songs
+    const seen = new Set();
+    if (r.chosen && r.chosen!=='__custom__' && r.chosen!=='__drop__') { opts.push(`<option value="${r.chosen}">${esc(songLabel(r.chosen))}</option>`); seen.add(r.chosen); }
+    cand.forEach(c => { if(!seen.has(c.songId)){ opts.push(`<option value="${c.songId}">${esc(c.name)} — ${esc(c.artist)} (${c.score})</option>`); seen.add(c.songId);} });
+    opts.push(`<option value="">— pick a song —</option>`);
+    opts.push(`<option value="__search__">🔍 search all songs…</option>`);
+    opts.push(`<option value="__custom__" ${r.chosen==='__custom__'?'selected':''}>keep as custom text</option>`);
+    opts.push(`<option value="__drop__" ${r.chosen==='__drop__'?'selected':''}>drop this line</option>`);
+    const art = (SONG_BY_ID.get(r.chosen) || {}).art;
+    const thumb = art ? `<img class="thumb" src="${art}" loading="lazy" onerror="this.style.visibility='hidden'">` : '<span class="thumb"></span>';
+    return `<div class="item" data-i="${i}">
+      <span class="pos">#${r.position}</span>
+      <span class="badge ${badge(r)}"></span>
+      ${thumb}
+      <span class="raw" title="${esc(r.rawLine)}">${esc(r.songText)}${r.artistText?` <span class="muted">- ${esc(r.artistText)}</span>`:''}</span>
+      <span class="pick search-box">
+        <select data-role="pick">${opts.join('')}</select>
+        <input data-role="search" class="hidden" placeholder="type to search…" autocomplete="off">
+        <div data-role="results" class="search-res"></div>
+      </span>
+    </div>`;
+  }).join('');
+  rows.forEach((r,i) => {
+    const el = $('itemList').querySelector(`[data-i="${i}"]`);
+    const sel = el.querySelector('[data-role=pick]');
+    sel.value = r.chosen;
+    sel.addEventListener('change', () => onPick(i, el, sel));
+    wireSearch(i, el);
+  });
+  updateSummary();
+}
+
+function onPick(i, el, sel){
+  if (sel.value === '__search__'){ el.querySelector('[data-role=search]').classList.remove('hidden'); el.querySelector('[data-role=search]').focus(); return; }
+  rows[i].chosen = sel.value;
+  rows[i].wasAuto = false;
+  el.querySelector('.badge').className = 'badge ' + (rows[i].chosen==='__drop__'?'b-r':rows[i].chosen==='__custom__'?'b-y':rows[i].chosen?'b-g':'b-r');
+  updateSummary();
+}
+
+function wireSearch(i, el){
+  const input = el.querySelector('[data-role=search]');
+  const res = el.querySelector('[data-role=results]');
+  let t;
+  input.addEventListener('input', () => {
+    clearTimeout(t);
+    t = setTimeout(() => {
+      const q = input.value.toLowerCase().trim();
+      if (!q){ res.classList.remove('show'); return; }
+      const m = CATALOG.filter(s => s.name.toLowerCase().includes(q) || (s.en&&s.en.toLowerCase().includes(q)) || s.artist.toLowerCase().includes(q)).slice(0,20);
+      res.innerHTML = m.map(s => `<div data-id="${s.id}" style="display:flex;align-items:center;gap:8px">${s.art?`<img class="thumb" src="${s.art}" loading="lazy" onerror="this.style.visibility='hidden'">`:'<span class="thumb"></span>'}<span>${esc(s.name)} — ${esc(s.artist)} <span class="muted">· ${esc(s.series)}</span></span></div>`).join('') || '<div class="muted">no matches</div>';
+      res.classList.add('show');
+      res.querySelectorAll('[data-id]').forEach(d => d.addEventListener('click', () => {
+        rows[i].chosen = d.dataset.id; rows[i].wasAuto = false;
+        const sel = el.querySelector('[data-role=pick]');
+        if (![...sel.options].some(o=>o.value===d.dataset.id)) sel.add(new Option(songLabel(d.dataset.id), d.dataset.id), 0);
+        sel.value = d.dataset.id;
+        input.classList.add('hidden'); res.classList.remove('show'); input.value='';
+        el.querySelector('.badge').className='badge b-g'; updateSummary();
+      }));
+    }, 120);
+  });
+}
+
+function updateSummary(){
+  const g = rows.filter(r=>r.chosen && r.chosen!=='__custom__' && r.chosen!=='__drop__').length;
+  const y = rows.filter(r=>r.chosen==='__custom__').length;
+  const r = rows.filter(r=>r.chosen==='__drop__' || r.chosen==='').length;
+  $('summary').innerHTML = `<span class="g">🟢 ${g} matched</span><span class="y">🟡 ${y} custom</span><span class="r">🔴 ${r} unresolved / dropped</span>`;
+  $('submitBtn').disabled = g < 5;
+
+  // Event scope: highlight which of the show's setlist songs are missing here.
+  const mb = $('missingBox');
+  if ($('scopeType').value === 'event' && selectedEvent?.songIds?.length) {
+    const chosen = new Set(rows.filter(x => x.chosen && x.chosen !== '__custom__' && x.chosen !== '__drop__').map(x => x.chosen));
+    const missing = selectedEvent.songIds.filter(id => !chosen.has(id));
+    const have = selectedEvent.songIds.length - missing.length;
+    if (missing.length) {
+      const list = missing.map(id => {
+        const s = SONG_BY_ID.get(id) || {};
+        const img = s.art ? `<img class="thumb" src="${s.art}" loading="lazy" onerror="this.style.visibility='hidden'">` : '<span class="thumb"></span>';
+        return `<div class="missrow">${img}<span>${esc(s.name || id)}</span></div>`;
+      }).join('');
+      mb.innerHTML = `<div class="msg" style="background:#3a2f1b;color:#ffcf8f;padding:10px">⚠️ Missing <strong>${missing.length}</strong> of ${selectedEvent.songIds.length} songs from this show (${have} ranked):<div class="misslist">${list}</div></div>`;
+    } else {
+      mb.innerHTML = `<div class="msg ok">✓ All ${selectedEvent.songIds.length} songs from this show are ranked.</div>`;
+    }
+  } else {
+    mb.innerHTML = '';
+  }
+}
+
+$('submitBtn').addEventListener('click', async () => {
+  $('submitMsg').innerHTML = '';
+  const items = [];
+  rows.filter(r => r.chosen !== '__drop__' && r.chosen !== '').forEach((r, idx) => {
+    const isSong = r.chosen !== '__custom__';
+    items.push({
+      position: idx + 1,
+      songId: isSong ? r.chosen : null,
+      customName: isSong ? null : r.songText,
+      rawLine: r.rawLine,
+      via: r.wasAuto ? r.via : (isSong ? 'manual' : 'none'),
+      score: r.score,
+      aliasText: (isSong && !r.wasAuto) ? r.songText : null,
+    });
+  });
+  const scopeType = $('scopeType').value;
+  const body = {
+    rankerName: $('rankerName').value.trim(),
+    title: $('title').value.trim() || null,
+    scopeType,
+    scopeRef: scopeType === 'series' ? $('scopeRef').value : scopeType === 'event' ? selectedEvent?.id ?? null : null,
+    items,
+  };
+  if (!body.rankerName){ $('submitMsg').innerHTML='<div class="msg err">Enter your name first.</div>'; return; }
+  if (scopeType === 'event' && !body.scopeRef){ $('submitMsg').innerHTML='<div class="msg err">Pick a concert/event, or change the scope.</div>'; return; }
+  $('submitBtn').disabled = true;
+  try {
+    const d = await (await fetch('/api/rankings', {method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)})).json();
+    if (d.error) throw new Error(d.error);
+    $('confirmCard').classList.add('hidden');
+    $('doneCard').classList.remove('hidden');
+  } catch (e) {
+    $('submitMsg').innerHTML = `<div class="msg err">${esc(e.message)}</div>`;
+    $('submitBtn').disabled = false;
+  }
+});
+</script>
+</body>
+</html>

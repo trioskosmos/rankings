@@ -171,10 +171,10 @@ function cleanName(n){return n.replace(/[「」"'（）\(\)]/g,'').trim();}
     SONG_BY_ID=new Map(CATALOG.map(s=>[s.id,s]));
     $('scopeRef').innerHTML=series.map(s=>'<option value="'+s.id+'">'+esc(s.name)+'</option>').join('');
     // Build events from performance data for the event picker
-    if(perfData&&perfData.data&&slData&&slData.data){
-      const pm={};perfData.data.forEach(p=>pm[p.id]=p);
+    if(perfData&&Array.isArray(perfData)&&slData){
+      const pm={};perfData.forEach(p=>pm[p.id]=p);
       const em={};
-      slData.data.forEach(sl=>{
+      Object.values(slData).forEach(sl=>{
         const p=pm[sl.performance_id];if(!p)return;
         const cid=p.concertId||'0';
         if(!em[cid])em[cid]={id:cid,tour_name:p.tourName||'',name:p.name||p.title||'',venue:p.venue||'',date_start:p.date||p.dateStart||'',date_end:p.dateEnd||'',day_count:0,song_count:0,seriesIds:[String(p.seriesId||'')],songIds:[],perfIds:[]};

@@ -69,6 +69,11 @@ nav button.active{background:#fb8a9b;color:#fff;border-color:#fb8a9b}
 .cover-inner{max-width:1100px;margin:40px auto;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:24px;position:relative}
 .cover-close{position:sticky;top:0;float:right;background:var(--bg-card);border:1px solid var(--border);color:var(--text);width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:1.2rem;display:flex;align-items:center;justify-content:center;z-index:10}
 .cover-close:hover{background:#fb8a9b;color:#fff}
+.prow{display:flex;align-items:center;gap:8px;padding:8px;border-radius:6px;cursor:pointer;transition:all .2s}
+.prow:hover{background:var(--bg-card2)}
+.prow input{width:16px;height:16px;accent-color:#fb8a9b;flex-shrink:0}
+.prow .inf{flex:1}
+.prow .nm{font-size:.9rem;font-weight:500}
 .delta{font-size:.85rem;font-weight:bold;width:48px;text-align:center;flex-shrink:0}
 .delta.d0{color:var(--text-dim)}
 .delta.dp{color:#4caf50}
@@ -338,7 +343,21 @@ let selectedAgg=new Set();
 function openAggProfileModal(){
   const fileFilter=getFileFilter();
   const candidates=fileFilter?profiles.filter(p=>p.source===fileFilter):profiles;
-  document.getElementById('aggProfileList').innerHTML=candidates.map(p=>'<label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:4px"><input type="checkbox" data-uid="'+p._uid+'" '+(selectedAgg.has(p._uid)?'checked':'')+' style="width:16px;height:16px;accent-color:#fb8a9b"><span style="flex:1;font-size:.9rem">'+p._label+' <span style="color:var(--text-dim);font-size:.78rem">('+p.ids.length+' songs)</span></span></label>').join('');
+  // Compute the current intersection of all SELECTED profiles
+  const selectedSet=candidates.filter(p=>selectedAgg.has(p._uid));
+  let commonPool=null;
+  if(selectedSet.length){
+    commonPool=selectedSet.reduce((a,p)=>{
+      const s=new Set(p.ids);if(!a)return s;
+      return new Set([...a].filter(x=>s.has(x)));
+    },null);
+  }
+  document.getElementById('aggProfileList').innerHTML=candidates.map(p=>{
+    // How many of the common pool songs does this profile have?
+    const share=commonPool?[...commonPool].filter(id=>p.ids.includes(id)).length:0;
+    const total=commonPool?commonPool.size:p.ids.length;
+    return '<label class="prow"><input type="checkbox" data-uid="'+p._uid+'" '+(selectedAgg.has(p._uid)?'checked':'')+'><span class="inf"><span class="nm">'+p._label+'</span><span style="font-size:.78rem;color:var(--text-dim)">'+p.ids.length+' songs'+(share?' · shares '+share+'/'+total+'':'' )+'</span></span></label>';
+  }).join('');
   document.getElementById('aggProfileModal').classList.add('show');
 }
 function closeAggProfileModal(){
@@ -415,10 +434,13 @@ function showSong(sid){
   document.getElementById('songDetail').innerHTML='<div class="det"><h2>'+s.name+'</h2><div class="mt">'+(s.en?s.en+' · ':'')+s.artist+' · '+s.series+(s.date?' · '+s.date:'')+'</div></div>';
   const list=filtered.map(p=>{
     const reranked=reRank(p,pool||null);
-    const pos=reranked.indexOf(sid)+1;
-    return{name:p._label,pos:pos>0&&pos<=reranked.length?pos:null};
-  }).filter(r=>r.pos!==null).sort((a,b)=>a.pos-b.pos);
-  document.getElementById('songResults').innerHTML=list.length?list.map(r=>'<div class="ritem"><span class="pos">#'+r.pos+'</span><span class="nm2">'+r.name+'</span></div>').join(''):'<p style="color:var(--text-dim);padding:12px">Not ranked by anyone.</p>';
+    const poolPos=reranked.indexOf(sid)+1;
+    const overallPos=p.ids.indexOf(sid)+1;
+    return{name:p._label,poolPos:poolPos>0&&poolPos<=reranked.length?poolPos:null,overallPos:overallPos||null};
+  }).filter(r=>r.poolPos!==null).sort((a,b)=>a.poolPos-b.poolPos);
+  document.getElementById('songResults').innerHTML=list.length
+    ? list.map(r=>'<div class="ritem"><span class="pos">#'+r.poolPos+'</span><span class="nm2">'+r.name+'</span>'+(pool&&r.overallPos?('<span style="color:var(--text-dim);font-size:.78rem;margin-left:auto">#'+r.overallPos+' overall</span>'):'')+'</div>').join('')
+    : '<p style="color:var(--text-dim);padding:12px">Not ranked by anyone.</p>';
   document.getElementById('songSearch').value=s.name;
 }
 function renderSearch(){

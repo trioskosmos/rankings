@@ -105,7 +105,7 @@ nav button.active{background:#fb8a9b;color:#fff;border-color:#fb8a9b}
 
   <div class="section active" id="section-agg">
     <div class="bar">
-      <label>Sort:</label><select id="sortAgg"><option value="rank">Avg rank</option><option value="rank-desc">Avg rank (worst)</option><option value="median">Median</option><option value="stddev">σ² ↑ least controversial</option><option value="stddev-desc">σ² ↓ most controversial</option><option value="name">Name A-Z</option><option value="date">Release date</option><option value="artist">Artist</option><option value="series">Series</option></select>
+      <label>Sort:</label><select id="sortAgg"><option value="rank">Avg rank</option><option value="rank-desc">Avg rank (worst)</option><option value="median">Median</option><option value="stddev">σ² ↑ least controversial</option><option value="stddev-desc">σ² ↓ most controversial</option><option value="name">Name A-Z</option><option value="date">Release date</option><option value="artist">Artist</option><option value="series">Series</option><option value="event">Event</option></select>
       <label>Series:</label><select id="filterAgg"><option value="">All series</option></select>
       <label>Artist:</label><select id="filterAggArtist"><option value="">All artists</option></select>
       <label class="cb"><input type="checkbox" id="hideUnranked" checked> Hide unranked</label>
@@ -117,7 +117,7 @@ nav button.active{background:#fb8a9b;color:#fff;border-color:#fb8a9b}
   <div class="section" id="section-rank">
     <div class="bar">
       <label>Profile:</label><select id="selProfile"></select>
-      <label>Sort:</label><select id="sortRank"><option value="default">Default (rank)</option><option value="name">Name A-Z</option><option value="name-desc">Name Z-A</option><option value="date">Release (old)</option><option value="date-desc">Release (new)</option><option value="artist">Artist A-Z</option><option value="artist-desc">Artist Z-A</option><option value="series">Series</option></select>
+      <label>Sort:</label><select id="sortRank"><option value="default">Default (rank)</option><option value="name">Name A-Z</option><option value="name-desc">Name Z-A</option><option value="date">Release (old)</option><option value="date-desc">Release (new)</option><option value="artist">Artist A-Z</option><option value="artist-desc">Artist Z-A</option><option value="series">Series</option><option value="event">Event</option></select>
       <label>Series:</label><select id="filterRank"><option value="">All series</option></select>
       <label>Artist:</label><select id="filterRankArtist"><option value="">All artists</option></select>
       <label class="cb"><input type="checkbox" id="hideUnrankedRank" checked> Hide unranked</label>
@@ -180,14 +180,28 @@ let SONGS=[],SM={},SERIES={},SERIES_COLORS={},ARTIST_NAMES={},ARTISTS_LIST=[],SE
 
 async function loadData(){
   try{
-    const[sr,ar,disco]=await Promise.all([fetch('data/series-info.json').then(r=>r.json()),fetch('data/artists-info.json').then(r=>r.json()),fetch('data/discography-info.json').then(r=>r.json()).catch(()=>[])]);
+    const[sr,ar,disco,perfData,slData]=await Promise.all([fetch('data/series-info.json').then(r=>r.json()),fetch('data/artists-info.json').then(r=>r.json()),fetch('data/discography-info.json').then(r=>r.json()).catch(()=>[]),fetch('data/performance-info.json').then(r=>r.json()).catch(()=>[]),fetch('data/performance-setlists.json').then(r=>r.json()).catch(()=>[])]);
     sr.forEach(s=>{SERIES[s.id]=s.name;SERIES_COLORS[s.id]=s.color;});
     ar.forEach(a=>{ARTIST_NAMES[a.id]=a.name;});
     const DISCO_ART={};disco.forEach(d=>{const v=(d.versions||[]).find(v=>v.imageUrl);if(v)DISCO_ART[d.id]=v.imageUrl;});
+    // Build song→event mapping from performance data
+    const songEvents={};
+    if(perfData&&Array.isArray(perfData)&&slData){
+      const pm={};perfData.forEach(p=>pm[p.id]=p);
+      Object.values(slData).forEach(sl=>{
+        const p=pm[sl.performanceId];if(!p)return;
+        (sl.items||[]).filter(x=>x.type==='song').forEach(item=>{
+          if(!item.songId)return;
+          const sid=String(item.songId);
+          const edate=p.date||p.dateStart||'';
+          if(!songEvents[sid]||edate>songEvents[sid].date)songEvents[sid]={event:p.name||p.title||p.tourName||'',tour:p.tourName||'',date:edate};
+        });
+      });
+    }
     const SONG_CACHE='ll_songs_v1';
     let raw=localStorage.getItem(SONG_CACHE);
     if(raw){raw=JSON.parse(raw);}else{raw=await(await fetch('data/song-info.json')).json();localStorage.setItem(SONG_CACHE,JSON.stringify(raw));}
-    SONGS=raw.map(s=>({id:String(s.id),name:s.name,en:s.englishName||'',artist:(s.artists&&s.artists.length?ARTIST_NAMES[s.artists[0].id]||'Unknown':'Unknown'),allArtists:[...new Set(s.artists.map(a=>ARTIST_NAMES[a.id]||'Unknown').filter(Boolean))],series:(s.seriesIds&&s.seriesIds.length?SERIES[String(s.seriesIds[0])]||'Unknown':'Unknown'),color:(s.seriesIds&&s.seriesIds.length?SERIES_COLORS[String(s.seriesIds[0])]||'#888':'#888'),date:s.releasedOn||'',art:((s.discographyIds||[]).map(d=>DISCO_ART[d]).find(Boolean)||'')}));
+    SONGS=raw.map(s=>({id:String(s.id),name:s.name,en:s.englishName||'',artist:(s.artists&&s.artists.length?ARTIST_NAMES[s.artists[0].id]||'Unknown':'Unknown'),allArtists:[...new Set(s.artists.map(a=>ARTIST_NAMES[a.id]||'Unknown').filter(Boolean))],series:(s.seriesIds&&s.seriesIds.length?SERIES[String(s.seriesIds[0])]||'Unknown':'Unknown'),color:(s.seriesIds&&s.seriesIds.length?SERIES_COLORS[String(s.seriesIds[0])]||'#888':'#888'),date:s.releasedOn||'',art:((s.discographyIds||[]).map(d=>DISCO_ART[d]).find(Boolean)||''),event:(songEvents[s.id]||{}).event||''}));
     SONGS.forEach(s=>SM[s.id]=s);
     const aS=new Set(),sS=new Set();SONGS.forEach(s=>{s.allArtists.forEach(a=>aS.add(a));sS.add(s.series);});
     ARTISTS_LIST=[...aS].sort();SERIES_LIST=[...sS].sort();
@@ -298,10 +312,10 @@ function rSel(){
   else if(!filtered.length){s.innerHTML='<option value="">No profiles in this file</option>';}
 }
 function sortSongs(songs,mode){
-  const c=[...songs];const cmp={name:(a,b)=>a.name.localeCompare(b.name),'name-desc':(a,b)=>b.name.localeCompare(a.name),date:(a,b)=>(a.date||'9999').localeCompare(b.date||'9999'),'date-desc':(a,b)=>(b.date||'').localeCompare(a.date||''),artist:(a,b)=>a.artist.localeCompare(b.artist),'artist-desc':(a,b)=>b.artist.localeCompare(a.artist),series:(a,b)=>a.series.localeCompare(b.series)||a.name.localeCompare(b.name)};
+  const c=[...songs];const cmp={name:(a,b)=>a.name.localeCompare(b.name),'name-desc':(a,b)=>b.name.localeCompare(a.name),date:(a,b)=>(a.date||'9999').localeCompare(b.date||'9999'),'date-desc':(a,b)=>(b.date||'').localeCompare(a.date||''),artist:(a,b)=>a.artist.localeCompare(b.artist),'artist-desc':(a,b)=>b.artist.localeCompare(a.artist),series:(a,b)=>a.series.localeCompare(b.series)||a.name.localeCompare(b.name),event:(a,b)=>a.event.localeCompare(b.event)||a.name.localeCompare(b.name),'event-desc':(a,b)=>b.event.localeCompare(a.event)||a.name.localeCompare(b.name)};
   if(cmp[mode])c.sort(cmp[mode]);return c;
 }
-function songHTML(song,extra){return '<div class="sc" style="background:'+(song.color||'#888')+'"></div>'+(song.art?'<img class="thumb" src="'+song.art+'" alt="" loading="lazy">':'')+'<div class="inf"><div class="nm">'+song.name+'</div><div class="ar">'+song.artist+(song.series?' · '+song.series:'')+(song.date?' · '+song.date:'')+'</div>'+(extra||'')+'</div>';}
+function songHTML(song,extra){return '<div class="sc" style="background:'+(song.color||'#888')+'"></div>'+(song.art?'<img class="thumb" src="'+song.art+'" alt="" loading="lazy">':'')+'<div class="inf"><div class="nm">'+song.name+'</div><div class="ar">'+song.artist+(song.series?' · '+song.series:'')+(song.event?' · '+song.event:'')+(song.date?' · '+song.date:'')+'</div>'+(extra||'')+'</div>';}
 function makeItem(song,rank,extra){if(!song){const d=document.createElement('div');d.className='item unr';d.innerHTML='<div class="inf"><div class="nm" style="color:var(--text-dim)">(unknown)</div></div>';return d;}const d=document.createElement('div');d.className='item';d.addEventListener('click',()=>showSong(song.id));d.innerHTML='<div class="rk">#'+rank+'</div>'+songHTML(song,extra);return d;}
 function getFileFilter(){return document.getElementById('globalFileFilter')?.value||'';}
 function getFilePool(fileFilter){
@@ -431,7 +445,7 @@ function renderAgg(){
     });
     return{song,avg,med,sd,hi,lo,count:rankedPositions.length};
   }).filter(d=>!hideZero||d.count>0);
-  const cmp={rank:(a,b)=>a.avg-b.avg,'rank-desc':(a,b)=>b.avg-a.avg,median:(a,b)=>a.med-b.med,stddev:(a,b)=>a.sd-b.sd,'stddev-desc':(a,b)=>b.sd-a.sd,name:(a,b)=>a.song.name.localeCompare(b.song.name),date:(a,b)=>(a.song.date||'9999').localeCompare(b.song.date||'9999'),artist:(a,b)=>a.song.artist.localeCompare(b.song.artist),series:(a,b)=>a.song.series.localeCompare(b.song.series)||a.song.name.localeCompare(b.song.name)};
+  const cmp={rank:(a,b)=>a.avg-b.avg,'rank-desc':(a,b)=>b.avg-a.avg,median:(a,b)=>a.med-b.med,stddev:(a,b)=>a.sd-b.sd,'stddev-desc':(a,b)=>b.sd-a.sd,name:(a,b)=>a.song.name.localeCompare(b.song.name),date:(a,b)=>(a.song.date||'9999').localeCompare(b.song.date||'9999'),artist:(a,b)=>a.song.artist.localeCompare(b.song.artist),series:(a,b)=>a.song.series.localeCompare(b.song.series)||a.song.name.localeCompare(b.song.name),event:(a,b)=>a.song.event.localeCompare(b.song.event)||a.song.name.localeCompare(b.song.name)};
   if(cmp[mode])data.sort(cmp[mode]);
   const isRankSort=mode==='rank'||mode==='rank-desc'||mode==='median'||mode==='stddev'||mode==='stddev-desc';
   if(isRankSort){

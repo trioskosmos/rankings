@@ -103,6 +103,7 @@ nav button.active{background:#fb8a9b;color:#fff;border-color:#fb8a9b}
       <label>Series:</label><select id="filterAgg"><option value="">All series</option></select>
       <label>Artist:</label><select id="filterAggArtist"><option value="">All artists</option></select>
       <label class="cb"><input type="checkbox" id="hideUnranked" checked> Hide unranked</label>
+      <button class="btn sec" id="aggProfilesBtn" style="padding:4px 10px;font-size:.8rem">👥</button>
     </div>
     <div id="aggContent"></div>
   </div>
@@ -151,6 +152,19 @@ nav button.active{background:#fb8a9b;color:#fff;border-color:#fb8a9b}
     <button class="cover-close" onclick="closeCmpDetail()">✕</button>
     <div id="cmpDetailTitle" style="color:#fb8a9b;font-size:1.1rem;margin-bottom:12px"></div>
     <div id="cmpDetailBody"></div>
+  </div>
+</div>
+
+<div class="cover" id="aggProfileModal" onclick="if(event.target===this)closeAggProfileModal()">
+  <div class="cover-inner" style="max-width:500px">
+    <button class="cover-close" onclick="closeAggProfileModal()">✕</button>
+    <h2 style="color:#fb8a9b;font-size:1.1rem;margin-bottom:8px">Select profiles</h2>
+    <p style="color:var(--text-dim);font-size:.85rem;margin-bottom:10px">Check which rankings to include in the aggregate. When profiles have different song sets, the common songs are extracted and re-ranked.</p>
+    <div style="margin-bottom:10px;display:flex;gap:8px">
+      <button class="btn sec" style="padding:4px 10px;font-size:.8rem" onclick="selectAllAggProfiles(true)">Select all</button>
+      <button class="btn sec" style="padding:4px 10px;font-size:.8rem" onclick="selectAllAggProfiles(false)">Clear all</button>
+    </div>
+    <div id="aggProfileList"></div>
   </div>
 </div>
 
@@ -318,20 +332,43 @@ function renderRank(){
 }
 
 // ---- AGGREGATE ----
+let selectedAgg=new Set();
+
+function openAggProfileModal(){
+  const fileFilter=getFileFilter();
+  const candidates=fileFilter?profiles.filter(p=>p.source===fileFilter):profiles;
+  document.getElementById('aggProfileList').innerHTML=candidates.map(p=>'<label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:4px"><input type="checkbox" data-uid="'+p._uid+'" '+(selectedAgg.has(p._uid)?'checked':'')+' style="width:16px;height:16px;accent-color:#fb8a9b"><span style="flex:1;font-size:.9rem">'+p._label+' <span style="color:var(--text-dim);font-size:.78rem">('+p.ids.length+' songs)</span></span></label>').join('');
+  document.getElementById('aggProfileModal').classList.add('show');
+}
+function closeAggProfileModal(){
+  // Read checkboxes and update selection
+  const checks=document.getElementById('aggProfileList').querySelectorAll('[data-uid]');
+  checks.forEach(cb=>{if(cb.checked)selectedAgg.add(cb.dataset.uid);else selectedAgg.delete(cb.dataset.uid);});
+  document.getElementById('aggProfileModal').classList.remove('show');
+  renderAgg();
+}
+function selectAllAggProfiles(sel){
+  document.getElementById('aggProfileList').querySelectorAll('[data-uid]').forEach(cb=>cb.checked=sel);
+}
+
 function renderAgg(){
   const el=document.getElementById('aggContent'),mode=document.getElementById('sortAgg').value;
   const fS=document.getElementById('filterAgg').value,fA=document.getElementById('filterAggArtist').value;
   const fileFilter=getFileFilter();
-  const pool=getFilePool(fileFilter);
-  // When a file filter is active, only use profiles from that file
-  const active=profiles.filter(p=>p.source===fileFilter||!fileFilter).filter(p=>p.ids.length>0);
-  if(!active.length){el.innerHTML='<p style="color:var(--text-dim)">No profiles.</p>';return;}
-  // Use the file pool as the song universe, or all ranked songs if no filter
-  const allSongIds=pool?[...pool]:[...new Set(active.flatMap(p=>p.ids))];
+  const candidates=fileFilter?profiles.filter(p=>p.source===fileFilter):profiles;
+  // If no profiles selected, select all candidates
+  const anySelected=candidates.some(p=>selectedAgg.has(p._uid));
+  if(!anySelected)candidates.forEach(p=>selectedAgg.add(p._uid));
+  const active=candidates.filter(p=>selectedAgg.has(p._uid)&&p.ids.length>0);
+  if(!active.length){el.innerHTML='<p style="color:var(--text-dim)">No profiles selected.</p>';return;}
+  // Build song pool: intersection of all selected profiles' songs (for fair cross-list comparison)
+  const pool=[...active.reduce((a,p)=>{const s=new Set(p.ids);return a?s=new Set([...a].filter(x=>s.has(x))):s;},null)];
+  const allSongIds=pool.length?pool:[...new Set(active.flatMap(p=>p.ids))];
   const hideZero=document.getElementById('hideUnranked').checked;
   const t=active.length;
-  // Pre-compute reRanked arrays once per profile (not once per song)
-  const reranked={};active.forEach(p=>{reranked[p._uid]=reRank(p,pool||null);});
+  document.getElementById('aggProfilesBtn').textContent='👥 '+t+'/'+candidates.length;
+  // Pre-compute reRanked arrays (re-rank each profile against the common pool)
+  const reranked={};active.forEach(p=>{reranked[p._uid]=reRank(p,new Set(allSongIds));});
   const totalSongs=allSongIds.length;
   let data=allSongIds.map(id=>gs(id)).filter(Boolean).filter(s=>{
     if(fS&&s.series!==fS)return false;
@@ -353,7 +390,6 @@ function renderAgg(){
   }).filter(d=>!hideZero||d.count>0);
   const cmp={rank:(a,b)=>a.avg-b.avg,'rank-desc':(a,b)=>b.avg-a.avg,median:(a,b)=>a.med-b.med,stddev:(a,b)=>a.sd-b.sd,name:(a,b)=>a.song.name.localeCompare(b.song.name),date:(a,b)=>(a.song.date||'9999').localeCompare(b.song.date||'9999'),artist:(a,b)=>a.song.artist.localeCompare(b.song.artist),series:(a,b)=>a.song.series.localeCompare(b.song.series)||a.song.name.localeCompare(b.song.name)};
   if(cmp[mode])data.sort(cmp[mode]);
-  // Assign rank positions
   const isRankSort=mode==='rank'||mode==='rank-desc'||mode==='median'||mode==='stddev';
   if(isRankSort){
     const sorted=[...data].sort((a,b)=>a.avg-b.avg);
@@ -600,6 +636,7 @@ document.querySelectorAll('nav button').forEach(b=>{b.addEventListener('click',(
 document.getElementById('selProfile').addEventListener('change',()=>{current=document.getElementById('selProfile').value;renderRank();});
 document.getElementById('sortRank').addEventListener('change',renderRank);
 document.getElementById('sortAgg').addEventListener('change',renderAgg);
+document.getElementById('aggProfilesBtn')?.addEventListener('click',openAggProfileModal);
 document.getElementById('filterRank').addEventListener('change',()=>{populateFilters();renderRank();});
 document.getElementById('filterAgg').addEventListener('change',()=>{populateFilters();renderAgg();});
 document.getElementById('filterRankArtist').addEventListener('change',()=>{populateFilters();renderRank();});

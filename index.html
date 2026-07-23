@@ -424,8 +424,9 @@ function renderCmp(){
       const shared=rerankedA.filter(id=>rerankedB.includes(id));
       if(!shared.length)return 0;
       const total=shared.length;
-      let sum=0;shared.forEach(sid=>{const pA=rerankedA.indexOf(sid)+1,pB=rerankedB.indexOf(sid)+1;sum+=1-Math.abs(pA-pB)/total;});
-      return Math.round(sum/total*100);
+      let sumDSq=0;shared.forEach(sid=>{const pA=rerankedA.indexOf(sid)+1,pB=rerankedB.indexOf(sid)+1;const d=pA-pB;sumDSq+=d*d;});
+      const rho=1-6*sumDSq/(total*(total*total-1));
+      return Math.round((rho+1)/2*100);
     }));
     let html='<div class="matrix" style="grid-template-columns:'+Math.min(80,Math.floor(700/n))+'px repeat('+n+',minmax(40px,1fr))">';
     html+='<div class="ml" style="grid-column:1;grid-row:1"></div>';

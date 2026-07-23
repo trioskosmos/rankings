@@ -154,12 +154,12 @@ function cleanName(n){return n.replace(/[「」"'（）\(\)]/g,'').trim();}
 (async()=>{
   try{
     const[songs,series,artists,disco,perf,setlists]=await Promise.all([
-      fetch('../data/song-info.json').then(r=>r.json()),
-      fetch('../data/series-info.json').then(r=>r.json()),
-      fetch('../data/artists-info.json').then(r=>r.json()),
-      fetch('../data/discography-info.json').then(r=>r.json()).catch(()=>[]),
-      fetch('../data/performance-info.json').then(r=>r.json()).catch(()=>[]),
-      fetch('../data/performance-setlists.json').then(r=>r.json()).catch(()=>[])
+      fetch('data/song-info.json').then(r=>r.json()),
+      fetch('data/series-info.json').then(r=>r.json()),
+      fetch('data/artists-info.json').then(r=>r.json()),
+      fetch('data/discography-info.json').then(r=>r.json()).catch(()=>[]),
+      fetch('data/performance-info.json').then(r=>r.json()).catch(()=>[]),
+      fetch('data/performance-setlists.json').then(r=>r.json()).catch(()=>[])
     ]);
     artists.forEach(a=>ARTIST_NAMES[a.id]=a.name);
     CATALOG_SERIES=series;

@@ -69,7 +69,7 @@ textarea{min-height:180px;resize:vertical;line-height:1.5}
 <div class="container">
   <header>
     <h1>♡ Submit a Ranking ♡</h1>
-    <p class="muted"><a href="index.html">← back to rankings</a> · paste or upload your list, review the matches, then click submit — it'll open a GitHub issue and an Action creates a PR automatically</p>
+    <p class="muted"><a href="index.html">← back to rankings</a> · paste your ranking, review the matches, submit — opens a GitHub issue. trioskosmos will add it manually.</p>
   </header>
 
   <!-- Step 1: input -->
@@ -229,9 +229,9 @@ $('submitBtn').addEventListener('click',async()=>{
   const title='New ranking: '+name;
   const body='### Your name\n'+name+'\n\n### Your ranking\n'+rankingLines+'\n\n---\n_Submitted via the ranking tool_';
   // Open GitHub issue creation page
-  const url='https://github.com/trioskosmos/rankings/issues/new?title='+encodeURIComponent(title)+'&body='+encodeURIComponent(body)+'&template=submit-ranking.yml';
+  const url='https://github.com/trioskosmos/rankings/issues/new?title='+encodeURIComponent(title)+'&body='+encodeURIComponent(body);
   window.open(url,'_blank');
-  $('doneMsg').innerHTML='✓ Issue page opened! Just click "Submit new issue" to create it — an automated workflow will turn it into a PR.';
+  $('doneMsg').innerHTML='✓ Issue opened! trioskosmos will copy it over. Or just yell at them directly.';
   $('confirmCard').classList.add('hidden');
   $('doneCard').classList.remove('hidden');
 });

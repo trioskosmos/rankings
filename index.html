@@ -105,9 +105,10 @@ nav button.active{background:#fb8a9b;color:#fff;border-color:#fb8a9b}
 
   <div class="section active" id="section-agg">
     <div class="bar">
-      <label>Sort:</label><select id="sortAgg"><option value="rank">Avg rank</option><option value="rank-desc">Avg rank (worst)</option><option value="median">Median</option><option value="stddev">σ² ↑ least controversial</option><option value="stddev-desc">σ² ↓ most controversial</option><option value="name">Name A-Z</option><option value="date">Release date</option><option value="artist">Artist</option><option value="series">Series</option><option value="event">Event</option></select>
+      <label>Sort:</label><select id="sortAgg"><option value="rank">Avg rank</option><option value="rank-desc">Avg rank (worst)</option><option value="median">Median</option><option value="stddev">σ² ↑ least controversial</option><option value="stddev-desc">σ² ↓ most controversial</option><option value="name">Name A-Z</option><option value="date">Release date</option><option value="artist">Artist</option><option value="series">Series</option></select>
       <label>Series:</label><select id="filterAgg"><option value="">All series</option></select>
       <label>Artist:</label><select id="filterAggArtist"><option value="">All artists</option></select>
+      <label>Event:</label><select id="filterAggEvent"><option value="">All events</option></select>
       <label class="cb"><input type="checkbox" id="hideUnranked" checked> Hide unranked</label>
       <button class="btn sec" id="aggProfilesBtn" style="padding:4px 10px;font-size:.8rem">👥</button>
     </div>
@@ -117,9 +118,10 @@ nav button.active{background:#fb8a9b;color:#fff;border-color:#fb8a9b}
   <div class="section" id="section-rank">
     <div class="bar">
       <label>Profile:</label><select id="selProfile"></select>
-      <label>Sort:</label><select id="sortRank"><option value="default">Default (rank)</option><option value="name">Name A-Z</option><option value="name-desc">Name Z-A</option><option value="date">Release (old)</option><option value="date-desc">Release (new)</option><option value="artist">Artist A-Z</option><option value="artist-desc">Artist Z-A</option><option value="series">Series</option><option value="event">Event</option></select>
+      <label>Sort:</label><select id="sortRank"><option value="default">Default (rank)</option><option value="name">Name A-Z</option><option value="name-desc">Name Z-A</option><option value="date">Release (old)</option><option value="date-desc">Release (new)</option><option value="artist">Artist A-Z</option><option value="artist-desc">Artist Z-A</option><option value="series">Series</option></select>
       <label>Series:</label><select id="filterRank"><option value="">All series</option></select>
       <label>Artist:</label><select id="filterRankArtist"><option value="">All artists</option></select>
+      <label>Event:</label><select id="filterRankEvent"><option value="">All events</option></select>
       <label class="cb"><input type="checkbox" id="hideUnrankedRank" checked> Hide unranked</label>
     </div>
     <div id="info" style="color:var(--text-dim);font-size:.85rem;margin-bottom:10px"></div>
@@ -176,7 +178,7 @@ nav button.active{background:#fb8a9b;color:#fff;border-color:#fb8a9b}
 
 <script>
 // ---- DATA LOADING ----
-let SONGS=[],SM={},SERIES={},SERIES_COLORS={},ARTIST_NAMES={},ARTISTS_LIST=[],SERIES_LIST=[];
+let SONGS=[],SM={},SERIES={},SERIES_COLORS={},ARTIST_NAMES={},ARTISTS_LIST=[],SERIES_LIST=[],EVENTS_LIST=[];
 
 async function loadData(){
   try{
@@ -203,8 +205,8 @@ async function loadData(){
     if(raw){raw=JSON.parse(raw);}else{raw=await(await fetch('data/song-info.json')).json();localStorage.setItem(SONG_CACHE,JSON.stringify(raw));}
     SONGS=raw.map(s=>({id:String(s.id),name:s.name,en:s.englishName||'',artist:(s.artists&&s.artists.length?ARTIST_NAMES[s.artists[0].id]||'Unknown':'Unknown'),allArtists:[...new Set(s.artists.map(a=>ARTIST_NAMES[a.id]||'Unknown').filter(Boolean))],series:(s.seriesIds&&s.seriesIds.length?SERIES[String(s.seriesIds[0])]||'Unknown':'Unknown'),color:(s.seriesIds&&s.seriesIds.length?SERIES_COLORS[String(s.seriesIds[0])]||'#888':'#888'),date:s.releasedOn||'',art:((s.discographyIds||[]).map(d=>DISCO_ART[d]).find(Boolean)||''),event:(songEvents[s.id]||{}).event||''}));
     SONGS.forEach(s=>SM[s.id]=s);
-    const aS=new Set(),sS=new Set();SONGS.forEach(s=>{s.allArtists.forEach(a=>aS.add(a));sS.add(s.series);});
-    ARTISTS_LIST=[...aS].sort();SERIES_LIST=[...sS].sort();
+    const aS=new Set(),sS=new Set(),eS=new Set();SONGS.forEach(s=>{s.allArtists.forEach(a=>aS.add(a));sS.add(s.series);if(s.event)eS.add(s.event);});
+    ARTISTS_LIST=[...aS].sort();SERIES_LIST=[...sS].sort();EVENTS_LIST=[...eS].sort();
     // Build series↔artist mapping for cross-limiting filters
     const SA={},AS={};
     SONGS.forEach(s=>{
@@ -218,10 +220,11 @@ async function loadData(){
 }
 function populateFilters(){
   const SA=window._SA||{},AS=window._AS||{};
-  const fS=document.getElementById('filterAgg').value,fA=document.getElementById('filterAggArtist').value;
-  let availArtists=ARTISTS_LIST,availSeries=SERIES_LIST;
+  const fS=document.getElementById('filterAgg').value,fA=document.getElementById('filterAggArtist').value,fE=document.getElementById('filterAggEvent').value;
+  let availArtists=ARTISTS_LIST,availSeries=SERIES_LIST,availEvents=EVENTS_LIST;
   if(fS&&SA[fS]){availArtists=[...SA[fS]].sort();}
   if(fA&&AS[fA]){availSeries=[...AS[fA]].sort();}
+  if(fE){availArtists=[...new Set(SONGS.filter(s=>s.event===fE).flatMap(s=>s.allArtists))].sort();availSeries=[...new Set(SONGS.filter(s=>s.event===fE).map(s=>s.series))].sort();}
   ['filterRank','filterAgg'].forEach(id=>{
     const s=document.getElementById(id);if(!s)return;
     const v=s.value;
@@ -233,6 +236,12 @@ function populateFilters(){
     const v=s.value;
     s.innerHTML='<option value="">All artists</option>'+availArtists.map(i=>'<option value="'+i+'">'+i+'</option>').join('');
     if(availArtists.includes(v))s.value=v;else s.value='';
+  });
+  ['filterRankEvent','filterAggEvent'].forEach(id=>{
+    const s=document.getElementById(id);if(!s)return;
+    const v=s.value;
+    s.innerHTML='<option value="">All events</option>'+availEvents.map(i=>'<option value="'+i+'">'+i+'</option>').join('');
+    if(availEvents.includes(v))s.value=v;else s.value='';
   });
 }
 // ---- RANKINGS ----
@@ -331,7 +340,7 @@ function reRank(profile, pool){
   const extra=[...pool].filter(id=>!subset.includes(id));
   return [...subset, ...extra];
 }
-function getFilteredSongs(fS,fA){let s=SONGS;if(fS)s=s.filter(x=>x.series===fS);if(fA)s=s.filter(x=>x.allArtists.includes(fA));return s;}
+function getFilteredSongs(fS,fA,fE){let s=SONGS;if(fS)s=s.filter(x=>x.series===fS);if(fA)s=s.filter(x=>x.allArtists.includes(fA));if(fE)s=s.filter(x=>x.event===fE);return s;}
 function median(arr){if(!arr.length)return 0;const s=[...arr].sort((a,b)=>a-b),m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2;}
 function stddev(arr,m){if(arr.length<2)return 0;return Math.sqrt(arr.reduce((s,v)=>s+(v-m)**2,0)/arr.length);}
 
@@ -342,8 +351,8 @@ function renderRank(){
   const fileFilter=getFileFilter();
   const pool=getFilePool(fileFilter);
   const rankedIds=reRank(p,pool);
-  const fS=document.getElementById('filterRank').value,fA=document.getElementById('filterRankArtist').value,hideUR=document.getElementById('hideUnrankedRank').checked;
-  const allS=getFilteredSongs(fS,fA),ranked=rankedIds.map(id=>gs(id)).filter(Boolean).filter(s=>allS.includes(s)),unranked=allS.filter(s=>!rankedIds.includes(s.id));
+  const fS=document.getElementById('filterRank').value,fA=document.getElementById('filterRankArtist').value,fE=document.getElementById('filterRankEvent').value,hideUR=document.getElementById('hideUnrankedRank').checked;
+  const allS=getFilteredSongs(fS,fA,fE),ranked=rankedIds.map(id=>gs(id)).filter(Boolean).filter(s=>allS.includes(s)),unranked=allS.filter(s=>!rankedIds.includes(s.id));
   info.textContent=(pool?rankedIds.length+' songs in pool · ':'')+p.ids.length+' total ranked'+(hideUR?' (hiding unranked)':'');
   const mode=document.getElementById('sortRank').value;
   const items = hideUR ? ranked : (mode==='default' ? [...ranked,...unranked] : sortSongs([...ranked,...unranked],mode));
@@ -403,7 +412,7 @@ function selectAllAggProfiles(sel){
 
 function renderAgg(){
   const el=document.getElementById('aggContent'),mode=document.getElementById('sortAgg').value;
-  const fS=document.getElementById('filterAgg').value,fA=document.getElementById('filterAggArtist').value;
+  const fS=document.getElementById('filterAgg').value,fA=document.getElementById('filterAggArtist').value,fE=document.getElementById('filterAggEvent').value;
   const fileFilter=getFileFilter();
   const candidates=fileFilter?profiles.filter(p=>p.source===fileFilter):profiles;
   const anySelected=candidates.some(p=>selectedAgg.has(p._uid));
@@ -423,6 +432,7 @@ function renderAgg(){
   let data=allSongIds.map(id=>gs(id)).filter(Boolean).filter(s=>{
     if(fS&&s.series!==fS)return false;
     if(fA&&!s.allArtists.includes(fA))return false;
+    if(fE&&s.event!==fE)return false;
     return true;
   }).map(song=>{
     const wRanked=[];let wTotal=0;
@@ -466,60 +476,6 @@ function closeAggProfileModal(){
 }
 function selectAllAggProfiles(sel){
   document.getElementById('aggProfileList').querySelectorAll('[data-uid]').forEach(cb=>cb.checked=sel);
-}
-
-function renderAgg(){
-  const el=document.getElementById('aggContent'),mode=document.getElementById('sortAgg').value;
-  const fS=document.getElementById('filterAgg').value,fA=document.getElementById('filterAggArtist').value;
-  const fileFilter=getFileFilter();
-  const candidates=fileFilter?profiles.filter(p=>p.source===fileFilter):profiles;
-  // If no profiles selected, select all candidates
-  const anySelected=candidates.some(p=>selectedAgg.has(p._uid));
-  if(!anySelected)candidates.forEach(p=>selectedAgg.add(p._uid));
-  const active=candidates.filter(p=>selectedAgg.has(p._uid)&&p.ids.length>0);
-  if(!active.length){el.innerHTML='<p style="color:var(--text-dim)">No profiles selected.</p>';return;}
-  // Build song pool: intersection of all selected profiles' songs (for fair cross-list comparison)
-  const pool=active.length?[...active.reduce((a,p)=>{
-    const ids=new Set(p.ids);
-    if(!a)return ids;
-    return new Set([...a].filter(x=>ids.has(x)));
-  },null)]:[];
-  const allSongIds=pool.length?pool:[...new Set(active.flatMap(p=>p.ids))];
-  const hideZero=document.getElementById('hideUnranked').checked;
-  const t=active.length;
-  document.getElementById('aggProfilesBtn').textContent='👥 '+t+'/'+candidates.length;
-  // Pre-compute reRanked arrays (re-rank each profile against the common pool)
-  const reranked={};active.forEach(p=>{reranked[p._uid]=reRank(p,new Set(allSongIds));});
-  const totalSongs=allSongIds.length;
-  let data=allSongIds.map(id=>gs(id)).filter(Boolean).filter(s=>{
-    if(fS&&s.series!==fS)return false;
-    if(fA&&!s.allArtists.includes(fA))return false;
-    return true;
-  }).map(song=>{
-    const allRanks=active.map(p=>{
-      const i=reranked[p._uid].indexOf(song.id);
-      return i===-1?totalSongs:i+1;
-    });
-    const avg=allRanks.reduce((a,b)=>a+b,0)/t;
-    const rankedRanks=allRanks.filter(r=>r<totalSongs),med=median(rankedRanks.length?rankedRanks:[totalSongs]),sd=stddev(allRanks,avg);
-    let hi={name:'',pos:999},lo={name:'',pos:0};
-    active.forEach(p=>{
-      const r=reranked[p._uid].indexOf(song.id)+1;
-      if(r<=totalSongs){if(r<hi.pos){hi={name:p._label,pos:r}}if(r>lo.pos){lo={name:p._label,pos:r}}}
-    });
-    return{song,avg,med,sd,hi,lo,count:rankedRanks.length};
-  }).filter(d=>!hideZero||d.count>0);
-  const cmp={rank:(a,b)=>a.avg-b.avg,'rank-desc':(a,b)=>b.avg-a.avg,median:(a,b)=>a.med-b.med,stddev:(a,b)=>a.sd-b.sd,name:(a,b)=>a.song.name.localeCompare(b.song.name),date:(a,b)=>(a.song.date||'9999').localeCompare(b.song.date||'9999'),artist:(a,b)=>a.song.artist.localeCompare(b.song.artist),series:(a,b)=>a.song.series.localeCompare(b.song.series)||a.song.name.localeCompare(b.song.name)};
-  if(cmp[mode])data.sort(cmp[mode]);
-  const isRankSort=mode==='rank'||mode==='rank-desc'||mode==='median'||mode==='stddev';
-  if(isRankSort){
-    const sorted=[...data].sort((a,b)=>a.avg-b.avg);
-    sorted.forEach((item,i)=>item.rankPos=i+1);
-  } else {
-    data.forEach((item,i)=>item.rankPos=i+1);
-  }
-  if(!data.length){el.innerHTML='<p style="color:var(--text-dim)">No songs match filters.</p>';return;}
-  el.innerHTML='<div class="list">'+data.map(item=>{const s=item.song;return '<div class="item" onclick="showSong(\''+s.id+'\')"><div class="rk">#'+item.rankPos+'</div>'+songHTML(s,'<div class="votes"><span>avg '+item.avg.toFixed(1)+' · med '+item.med.toFixed(1)+' · σ² '+item.sd.toFixed(1)+' ('+item.count+'/'+t+' ranked)</span>'+(item.hi.name?'<span class="hi">▲ '+item.hi.name+' (#'+item.hi.pos+')</span>':'')+(item.lo.name?'<span class="lo">▼ '+item.lo.name+' (#'+item.lo.pos+')</span>':'')+'</div>')+'</div>';}).join('')+'</div>';
 }
 
 // ---- PER SONG ----
@@ -765,6 +721,8 @@ document.getElementById('filterRank').addEventListener('change',()=>{populateFil
 document.getElementById('filterAgg').addEventListener('change',()=>{populateFilters();renderAgg();});
 document.getElementById('filterRankArtist').addEventListener('change',()=>{populateFilters();renderRank();});
 document.getElementById('filterAggArtist').addEventListener('change',()=>{populateFilters();renderAgg();});
+document.getElementById('filterRankEvent').addEventListener('change',()=>{populateFilters();renderRank();});
+document.getElementById('filterAggEvent').addEventListener('change',()=>{populateFilters();renderAgg();});
 document.getElementById('hideUnranked').addEventListener('change',renderAgg);
 document.getElementById('hideUnrankedRank').addEventListener('change',renderRank);
 document.getElementById('sortStartBtn')?.addEventListener('click',startSort);

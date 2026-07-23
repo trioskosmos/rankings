@@ -215,6 +215,7 @@ async function loadData(){
     const eList=Object.keys(eDates).filter(Boolean).sort((a,b)=>(eDates[a]||'9999').localeCompare(eDates[b]||'9999'));
     EVENTS_LIST=eList.map(e=>({name:e,date:eDates[e]||'',label:(eDates[e]||'').slice(0,10)+' - '+e}));
     const aS=new Set(),sS=new Set();SONGS.forEach(s=>{s.allArtists.forEach(a=>aS.add(a));sS.add(s.series);});
+    ARTISTS_LIST=[...aS].sort();SERIES_LIST=[...sS].sort();
     // Build series↔artist mapping for cross-limiting filters
     const SA={},AS={};
     SONGS.forEach(s=>{

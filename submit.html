@@ -69,7 +69,7 @@ textarea{min-height:180px;resize:vertical;line-height:1.5}
 <div class="container">
   <header>
     <h1>♡ Submit a Ranking ♡</h1>
-    <p class="muted"><a href="index.html">← back to rankings</a> · paste your ranking, review the matches, submit — opens a GitHub issue. trioskosmos will add it manually.</p>
+    <p class="muted"><a href="index.html">← back to rankings</a> · paste your ranking, review the matches, submit — your ranking is copied and a Google Form opens. Paste it there and I'll add it!</p>
   </header>
 
   <!-- Step 1: input -->
@@ -293,14 +293,17 @@ $('submitBtn').addEventListener('click',async()=>{
   if(!name){$('submitMsg').innerHTML='<div class="msg err">Enter your name first.</div>';return;}
   const items=rows.filter(r=>r.chosen);
   if(items.length<5){$('submitMsg').innerHTML='<div class="msg err">Rank at least 5 songs.</div>';return;}
-  // Build issue body from the matched ranking
+  // Build the ranking text to copy
   const rankingLines=items.map((r,i)=>(i+1)+'. '+r.rawLine.replace(/^\d+[\.\)、]\s*/,'')).join('\n');
-  const title='New ranking: '+name;
-  const body='### Your name\n'+name+'\n\n### Your ranking\n'+rankingLines+'\n\n---\n_Submitted via the ranking tool_';
-  // Open GitHub issue creation page
-  const url='https://github.com/trioskosmos/rankings/issues/new?title='+encodeURIComponent(title)+'&body='+encodeURIComponent(body);
+  const body='Your name: '+name+'\n\nYour ranking:\n'+rankingLines;
+  // Pre-fill the Google Form — user pastes their ranking
+  const url='https://docs.google.com/forms/d/e/19PrVgQxFco6TPsP1MVX7Tb-_WLyba7wDM5ErJc8cURQ/viewform';
+  navigator.clipboard.writeText(body).then(()=>{
+    $('doneMsg').innerHTML='✓ Ranking copied! Opening Google Form — paste it in and submit.';
+  }).catch(()=>{
+    $('doneMsg').innerHTML='✓ Copy this ranking, then open the Google Form and paste it:<br><textarea rows="8" style="width:100%;background:var(--bg-card2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:8px;margin-top:8px">'+esc(body)+'</textarea>';
+  });
   window.open(url,'_blank');
-  $('doneMsg').innerHTML='✓ Issue opened! trioskosmos will copy it over. Or just yell at them directly.';
   $('confirmCard').classList.add('hidden');
   $('doneCard').classList.remove('hidden');
 });

@@ -105,7 +105,7 @@ nav button.active{background:#fb8a9b;color:#fff;border-color:#fb8a9b}
 
   <div class="section active" id="section-agg">
     <div class="bar">
-      <label>Sort:</label><select id="sortAgg"><option value="rank">Avg rank</option><option value="rank-desc">Avg rank (worst)</option><option value="median">Median</option><option value="stddev">Std deviation</option><option value="name">Name A-Z</option><option value="date">Release date</option><option value="artist">Artist</option><option value="series">Series</option></select>
+      <label>Sort:</label><select id="sortAgg"><option value="rank">Avg rank</option><option value="rank-desc">Avg rank (worst)</option><option value="median">Median</option><option value="stddev">Controversial (σ²)</option><option value="name">Name A-Z</option><option value="date">Release date</option><option value="artist">Artist</option><option value="series">Series</option></select>
       <label>Series:</label><select id="filterAgg"><option value="">All series</option></select>
       <label>Artist:</label><select id="filterAggArtist"><option value="">All artists</option></select>
       <label class="cb"><input type="checkbox" id="hideUnranked" checked> Hide unranked</label>
@@ -422,7 +422,7 @@ function renderAgg(){
     data.forEach((item,i)=>item.rankPos=i+1);
   }
   if(!data.length){el.innerHTML='<p style="color:var(--text-dim)">No songs match filters.</p>';return;}
-  el.innerHTML='<div class="list">'+data.map(item=>{const s=item.song;return '<div class="item" onclick="showSong(\''+s.id+'\')"><div class="rk">#'+item.rankPos+'</div>'+songHTML(s,'<div class="votes"><span>avg '+item.avg.toFixed(1)+' · med '+item.med.toFixed(1)+' · σ '+item.sd.toFixed(1)+' ('+item.count+'/'+t+' ranked)</span>'+(item.hi.name?'<span class="hi">▲ '+item.hi.name+' (#'+item.hi.pos+')</span>':'')+(item.lo.name?'<span class="lo">▼ '+item.lo.name+' (#'+item.lo.pos+')</span>':'')+'</div>')+'</div>';}).join('')+'</div>';
+  el.innerHTML='<div class="list">'+data.map(item=>{const s=item.song;return '<div class="item" onclick="showSong(\''+s.id+'\')"><div class="rk">#'+item.rankPos+'</div>'+songHTML(s,'<div class="votes"><span>avg '+item.avg.toFixed(1)+' · med '+item.med.toFixed(1)+' · σ² '+item.sd.toFixed(1)+' ('+item.count+'/'+t+' ranked)</span>'+(item.hi.name?'<span class="hi">▲ '+item.hi.name+' (#'+item.hi.pos+')</span>':'')+(item.lo.name?'<span class="lo">▼ '+item.lo.name+' (#'+item.lo.pos+')</span>':'')+'</div>')+'</div>';}).join('')+'</div>';
 }
 
 // ---- PER SONG ----

@@ -69,7 +69,7 @@ textarea{min-height:180px;resize:vertical;line-height:1.5}
 <div class="container">
   <header>
     <h1>♡ Submit a Ranking ♡</h1>
-    <p class="muted"><a href="index.html">← back to rankings</a> · paste or upload your list, review the matches, submit for review</p>
+    <p class="muted"><a href="index.html">← back to rankings</a> · paste or upload your list, review the matches, then click submit — it'll open a GitHub issue and an Action creates a PR automatically</p>
   </header>
 
   <!-- Step 1: input -->
@@ -220,36 +220,20 @@ function renderConfirm(){
 }
 
 $('submitBtn').addEventListener('click',async()=>{
-  $('submitMsg').innerHTML='';
   const name=$('rankerName').value.trim();
   if(!name){$('submitMsg').innerHTML='<div class="msg err">Enter your name first.</div>';return;}
   const items=rows.filter(r=>r.chosen);
   if(items.length<5){$('submitMsg').innerHTML='<div class="msg err">Rank at least 5 songs.</div>';return;}
-  $('submitBtn').disabled=true;
-  try{
-    const fileContent=name+'\n'+items.map((r,i)=>(i+1)+'. '+r.rawLine).join('\n');
-    const b64=btoa(unescape(encodeURIComponent(fileContent)));
-    const branch='user/'+name.toLowerCase().replace(/[^a-z0-9]/g,'');
-    const TOKEN=sessionStorage.getItem('gh_token')||prompt('GitHub token:');
-    if(!TOKEN){$('submitMsg').innerHTML='<div class="msg err">Token required.</div>';$('submitBtn').disabled=false;return;}
-    const blobRes=await fetch('https://api.github.com/repos/trioskosmos/rankings/git/blobs',{method:'POST',headers:{'Authorization':'Bearer '+TOKEN},body:JSON.stringify({content:b64,encoding:'base64'})});
-    const blob=await blobRes.json();if(blobRes.status>=400)throw new Error(blob.message||'API error');
-    const refRes=await fetch('https://api.github.com/repos/trioskosmos/rankings/git/ref/heads/main',{headers:{'Authorization':'Bearer '+TOKEN}});
-    const ref=await refRes.json();if(refRes.status>=400)throw new Error(ref.message||'API error');
-    const baseRes=await fetch(ref.object.url,{headers:{'Authorization':'Bearer '+TOKEN}});
-    const base=await baseRes.json();if(baseRes.status>=400)throw new Error(base.message||'API error');
-    const treeRes=await fetch('https://api.github.com/repos/trioskosmos/rankings/git/trees',{method:'POST',headers:{'Authorization':'Bearer '+TOKEN},body:JSON.stringify({base_tree:base.tree.sha,tree:[{path:'data/rankings/'+name.toLowerCase().replace(/[^a-z0-9]/g,'')+'.txt',mode:'100644',type:'blob',sha:blob.sha}]})});
-    const tree=await treeRes.json();if(treeRes.status>=400)throw new Error(tree.message||'API error');
-    const commitRes=await fetch('https://api.github.com/repos/trioskosmos/rankings/git/commits',{method:'POST',headers:{'Authorization':'Bearer '+TOKEN},body:JSON.stringify({message:'Add ranking: '+name,tree:tree.sha,parents:[base.sha]})});
-    const commit=await commitRes.json();if(commitRes.status>=400)throw new Error(commit.message||'API error');
-    const branchRes=await fetch('https://api.github.com/repos/trioskosmos/rankings/git/refs',{method:'POST',headers:{'Authorization':'Bearer '+TOKEN},body:JSON.stringify({ref:'refs/heads/'+branch,sha:commit.sha})});
-    if(branchRes.status>=400){const e=await branchRes.json();throw new Error(e.message||'API error');}
-    const prRes=await fetch('https://api.github.com/repos/trioskosmos/rankings/pulls',{method:'POST',headers:{'Authorization':'Bearer '+TOKEN},body:JSON.stringify({title:'Add ranking: '+name,head:branch,base:'main',body:'Submitted via web form'})});
-    const pr=await prRes.json();if(prRes.status>=400)throw new Error(pr.message||'API error');
-    $('confirmCard').classList.add('hidden');
-    $('doneCard').classList.remove('hidden');
-    $('doneMsg').innerHTML='✓ PR created! <a href="'+pr.html_url+'" target="_blank" style="color:#8f8">View PR ↗</a>';
-  }catch(e){$('submitMsg').innerHTML='<div class="msg err">'+esc(e.message)+'</div>';$('submitBtn').disabled=false;}
+  // Build issue body from the matched ranking
+  const rankingLines=items.map((r,i)=>(i+1)+'. '+r.rawLine).join('\n');
+  const title='New ranking: '+name;
+  const body='### Your name\n'+name+'\n\n### Your ranking\n'+rankingLines+'\n\n---\n_Submitted via the ranking tool_';
+  // Open GitHub issue creation page
+  const url='https://github.com/trioskosmos/rankings/issues/new?title='+encodeURIComponent(title)+'&body='+encodeURIComponent(body)+'&template=submit-ranking.yml';
+  window.open(url,'_blank');
+  $('doneMsg').innerHTML='✓ Issue page opened! Just click "Submit new issue" to create it — an automated workflow will turn it into a PR.';
+  $('confirmCard').classList.add('hidden');
+  $('doneCard').classList.remove('hidden');
 });
 </script>
 </body>

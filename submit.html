@@ -151,11 +151,13 @@ function cleanName(n){return n.replace(/[「」"'（）\(\)]/g,'').trim();}
 
 (async()=>{
   try{
-    const[songs,series,artists,disco]=await Promise.all([
+    const[songs,series,artists,disco,perfData,slData]=await Promise.all([
       fetch('data/song-info.json').then(r=>r.json()),
       fetch('data/series-info.json').then(r=>r.json()),
       fetch('data/artists-info.json').then(r=>r.json()),
-      fetch('data/discography-info.json').then(r=>r.json()).catch(()=>[])
+      fetch('data/discography-info.json').then(r=>r.json()).catch(()=>[]),
+      fetch('data/performance-info.json').then(r=>r.json()).catch(()=>[]),
+      fetch('data/performance-setlists.json').then(r=>r.json()).catch(()=>[])
     ]);
     artists.forEach(a=>ARTIST_NAMES[a.id]=a.name);
     CATALOG_SERIES=series;
@@ -168,6 +170,20 @@ function cleanName(n){return n.replace(/[「」"'（）\(\)]/g,'').trim();}
     }));
     SONG_BY_ID=new Map(CATALOG.map(s=>[s.id,s]));
     $('scopeRef').innerHTML=series.map(s=>'<option value="'+s.id+'">'+esc(s.name)+'</option>').join('');
+    // Build events from performance data for the event picker
+    if(perfData&&perfData.data&&slData&&slData.data){
+      const pm={};perfData.data.forEach(p=>pm[p.id]=p);
+      const em={};
+      slData.data.forEach(sl=>{
+        const p=pm[sl.performance_id];if(!p)return;
+        const cid=p.concertId||'0';
+        if(!em[cid])em[cid]={id:cid,tour_name:p.tourName||'',name:p.name||p.title||'',venue:p.venue||'',date_start:p.date||p.dateStart||'',date_end:p.dateEnd||'',day_count:0,song_count:0,seriesIds:[String(p.seriesId||'')],songIds:[],perfIds:[]};
+        const e=em[cid];e.day_count++;
+        e.seriesIds=[String(p.seriesId||'')];e.perfIds.push(String(sl.performance_id));
+        (sl.songs||[]).forEach(sid=>{if(!e.songIds.includes(String(sid)))e.songIds.push(String(sid));});
+      });
+      ALL_EVENTS=Object.values(em).map(e=>{e.song_count=e.songIds.length;return e;});
+    }
   }catch(e){$('parseMsg').innerHTML='<div class="msg err">Failed to load songs: '+esc(e.message)+'</div>';}
 })();
 
@@ -176,9 +192,62 @@ $('scopeType').addEventListener('change',()=>{
   $('seriesWrap').classList.toggle('hidden',v!=='series');
   $('eventWrap').classList.toggle('hidden',v!=='event');
 });
-$('eventPickBtn').addEventListener('click',()=>$('eventModal').classList.add('show'));
+$('eventPickBtn').addEventListener('click',()=>openEventModal());
 $('eventModalClose').addEventListener('click',()=>$('eventModal').classList.remove('show'));
 $('eventModal').addEventListener('click',(e)=>{if(e.target===$('eventModal'))$('eventModal').classList.remove('show');});
+$('eventSearch').addEventListener('input',()=>renderEventList());
+
+function seriesColor(id){return(CATALOG_SERIES.find(s=>String(s.id)===String(id))||{}).color||'#888';}
+
+function openEventModal(){
+  $('eventModal').classList.add('show');
+  if(!ALL_EVENTS){$('eventList').innerHTML='<div class="muted" style="padding:12px">No event data.</div>';return;}
+  renderChips();
+  $('eventSearch').focus();
+  renderEventList();
+}
+
+function renderChips(){
+  const present=new Set(ALL_EVENTS.flatMap(e=>e.seriesIds));
+  const series=CATALOG_SERIES.filter(s=>present.has(String(s.id)));
+  $('eventChips').innerHTML=series.map(s=>'<button type="button" class="chip" data-sid="'+s.id+'" style="border-color:'+s.color+';color:'+s.color+'">'+esc(s.name)+'</button>').join('');
+  $('eventChips').querySelectorAll('[data-sid]').forEach(c=>c.addEventListener('click',()=>{
+    const id=c.dataset.sid,on=activeSeries.has(id);
+    if(on){activeSeries.delete(id);c.classList.remove('active');c.style.background='transparent';c.style.color=c.style.borderColor;}
+    else{activeSeries.add(id);c.classList.add('active');c.style.background=c.style.borderColor;c.style.color='#fff';}
+    renderEventList();
+  }));
+}
+
+function renderEventList(){
+  if(!ALL_EVENTS)return;
+  const q=$('eventSearch').value.toLowerCase().trim();
+  const evs=ALL_EVENTS.filter(e=>{
+    if(activeSeries.size&&!e.seriesIds.some(id=>activeSeries.has(id)))return false;
+    if(q&&!String(e.tour_name+' '+e.name+' '+e.venue+' '+e.date_start).toLowerCase().includes(q))return false;
+    return true;
+  });
+  if(!evs.length){$('eventList').innerHTML='<div class="muted" style="padding:12px">No events match.</div>';return;}
+  const groups={};
+  for(const e of evs){const k=e.tour_name||'—';if(!groups[k])groups[k]=[];groups[k].push(e);}
+  let html='';
+  for(const tour of Object.keys(groups)){
+    html+='<div class="tour-group"><div class="tour-name">'+esc(tour)+'</div>';
+    for(const e of groups[tour]){
+      const endD=e.date_end&&e.date_end!==e.date_start?'–'+esc(e.date_end.slice(5,10)):'';
+      html+='<div class="leg" data-id="'+e.id+'" data-label="'+esc(e.name||tour)+'" data-count="'+e.song_count+'"><div class="bar" style="background:'+seriesColor(e.seriesIds[0])+'"></div><div class="meta"><div class="ln">'+esc(e.name||tour)+'</div><div class="sub">'+esc(e.venue||'')+' · '+esc((e.date_start||'').slice(0,10))+endD+' · '+e.day_count+' day'+(e.day_count==1?'':'s')+'</div></div><div class="cnt">'+e.song_count+' songs</div></div>';
+    }
+    html+='</div>';
+  }
+  $('eventList').innerHTML=html;
+  $('eventList').querySelectorAll('.leg').forEach(row=>row.addEventListener('click',()=>{
+    selectedEvent={id:row.dataset.id,label:row.dataset.label,song_count:row.dataset.count};
+    $('eventPickBtn').textContent='🎤 '+row.dataset.label+' — change';
+    $('eventPicked').innerHTML='✓ universe = <strong>'+row.dataset.count+' songs</strong>';
+    $('eventModal').classList.remove('show');
+  }));
+}
+
 $('file').addEventListener('change',async(e)=>{const f=e.target.files[0];if(!f)return;$('text').value=await f.text();});
 $('backBtn').addEventListener('click',()=>{$('confirmCard').classList.add('hidden');$('inputCard').classList.remove('hidden');});
 $('anotherBtn').addEventListener('click',()=>location.reload());

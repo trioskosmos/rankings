@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Love Live! Song Rankings</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♡</text></svg>">
 <style>
 :root{--bg:#1a1a2e;--bg-card:#222244;--bg-card2:#2a2a4a;--text:#eee;--text-dim:#999;--border:#333366}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -362,7 +363,11 @@ function renderAgg(){
   const active=candidates.filter(p=>selectedAgg.has(p._uid)&&p.ids.length>0);
   if(!active.length){el.innerHTML='<p style="color:var(--text-dim)">No profiles selected.</p>';return;}
   // Build song pool: intersection of all selected profiles' songs (for fair cross-list comparison)
-  const pool=[...active.reduce((a,p)=>{const s=new Set(p.ids);return a?s=new Set([...a].filter(x=>s.has(x))):s;},null)];
+  const pool=active.length?[...active.reduce((a,p)=>{
+    const ids=new Set(p.ids);
+    if(!a)return ids;
+    return new Set([...a].filter(x=>ids.has(x)));
+  },null)]:[];
   const allSongIds=pool.length?pool:[...new Set(active.flatMap(p=>p.ids))];
   const hideZero=document.getElementById('hideUnranked').checked;
   const t=active.length;

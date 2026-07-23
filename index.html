@@ -187,7 +187,7 @@ async function loadData(){
     ar.forEach(a=>{ARTIST_NAMES[a.id]=a.name;});
     const DISCO_ART={};disco.forEach(d=>{const v=(d.versions||[]).find(v=>v.imageUrl);if(v)DISCO_ART[d.id]=v.imageUrl;});
     // Build song→event mapping and event→date mapping from performance data
-    const songEvents={};const eventDates={};
+    const songEvents={};const allSongEvents={};const eventDates={};
     if(perfData&&Array.isArray(perfData)&&slData){
       const pm={};perfData.forEach(p=>pm[p.id]=p);
       Object.values(slData).forEach(sl=>{
@@ -196,16 +196,19 @@ async function loadData(){
           if(!item.songId)return;
           const sid=String(item.songId);
           const edate=p.date||p.dateStart||'';
-          const evName=p.name||p.title||p.tourName||'';
+          const evName=p.tourName||'';
           if(!songEvents[sid]||edate>songEvents[sid].date)songEvents[sid]={event:evName,tour:p.tourName||'',date:edate};
-          if(evName&&(!eventDates[evName]||edate<eventDates[evName]))eventDates[evName]=edate;
+          // Track all events for this song (not just the latest)
+          if(!allSongEvents[sid])allSongEvents[sid]=new Set();
+          if(evName)allSongEvents[sid].add(evName);
+          if(evName&&(!eventDates[evName]||(edate&&edate<eventDates[evName])))eventDates[evName]=edate;
         });
       });
     }
-    const SONG_CACHE='ll_songs_v1';
+    const SONG_CACHE='ll_songs_v2';
     let raw=localStorage.getItem(SONG_CACHE);
     if(raw){raw=JSON.parse(raw);}else{raw=await(await fetch('data/song-info.json')).json();localStorage.setItem(SONG_CACHE,JSON.stringify(raw));}
-    SONGS=raw.map(s=>({id:String(s.id),name:s.name,en:s.englishName||'',artist:(s.artists&&s.artists.length?ARTIST_NAMES[s.artists[0].id]||'Unknown':'Unknown'),allArtists:[...new Set(s.artists.map(a=>ARTIST_NAMES[a.id]||'Unknown').filter(Boolean))],series:(s.seriesIds&&s.seriesIds.length?SERIES[String(s.seriesIds[0])]||'Unknown':'Unknown'),color:(s.seriesIds&&s.seriesIds.length?SERIES_COLORS[String(s.seriesIds[0])]||'#888':'#888'),date:s.releasedOn||'',art:((s.discographyIds||[]).map(d=>DISCO_ART[d]).find(Boolean)||''),event:(songEvents[s.id]||{}).event||''}));
+    SONGS=raw.map(s=>({id:String(s.id),name:s.name,en:s.englishName||'',artist:(s.artists&&s.artists.length?ARTIST_NAMES[s.artists[0].id]||'Unknown':'Unknown'),allArtists:[...new Set(s.artists.map(a=>ARTIST_NAMES[a.id]||'Unknown').filter(Boolean))],series:(s.seriesIds&&s.seriesIds.length?SERIES[String(s.seriesIds[0])]||'Unknown':'Unknown'),color:(s.seriesIds&&s.seriesIds.length?SERIES_COLORS[String(s.seriesIds[0])]||'#888':'#888'),date:s.releasedOn||'',art:((s.discographyIds||[]).map(d=>DISCO_ART[d]).find(Boolean)||''),event:(songEvents[s.id]||{}).event||'',allEvents:[...(allSongEvents[s.id]||[])]}));
     SONGS.forEach(s=>SM[s.id]=s);
     // Build event list sorted by date, with labels
     const eDates=eventDates;window._eventDates=eDates;
@@ -229,7 +232,7 @@ function populateFilters(){
   let availArtists=ARTISTS_LIST,availSeries=SERIES_LIST,availEvents=EVENTS_LIST;
   if(fS&&SA[fS]){availArtists=[...SA[fS]].sort();}
   if(fA&&AS[fA]){availSeries=[...AS[fA]].sort();}
-  if(fE){availArtists=[...new Set(SONGS.filter(s=>s.event===fE).flatMap(s=>s.allArtists))].sort();availSeries=[...new Set(SONGS.filter(s=>s.event===fE).map(s=>s.series))].sort();}
+  if(fE){availArtists=[...new Set(SONGS.filter(s=>s.allEvents.includes(fE)).flatMap(s=>s.allArtists))].sort();availSeries=[...new Set(SONGS.filter(s=>s.allEvents.includes(fE)).map(s=>s.series))].sort();}
   ['filterRank','filterAgg'].forEach(id=>{
     const s=document.getElementById(id);if(!s)return;
     const v=s.value;
@@ -346,7 +349,7 @@ function reRank(profile, pool){
   const extra=[...pool].filter(id=>!subset.includes(id));
   return [...subset, ...extra];
 }
-function getFilteredSongs(fS,fA,fE){let s=SONGS;if(fS)s=s.filter(x=>x.series===fS);if(fA)s=s.filter(x=>x.allArtists.includes(fA));if(fE)s=s.filter(x=>x.event===fE);return s;}
+function getFilteredSongs(fS,fA,fE){let s=SONGS;if(fS)s=s.filter(x=>x.series===fS);if(fA)s=s.filter(x=>x.allArtists.includes(fA));if(fE)s=s.filter(x=>x.allEvents.includes(fE));return s;}
 function median(arr){if(!arr.length)return 0;const s=[...arr].sort((a,b)=>a-b),m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2;}
 function stddev(arr,m){if(arr.length<2)return 0;return Math.sqrt(arr.reduce((s,v)=>s+(v-m)**2,0)/arr.length);}
 
@@ -438,7 +441,7 @@ function renderAgg(){
   let data=allSongIds.map(id=>gs(id)).filter(Boolean).filter(s=>{
     if(fS&&s.series!==fS)return false;
     if(fA&&!s.allArtists.includes(fA))return false;
-    if(fE&&s.event!==fE)return false;
+    if(fE&&!s.allEvents.includes(fE))return false;
     return true;
   }).map(song=>{
     const wRanked=[];let wTotal=0;

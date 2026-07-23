@@ -186,8 +186,8 @@ async function loadData(){
     sr.forEach(s=>{SERIES[s.id]=s.name;SERIES_COLORS[s.id]=s.color;});
     ar.forEach(a=>{ARTIST_NAMES[a.id]=a.name;});
     const DISCO_ART={};disco.forEach(d=>{const v=(d.versions||[]).find(v=>v.imageUrl);if(v)DISCO_ART[d.id]=v.imageUrl;});
-    // Build song→event mapping from performance data
-    const songEvents={};
+    // Build song→event mapping and event→date mapping from performance data
+    const songEvents={};const eventDates={};
     if(perfData&&Array.isArray(perfData)&&slData){
       const pm={};perfData.forEach(p=>pm[p.id]=p);
       Object.values(slData).forEach(sl=>{
@@ -196,7 +196,9 @@ async function loadData(){
           if(!item.songId)return;
           const sid=String(item.songId);
           const edate=p.date||p.dateStart||'';
-          if(!songEvents[sid]||edate>songEvents[sid].date)songEvents[sid]={event:p.name||p.title||p.tourName||'',tour:p.tourName||'',date:edate};
+          const evName=p.name||p.title||p.tourName||'';
+          if(!songEvents[sid]||edate>songEvents[sid].date)songEvents[sid]={event:evName,tour:p.tourName||'',date:edate};
+          if(evName&&(!eventDates[evName]||edate<eventDates[evName]))eventDates[evName]=edate;
         });
       });
     }
@@ -205,8 +207,11 @@ async function loadData(){
     if(raw){raw=JSON.parse(raw);}else{raw=await(await fetch('data/song-info.json')).json();localStorage.setItem(SONG_CACHE,JSON.stringify(raw));}
     SONGS=raw.map(s=>({id:String(s.id),name:s.name,en:s.englishName||'',artist:(s.artists&&s.artists.length?ARTIST_NAMES[s.artists[0].id]||'Unknown':'Unknown'),allArtists:[...new Set(s.artists.map(a=>ARTIST_NAMES[a.id]||'Unknown').filter(Boolean))],series:(s.seriesIds&&s.seriesIds.length?SERIES[String(s.seriesIds[0])]||'Unknown':'Unknown'),color:(s.seriesIds&&s.seriesIds.length?SERIES_COLORS[String(s.seriesIds[0])]||'#888':'#888'),date:s.releasedOn||'',art:((s.discographyIds||[]).map(d=>DISCO_ART[d]).find(Boolean)||''),event:(songEvents[s.id]||{}).event||''}));
     SONGS.forEach(s=>SM[s.id]=s);
-    const aS=new Set(),sS=new Set(),eS=new Set();SONGS.forEach(s=>{s.allArtists.forEach(a=>aS.add(a));sS.add(s.series);if(s.event)eS.add(s.event);});
-    ARTISTS_LIST=[...aS].sort();SERIES_LIST=[...sS].sort();EVENTS_LIST=[...eS].sort();
+    // Build event list sorted by date, with labels
+    const eDates=eventDates;window._eventDates=eDates;
+    const eList=Object.keys(eDates).filter(Boolean).sort((a,b)=>(eDates[a]||'9999').localeCompare(eDates[b]||'9999'));
+    EVENTS_LIST=eList.map(e=>({name:e,date:eDates[e]||'',label:(eDates[e]||'').slice(0,10)+' - '+e}));
+    const aS=new Set(),sS=new Set();SONGS.forEach(s=>{s.allArtists.forEach(a=>aS.add(a));sS.add(s.series);});
     // Build series↔artist mapping for cross-limiting filters
     const SA={},AS={};
     SONGS.forEach(s=>{
@@ -219,7 +224,7 @@ async function loadData(){
   }catch(e){console.error('Failed:',e);document.body.innerHTML='<div class="container"><p style="color:red">Failed to load data.</p></div>';}
 }
 function populateFilters(){
-  const SA=window._SA||{},AS=window._AS||{};
+  const SA=window._SA||{},AS=window._AS||{},eDates=window._eventDates||{};
   const fS=document.getElementById('filterAgg').value,fA=document.getElementById('filterAggArtist').value,fE=document.getElementById('filterAggEvent').value;
   let availArtists=ARTISTS_LIST,availSeries=SERIES_LIST,availEvents=EVENTS_LIST;
   if(fS&&SA[fS]){availArtists=[...SA[fS]].sort();}
@@ -240,8 +245,9 @@ function populateFilters(){
   ['filterRankEvent','filterAggEvent'].forEach(id=>{
     const s=document.getElementById(id);if(!s)return;
     const v=s.value;
-    s.innerHTML='<option value="">All events</option>'+availEvents.map(i=>'<option value="'+i+'">'+i+'</option>').join('');
-    if(availEvents.includes(v))s.value=v;else s.value='';
+    s.innerHTML='<option value="">All events</option>'+availEvents.map(e=>'<option value="'+e.name+'">'+e.label+'</option>').join('');
+    // Try to restore selected value by name
+    if(availEvents.some(e=>e.name===v))s.value=v;else s.value='';
   });
 }
 // ---- RANKINGS ----

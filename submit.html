@@ -134,7 +134,10 @@ textarea{min-height:180px;resize:vertical;line-height:1.5}
         <h2>Choose a concert / event</h2>
         <button class="btn sec" id="eventModalClose" style="padding:4px 10px">✕</button>
       </div>
-      <input id="eventSearch" placeholder="Search by tour, leg, or venue…" autocomplete="off">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px">
+        <input id="eventSearch" placeholder="Search by tour, leg, or venue…" autocomplete="off" style="flex:1">
+        <select id="eventSort"><option value="date">Date</option><option value="name">Name</option><option value="songs">Song count</option><option value="tour">Tour</option></select>
+      </div>
       <div class="chips" id="eventChips"></div>
     </div>
     <div class="modal-body" id="eventList"></div>
@@ -175,14 +178,17 @@ function cleanName(n){return n.replace(/[「」"'（）\(\)]/g,'').trim();}
       const pm={};perfData.forEach(p=>pm[p.id]=p);
       const em={};
       Object.values(slData).forEach(sl=>{
-        const p=pm[sl.performance_id];if(!p)return;
+        const p=pm[sl.performanceId];if(!p)return;
         const cid=p.concertId||'0';
         if(!em[cid])em[cid]={id:cid,tour_name:p.tourName||'',name:p.name||p.title||'',venue:p.venue||'',date_start:p.date||p.dateStart||'',date_end:p.dateEnd||'',day_count:0,song_count:0,seriesIds:[String(p.seriesId||'')],songIds:[],perfIds:[]};
         const e=em[cid];e.day_count++;
-        e.seriesIds=[String(p.seriesId||'')];e.perfIds.push(String(sl.performance_id));
-        (sl.songs||[]).forEach(sid=>{if(!e.songIds.includes(String(sid)))e.songIds.push(String(sid));});
+        e.seriesIds=[String(p.seriesId||'')];e.perfIds.push(String(sl.performanceId));
+        (sl.items||[]).filter(x=>x.type==='song').forEach(item=>{
+          if(item.songId&&!e.songIds.includes(String(item.songId)))e.songIds.push(String(item.songId));
+        });
       });
       ALL_EVENTS=Object.values(em).map(e=>{e.song_count=e.songIds.length;return e;});
+      console.log('Built',ALL_EVENTS.length,'events from performance data');
     }
   }catch(e){$('parseMsg').innerHTML='<div class="msg err">Failed to load songs: '+esc(e.message)+'</div>';}
 })();
@@ -196,6 +202,7 @@ $('eventPickBtn').addEventListener('click',()=>openEventModal());
 $('eventModalClose').addEventListener('click',()=>$('eventModal').classList.remove('show'));
 $('eventModal').addEventListener('click',(e)=>{if(e.target===$('eventModal'))$('eventModal').classList.remove('show');});
 $('eventSearch').addEventListener('input',()=>renderEventList());
+$('eventSort').addEventListener('change',()=>renderEventList());
 
 function seriesColor(id){return(CATALOG_SERIES.find(s=>String(s.id)===String(id))||{}).color||'#888';}
 
@@ -222,11 +229,15 @@ function renderChips(){
 function renderEventList(){
   if(!ALL_EVENTS)return;
   const q=$('eventSearch').value.toLowerCase().trim();
-  const evs=ALL_EVENTS.filter(e=>{
+  const sort=$('eventSort').value;
+  let evs=ALL_EVENTS.filter(e=>{
     if(activeSeries.size&&!e.seriesIds.some(id=>activeSeries.has(id)))return false;
     if(q&&!String(e.tour_name+' '+e.name+' '+e.venue+' '+e.date_start).toLowerCase().includes(q))return false;
     return true;
   });
+  // Sort by the selected criteria
+  const sorters={date:(a,b)=>(a.date_start||'').localeCompare(b.date_start||''),name:(a,b)=>a.name.localeCompare(b.name),songs:(a,b)=>b.song_count-a.song_count,tour:(a,b)=>a.tour_name.localeCompare(b.tour_name)};
+  if(sorters[sort])evs.sort(sorters[sort]);
   if(!evs.length){$('eventList').innerHTML='<div class="muted" style="padding:12px">No events match.</div>';return;}
   const groups={};
   for(const e of evs){const k=e.tour_name||'—';if(!groups[k])groups[k]=[];groups[k].push(e);}
@@ -234,7 +245,7 @@ function renderEventList(){
   for(const tour of Object.keys(groups)){
     html+='<div class="tour-group"><div class="tour-name">'+esc(tour)+'</div>';
     for(const e of groups[tour]){
-      const endD=e.date_end&&e.date_end!==e.date_start?'–'+esc(e.date_end.slice(5,10)):'';
+      const endD=e.date_end&&e.date_end!==e.date_start?' – '+esc(e.date_end.slice(5,10)):'';
       html+='<div class="leg" data-id="'+e.id+'" data-label="'+esc(e.name||tour)+'" data-count="'+e.song_count+'"><div class="bar" style="background:'+seriesColor(e.seriesIds[0])+'"></div><div class="meta"><div class="ln">'+esc(e.name||tour)+'</div><div class="sub">'+esc(e.venue||'')+' · '+esc((e.date_start||'').slice(0,10))+endD+' · '+e.day_count+' day'+(e.day_count==1?'':'s')+'</div></div><div class="cnt">'+e.song_count+' songs</div></div>';
     }
     html+='</div>';

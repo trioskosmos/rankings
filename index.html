@@ -554,17 +554,16 @@ function renderCmp(){
   fileOrder.forEach(key=>{
     const list=groups[key];
     if(list.length<2)return;
-    const pool=getFilePool(key);
     allHtml+='<h3 style="color:#fb8a9b;font-size:.95rem;margin:16px 0 8px">'+key.replace('.txt','')+'</h3>';
     const n=list.length;
     const matrix=list.map(a=>list.map(b=>{
       if(a===b)return null;
-      const rerankedA=reRank(a,pool);
-      const rerankedB=reRank(b,pool);
-      const shared=rerankedA.filter(id=>rerankedB.includes(id));
+      const shared=a.ids.filter(id=>b.ids.includes(id));
       if(!shared.length)return 0;
       const total=shared.length;
-      let sumDSq=0;shared.forEach(sid=>{const pA=rerankedA.indexOf(sid)+1,pB=rerankedB.indexOf(sid)+1;const d=pA-pB;sumDSq+=d*d;});
+      const rankA={};shared.forEach((id,i)=>{rankA[id]=i+1;});
+      const rankB={};shared.forEach((id,i)=>{rankB[id]=i+1;});
+      let sumDSq=0;shared.forEach(sid=>{const d=rankA[sid]-rankB[sid];sumDSq+=d*d;});
       const rho=1-6*sumDSq/(total*(total*total-1));
       return Math.round((rho+1)/2*100);
     }));
@@ -578,9 +577,7 @@ function renderCmp(){
         else{
           const v=matrix[i][j];const r=v/100;
           const grn=Math.round(200*r),red=Math.round(200*(1-r));
-          const rerankedA=reRank(list[i],pool);
-          const rerankedB=reRank(list[j],pool);
-          const shared=rerankedA.filter(id=>rerankedB.includes(id));
+          const shared=list[i].ids.filter(id=>list[j].ids.includes(id));
           const sel=cmpSel&&cmpSel[0]===list[i]&&cmpSel[1]===list[j]?' sel':'';
           html+='<div class="mc'+sel+'" style="grid-column:'+(j+2)+';grid-row:'+(i+2)+';background:rgb('+red+','+grn+',80)" onclick="openCmp(\''+list[i]._uid+'\',\''+list[j]._uid+'\')"><span class="pct">'+v+'%</span><span class="sub">'+shared.length+' shared</span></div>';
         }
@@ -599,15 +596,15 @@ function openCmp(uidA,uidB){
 }
 function closeCmpDetail(){document.getElementById('cmpCover').classList.remove('show');}
 function showCmpDetail(pa,pb){
-  // Find the file they share, compute re-ranked positions within that file's pool
-  const commonSource=pa.source||pb.source;
-  const pool=getFilePool(commonSource);
-  const rerankedA=reRank(pa,pool);
-  const rerankedB=reRank(pb,pool);
-  const sharedIds=rerankedA.filter(id=>rerankedB.includes(id));
+  // Use only songs BOTH profiles actually ranked — no pool expansion
+  const sharedIds=pa.ids.filter(id=>pb.ids.includes(id));
   const cmpSongs=sharedIds.map(id=>gs(id)).filter(Boolean).sort((a,b)=>a.name.localeCompare(b.name));
   if(!cmpSongs.length){document.getElementById('cmpDetailBody').innerHTML='<p style="color:var(--text-dim)">No shared songs.</p>';document.getElementById('cmpCover').classList.add('show');return;}
-  const diffs=cmpSongs.map(s=>{const pA=rerankedA.indexOf(s.id)+1,pB=rerankedB.indexOf(s.id)+1;return{song:s,pA,pB,abs:Math.abs(pA-pB)};}).sort((a,b)=>b.abs-a.abs);
+  // Compute ranks within each profile's OWN ordering of just the shared songs
+  const rankInA={};sharedIds.forEach((id,i)=>{rankInA[id]=i+1;});
+  const pbShared=pb.ids.filter(id=>sharedIds.includes(id));
+  const rankInB={};pbShared.forEach((id,i)=>{rankInB[id]=i+1;});
+  const diffs=cmpSongs.map(s=>{const pA=rankInA[s.id],pB=rankInB[s.id];return{song:s,pA,pB,abs:Math.abs(pA-pB)};}).sort((a,b)=>b.abs-a.abs);
   const total=cmpSongs.length;
   const sum=diffs.reduce((s,d)=>s+(1-d.abs/total),0);
   const agreePct=total?Math.round(sum/total*100):0;
@@ -619,8 +616,8 @@ function showCmpDetail(pa,pb){
     </div>
     <div class="list" style="margin-bottom:16px"><div class="item" style="cursor:default;background:var(--bg-card2);font-weight:bold;font-size:.82rem;color:var(--text-dim)"><div style="width:28px;text-align:center">Δ</div><div class="rk" style="width:28px">#</div><div class="inf">Song</div><div class="rk" style="width:28px">#</div></div>
     ${diffs.map(d=>{const dc=d.abs===0?'d0':d.pA<d.pB?'dp':'dn';return '<div class="item" onclick="closeCmpDetail();showSong(\''+d.song.id+'\')"><div class="delta '+dc+'">'+(d.pA-d.pB>0?'+':'')+(d.pA-d.pB)+'</div><div class="rk" style="width:28px;font-size:.9rem">#'+d.pA+'</div>'+songHTML(d.song)+'<div class="rk" style="width:28px;font-size:.9rem">#'+d.pB+'</div></div>';}).join('')}</div>
-    <h3 style="color:#fb8a9b;margin:16px 0 8px;font-size:.95rem">Full Rankings (shared songs only)</h3>
-    <div class="cc"><div class="cl"><h3>${pa.name} (${pa.ids.length} total)</h3>${sharedIds.map((id,i)=>gs(id)).filter(Boolean).map((s,i)=>'<div class="item" onclick="closeCmpDetail();showSong(\''+s.id+'\')"><div class="rk" style="font-size:.9rem">#'+(i+1)+'</div>'+songHTML(s)+'</div>').join('')}</div><div class="cl"><h3>${pb.name} (${pb.ids.length} total)</h3>${sharedIds.map((id,i)=>gs(id)).filter(Boolean).map((s,i)=>'<div class="item" onclick="closeCmpDetail();showSong(\''+s.id+'\')"><div class="rk" style="font-size:.9rem">#'+(i+1)+'</div>'+songHTML(s)+'</div>').join('')}</div></div>`;
+    <h3 style="color:#fb8a9b;margin:16px 0 8px;font-size:.95rem">Shared Songs Rankings</h3>
+    <div class="cc"><div class="cl"><h3>${pa.name} (${pa.ids.length} total, ${total} shared)</h3>${sharedIds.map(id=>gs(id)).filter(Boolean).map((s,i)=>'<div class="item" onclick="closeCmpDetail();showSong(\''+s.id+'\')"><div class="rk" style="font-size:.9rem">#'+(i+1)+'</div>'+songHTML(s)+'</div>').join('')}</div><div class="cl"><h3>${pb.name} (${pb.ids.length} total, ${total} shared)</h3>${pbShared.map(id=>gs(id)).filter(Boolean).map((s,i)=>'<div class="item" onclick="closeCmpDetail();showSong(\''+s.id+'\')"><div class="rk" style="font-size:.9rem">#'+(i+1)+'</div>'+songHTML(s)+'</div>').join('')}</div></div>`;
   document.getElementById('cmpCover').classList.add('show');
   document.getElementById('cmpCover').scrollTop=0;
 }

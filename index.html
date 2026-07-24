@@ -135,6 +135,13 @@ nav button.active{background:#fb8a9b;color:#fff;border-color:#fb8a9b}
   </div>
 
   <div class="section" id="section-cmp">
+    <div class="bar" style="background:var(--bg-card2);padding:8px 12px;border-radius:6px;margin-bottom:12px">
+      <label style="color:#fb8a9b;font-weight:bold">Cross-file:</label>
+      <select id="cmpCrossA"><option value="">Pick profile A</option></select>
+      <label>vs</label>
+      <select id="cmpCrossB"><option value="">Pick profile B</option></select>
+      <button class="btn sec" id="cmpCrossBtn" style="padding:4px 10px;font-size:.8rem">Compare</button>
+    </div>
     <div class="matrix-wrap" id="cmpGrid"></div>
   </div>
 
@@ -529,6 +536,13 @@ function renderSearch(){
 let cmpSel=null;
 function renderCmp(){
   if(profiles.length<2){document.getElementById('cmpGrid').innerHTML='<p style="color:var(--text-dim)">Need at least 2 profiles.</p>';return;}
+  // Populate cross-file dropdowns
+  ['cmpCrossA','cmpCrossB'].forEach(id=>{
+    const s=document.getElementById(id);if(!s)return;
+    const v=s.value;
+    s.innerHTML='<option value="">Pick profile</option>'+profiles.map(p=>'<option value="'+p._uid+'">'+p._label+'</option>').join('');
+    if(profiles.some(p=>p._uid===v))s.value=v;
+  });
   // Group profiles by source file
   const groups={}; profiles.forEach(p=>{
     const key=p.source||'unknown';
@@ -739,6 +753,12 @@ document.getElementById('sortStartBtn')?.addEventListener('click',startSort);
 document.getElementById('sortUndoBtn')?.addEventListener('click',undoSortMeta);
 document.getElementById('sortBlind')?.addEventListener('change',()=>{if(sortState)renderSortMeta();});
 document.getElementById('globalFileFilter')?.addEventListener('change',()=>{rSel();renderAgg();renderRank();renderSearch();renderCmp();});
+document.getElementById('cmpCrossBtn')?.addEventListener('click',()=>{
+  const aUid=document.getElementById('cmpCrossA').value,bUid=document.getElementById('cmpCrossB').value;
+  if(!aUid||!bUid||aUid===bUid)return;
+  const pa=profiles.find(p=>p._uid===aUid),pb=profiles.find(p=>p._uid===bUid);
+  if(pa&&pb)showCmpDetail(pa,pb);
+});
 let searchTimer;
 document.getElementById('songSearch').addEventListener('input',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(renderSearch,150);});
 

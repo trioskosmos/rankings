@@ -604,14 +604,15 @@ function showCmpDetail(pa,pb){
   const rankInA={};sharedIds.forEach((id,i)=>{rankInA[id]=i+1;});
   const pbShared=pb.ids.filter(id=>sharedIds.includes(id));
   const rankInB={};pbShared.forEach((id,i)=>{rankInB[id]=i+1;});
-  const diffs=cmpSongs.map(s=>{const pA=rankInA[s.id],pB=rankInB[s.id];return{song:s,pA,pB,abs:Math.abs(pA-pB)};}).sort((a,b)=>b.abs-a.abs);
+  const diffs=cmpSongs.map(s=>{const pA=rankInA[s.id],pB=rankInB[s.id];return{song:s,pA,pB,abs:Math.abs(pA-pB),dsq:(pA-pB)*(pA-pB)};}).sort((a,b)=>b.abs-a.abs);
   const total=cmpSongs.length;
-  const sum=diffs.reduce((s,d)=>s+(1-d.abs/total),0);
-  const agreePct=total?Math.round(sum/total*100):0;
+  const sumDSq=diffs.reduce((s,d)=>s+d.dsq,0);
+  const rho=total>2?1-6*sumDSq/(total*(total*total-1)):0;
+  const agreePct=Math.round((rho+1)/2*100);
   document.getElementById('cmpDetailTitle').textContent=pa.name+' vs '+pb.name+' ('+total+' shared)';
   document.getElementById('cmpDetailBody').innerHTML=`
     <div class="abar" style="gap:12px">
-      <span>Agreement: <strong>${agreePct}%</strong> (normalized rank diff) on ${total} shared songs</span>
+      <span>Agreement: <strong>${agreePct}%</strong> (ρ) on ${total} shared songs</span>
       <div class="bt" style="min-width:100px"><div class="bf" style="width:${agreePct}%"></div></div>
     </div>
     <div class="list" style="margin-bottom:16px"><div class="item" style="cursor:default;background:var(--bg-card2);font-weight:bold;font-size:.82rem;color:var(--text-dim)"><div style="width:28px;text-align:center">Δ</div><div class="rk" style="width:28px">#</div><div class="inf">Song</div><div class="rk" style="width:28px">#</div></div>
